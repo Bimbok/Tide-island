@@ -46,6 +46,16 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 
 它基于 Quickshell、QML 和 C++/Qt 6 构建。开发时的大部分精力都花在了让动画尽可能流畅、交互足够跟手，同时控制好资源占用上。谈不上有什么特别，但希望它用起来足够舒服。
 
+> [!WARNING]
+> **Tide Island 已迁移至新的仓库。**
+>
+> 当前版本仍可正常使用，但已不再积极维护。
+>
+> 新版本正在开发中，目前**尚未完成**。
+>
+> 最新开发进展请前往 **[Tide Island — 新仓库](https://github.com/enhaoswen/Tide-Island-New)**。
+
+
 <br>
 
 ## 预览
