@@ -47,6 +47,16 @@ When nothing much is going on, it just sits in the corner, staying out of the wa
 
 It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into making the animations as smooth as possible, interactions responsive, and resource usage kept in check. I can't claim it's anything special, but I hope it's comfortable to use.
 
+> [!WARNING]
+> **Tide Island has moved to a new repository.**
+>
+> This version is still working well and remains available, but it is no longer actively maintained.
+>
+> A new version is currently under development, but it is **not finished yet**.
+>
+> For the latest development, visit **[Tide Island — New Repository](https://github.com/enhaoswen/Tide-Island-New)**.
+
+
 <br>
 
 ## Preview
