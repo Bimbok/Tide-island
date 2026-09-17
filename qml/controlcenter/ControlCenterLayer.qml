@@ -4,6 +4,7 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import IslandBackend
 import "../common/BluetoothFormatting.js" as BluetoothFormatting
+import "../island"
 
 Item {
     id: controlCenter
@@ -12,9 +13,11 @@ Item {
     signal focusModeChanged(bool enabled)
     signal nightLightModeChanged(bool enabled)
     signal requestNotification(string appName, string summary, string body)
+    signal weatherRequested()
 
     readonly property var userConfig: UserConfig
 
+    property var weatherService: null
     property bool showCondition: false
     property string iconFontFamily: userConfig.iconFontFamily
     property string textFontFamily: userConfig.textFontFamily
@@ -1498,6 +1501,7 @@ Item {
                 }
 
                 Text {
+                    id: dateLabel
                     anchors.left: timeLabel.right
                     anchors.leftMargin: 10
                     anchors.baseline: timeLabel.baseline
@@ -1506,6 +1510,50 @@ Item {
                     font.pixelSize: 12
                     font.family: textFontFamily
                     font.weight: Font.Medium
+                }
+
+                Rectangle {
+                    id: weatherChip
+                    anchors.left: dateLabel.right
+                    anchors.leftMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 22
+                    width: weatherChipRow.implicitWidth + 14
+                    radius: 11
+                    color: weatherHover.containsMouse ? StyleTokens.moduleHover : StyleTokens.module
+                    visible: weatherService && weatherService.hasData && userConfig.weatherEnabled
+
+                    Row {
+                        id: weatherChipRow
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        WeatherIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            weatherType: weatherService ? weatherService.weatherType : "sunny"
+                            iconColor: weatherService ? weatherService.iconColor : "#f4c542"
+                            glyph: weatherService ? weatherService.iconGlyph : "\ue30d"
+                            iconFontFamily: controlCenter.iconFontFamily
+                            iconSize: 14
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: weatherService ? weatherService.tempString : ""
+                            color: StyleTokens.textPrimary
+                            font.pixelSize: 11
+                            font.family: controlCenter.textFontFamily
+                            font.weight: Font.DemiBold
+                        }
+                    }
+
+                    MouseArea {
+                        id: weatherHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: controlCenter.weatherRequested()
+                    }
                 }
             }
 

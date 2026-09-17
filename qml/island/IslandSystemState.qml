@@ -19,12 +19,14 @@ Item {
     property int currentWorkspace: 1
     property bool customSwipeActive: false
     property bool lyricsCavaActive: false
+    property var weatherService: null
 
     readonly property var configuredLeftSwipeIds: buildNormalizedSwipeItemIds(configuredLeftSwipeItems)
     readonly property bool usesSystemStatsModule: configuredLeftSwipeIds.indexOf("cpu") !== -1
         || configuredLeftSwipeIds.indexOf("ram") !== -1
     readonly property bool usesStorageModule: configuredLeftSwipeIds.indexOf("storage") !== -1
     readonly property bool usesCavaModule: configuredLeftSwipeIds.indexOf("cava") !== -1
+    readonly property bool usesWeatherModule: configuredLeftSwipeIds.indexOf("weather") !== -1
     readonly property bool hasCustomLeftItems: customLeftItems.length > 0
     readonly property string systemServicesClientId: "island-system-state-" + Math.random().toString(36).slice(2)
     readonly property string defaultStatusIcon: "\ud83c\udfa7"
@@ -256,6 +258,16 @@ Item {
                 icon: storageStatusIcon,
                 text: currentStorageUsage >= 0 ? Math.round(currentStorageUsage) + "%" : "--%"
             };
+        case "weather":
+            return {
+                id: itemId,
+                kind: "weather",
+                icon: "",
+                weatherType: weatherService ? weatherService.weatherType : "sunny",
+                iconColor: weatherService ? weatherService.iconColor : "#f4c542",
+                iconGlyph: weatherService ? weatherService.iconGlyph : "\ue30d",
+                text: weatherService ? weatherService.tempString : "--"
+            };
         default:
             return null;
         }
@@ -287,6 +299,8 @@ Item {
                 + "\u001f" + String(item.icon || "")
                 + "\u001f" + String(item.text || "")
                 + "\u001f" + String(item.artUrl || "")
+                + "\u001f" + String(item.weatherType || "")
+                + "\u001f" + String(item.iconColor || "")
                 + "\u001f" + String(item.level === undefined ? "" : item.level)
                 + "\u001f" + String(item.isCharging === undefined ? "" : item.isCharging)
                 + "\u001e";
@@ -460,5 +474,14 @@ Item {
 
             root.transientRequested(root.statusIcon("bluetooth"), -1.0, "Disconnected");
         }
+    }
+
+    Connections {
+        target: root.weatherService
+
+        function onTempChanged() { root.syncCustomLeftItems(); }
+        function onWeatherTypeChanged() { root.syncCustomLeftItems(); }
+        function onHasDataChanged() { root.syncCustomLeftItems(); }
+        function onUnitsChanged() { root.syncCustomLeftItems(); }
     }
 }

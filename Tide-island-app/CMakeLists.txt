@@ -74,6 +74,7 @@ qt_add_qml_module(tide-island-config-app
         Wallpaper.qml
         WallpaperSettings.qml
         TlpSettings.qml
+        WeatherSettings.qml
         FontSettings.qml
         Interaction.qml
         Shortcut.qml

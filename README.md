@@ -109,6 +109,7 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - Application launcher
 - File shelf
 - Clipboard history manager
+- Weather & Forecast
 - Wallpaper switcher
 - Workspace overview
 - Custom page
@@ -140,6 +141,7 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - Brightness
 - Cava
 - Storage usage
+- Weather
 
 ### Compositor support
 
@@ -239,8 +241,9 @@ Search `Tide Island Settings` in any application launcher, or run:
 tide-island-config-app
 ```
 
-- **Shortcuts**: Configure shortcuts for Workspace Overview, Application Launcher, Music Player, Notification Center, Control Center, and Clipboard History (`Super + V` by default).
+- **Shortcuts**: Configure shortcuts for Workspace Overview, Application Launcher, Music Player, Notification Center, Control Center, Clipboard History (`Super + V`), and Weather (`Super + E` by default).
 - **Interaction**: Configure click actions for the dynamic island pill (Left, Middle, and Right mouse buttons for Player, Control Center, and Clipboard History).
+- **Weather**: Configure auto-detection or custom city name, temperature units (°C or °F), and refresh interval.
 
 ## Common Commands
 
@@ -268,6 +271,10 @@ You can control Tide Island remotely using `quickshell ipc call`:
 
 | Command | Action |
 | --- | --- |
+| `quickshell ipc call tide toggleWeather` | Open or close weather view |
+| `quickshell ipc call tide openWeather` | Open weather view |
+| `quickshell ipc call tide closeWeather` | Close weather view |
+| `quickshell ipc call weather refresh` | Refresh weather data immediately |
 | `quickshell ipc call tide toggleClipboard` | Open or close clipboard history |
 | `quickshell ipc call tide openClipboard` | Open clipboard history |
 | `quickshell ipc call tide closeClipboard` | Close clipboard history |

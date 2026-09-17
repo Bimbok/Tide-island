@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import IslandBackend
+import "qml/island"
 
 Scope {
     id: shellRoot
@@ -13,6 +14,11 @@ Scope {
     property bool islandAutoHideRuntimeEnabled: true
 
     readonly property var userConfig: UserConfig
+
+    WeatherService {
+        id: globalWeatherService
+    }
+    readonly property var weatherService: globalWeatherService
 
     function forEachWindow(callback) {
         const windows = panelVariants.instances ? panelVariants.instances : [];
@@ -278,6 +284,22 @@ Scope {
         function closeClipboard() {
             shellRoot.forFocusedWindow((window) => window.closeClipboardWindow ? window.closeClipboardWindow() : window.toggleClipboardWindow());
         }
+
+        function toggleWeather() {
+            shellRoot.forFocusedWindow((window) => window.toggleWeatherWindow());
+        }
+
+        function showWeather() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function openWeather() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function closeWeather() {
+            shellRoot.forFocusedWindow((window) => window.closeWeatherWindow ? window.closeWeatherWindow() : window.toggleWeatherWindow());
+        }
     }
 
     IpcHandler {
@@ -297,6 +319,31 @@ Scope {
 
         function close() {
             shellRoot.forFocusedWindow((window) => window.closeClipboardWindow ? window.closeClipboardWindow() : window.toggleClipboardWindow());
+        }
+    }
+
+    IpcHandler {
+        target: "weather"
+
+        function toggle() {
+            shellRoot.forFocusedWindow((window) => window.toggleWeatherWindow());
+        }
+
+        function show() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function open() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function close() {
+            shellRoot.forFocusedWindow((window) => window.closeWeatherWindow ? window.closeWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function refresh() {
+            if (shellRoot.weatherService)
+                shellRoot.weatherService.refresh();
         }
     }
 

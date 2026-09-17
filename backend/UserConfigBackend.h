@@ -64,6 +64,11 @@ class UserConfigBackend final : public QObject {
     Q_PROPERTY(int titleFontSize READ titleFontSize NOTIFY titleFontSizeChanged FINAL)
     Q_PROPERTY(int iconFontSize READ iconFontSize NOTIFY iconFontSizeChanged FINAL)
 
+    Q_PROPERTY(bool weatherEnabled READ weatherEnabled NOTIFY weatherEnabledChanged FINAL)
+    Q_PROPERTY(QString weatherLocation READ weatherLocation NOTIFY weatherLocationChanged FINAL)
+    Q_PROPERTY(QString weatherUnits READ weatherUnits NOTIFY weatherUnitsChanged FINAL)
+    Q_PROPERTY(int weatherRefreshInterval READ weatherRefreshInterval NOTIFY weatherRefreshIntervalChanged FINAL)
+
 public:
     explicit UserConfigBackend(QObject *parent = nullptr);
 
@@ -115,6 +120,10 @@ public:
     int bodyFontSize() const;
     int titleFontSize() const;
     int iconFontSize() const;
+    bool weatherEnabled() const;
+    QString weatherLocation() const;
+    QString weatherUnits() const;
+    int weatherRefreshInterval() const;
     void setDefaultWallpaperPath(const QString &path);
     void setDefaultTlpSudoPassword(const QString &password);
 
@@ -170,6 +179,10 @@ signals:
     void bodyFontSizeChanged();
     void titleFontSizeChanged();
     void iconFontSizeChanged();
+    void weatherEnabledChanged();
+    void weatherLocationChanged();
+    void weatherUnitsChanged();
+    void weatherRefreshIntervalChanged();
 
 private:
     void scheduleReload();
@@ -225,6 +238,10 @@ private:
     int m_bodyFontSize = 16;
     int m_titleFontSize = 20;
     int m_iconFontSize = 18;
+    bool m_weatherEnabled = true;
+    QString m_weatherLocation;
+    QString m_weatherUnits = QStringLiteral("metric");
+    int m_weatherRefreshInterval = 1800000;
 
     QFileSystemWatcher m_watcher;
     QTimer m_reloadTimer;

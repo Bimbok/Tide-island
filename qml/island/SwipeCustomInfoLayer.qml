@@ -104,7 +104,8 @@ Item {
                 readonly property bool isBattery: modelData.kind === "battery"
                 readonly property bool isAlbumArt: modelData.kind === "albumArt"
                 readonly property bool isMediaText: modelData.kind === "trackName"
-                readonly property bool hasLeadingVisual: hasIcon || isBattery
+                readonly property bool isWeather: modelData.kind === "weather"
+                readonly property bool hasLeadingVisual: hasIcon || isBattery || isWeather
                 readonly property real boundedTextWidth: isMediaText
                     ? Math.min(valueText.implicitWidth, root.maximumMediaTextWidth)
                     : valueText.implicitWidth
@@ -180,19 +181,29 @@ Item {
                 Item {
                     id: leadingVisual
                     visible: !parent.isCava && !parent.isAlbumArt && parent.hasLeadingVisual
-                    width: parent.isBattery ? root.batteryIconWidth : (parent.hasIcon ? root.iconBoxSize : 0)
-                    height: parent.isBattery ? Math.max(root.batteryIconHeight, valueText.implicitHeight) : root.iconBoxSize
+                    width: parent.isBattery ? root.batteryIconWidth : (parent.isWeather ? 16 : (parent.hasIcon ? root.iconBoxSize : 0))
+                    height: parent.isBattery ? Math.max(root.batteryIconHeight, valueText.implicitHeight) : (parent.isWeather ? 16 : root.iconBoxSize)
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
                         anchors.centerIn: parent
                         anchors.verticalCenterOffset: root.iconVerticalOffset
-                        visible: parent.parent.hasIcon && !parent.parent.isBattery
+                        visible: parent.parent.hasIcon && !parent.parent.isBattery && !parent.parent.isWeather
                         text: modelData.icon || ""
                         color: "white"
                         font.pixelSize: root.iconPixelSize
                         font.family: root.iconFontFamily
+                    }
+
+                    WeatherIcon {
+                        anchors.centerIn: parent
+                        visible: parent.parent.isWeather
+                        weatherType: modelData.weatherType || "sunny"
+                        iconColor: modelData.iconColor || "#f4c542"
+                        glyph: modelData.iconGlyph || "\ue30d"
+                        iconFontFamily: root.iconFontFamily
+                        iconSize: 14
                     }
 
                     Item {

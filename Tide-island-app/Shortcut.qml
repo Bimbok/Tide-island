@@ -111,6 +111,13 @@ PagePanel {
                 "method": "toggleClipboard"
             },
             {
+                "action": "Weather",
+                "mods": "SUPER",
+                "key": "E",
+                "target": "tide",
+                "method": "toggleWeather"
+            },
+            {
                 "action": "Toggle island",
                 "mods": "SUPER",
                 "key": "F",

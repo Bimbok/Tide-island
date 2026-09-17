@@ -63,6 +63,7 @@ QVariantList defaultShortcutBindings()
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("slash"), QStringLiteral("tide"), QStringLiteral("toggleApplicationLauncher")),
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("O"), QStringLiteral("tide"), QStringLiteral("toggleFileShelf")),
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("V"), QStringLiteral("tide"), QStringLiteral("toggleClipboard")),
+        shortcutMap(QStringLiteral("SUPER"), QStringLiteral("E"), QStringLiteral("tide"), QStringLiteral("toggleWeather")),
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("F"), QStringLiteral("island"), QStringLiteral("toggle")),
     };
 }

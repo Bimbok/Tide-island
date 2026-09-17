@@ -50,7 +50,7 @@ PagePanel {
         Item {
             id: content
             width: scroller.width
-            height: tlpPanel.y + tlpPanel.height + 40
+            height: weatherPanel.y + weatherPanel.height + 40
 
             Text {
                 id: title
@@ -220,6 +220,31 @@ PagePanel {
             TlpSettings {
                 id: tlpPanel
                 anchors.top: tlpTitle.bottom
+                anchors.topMargin: 15
+                anchors.left: parent.left
+                anchors.leftMargin: 30
+                anchors.right: parent.right
+                anchors.rightMargin: 40
+                height: implicitHeight
+            }
+
+            Text {
+                id: weatherTitle
+                text: "Weather"
+                anchors.top: tlpPanel.bottom
+                anchors.topMargin: 34
+                anchors.left: parent.left
+                anchors.leftMargin: 32
+                anchors.right: parent.right
+                anchors.rightMargin: 40
+                font.family: Theme.titleFontFamily
+                font.pixelSize: 23
+                color: Theme.textColor
+            }
+
+            WeatherSettings {
+                id: weatherPanel
+                anchors.top: weatherTitle.bottom
                 anchors.topMargin: 15
                 anchors.left: parent.left
                 anchors.leftMargin: 30

@@ -367,6 +367,26 @@ int UserConfigBackend::iconFontSize() const
     return m_iconFontSize;
 }
 
+bool UserConfigBackend::weatherEnabled() const
+{
+    return m_weatherEnabled;
+}
+
+QString UserConfigBackend::weatherLocation() const
+{
+    return m_weatherLocation;
+}
+
+QString UserConfigBackend::weatherUnits() const
+{
+    return m_weatherUnits;
+}
+
+int UserConfigBackend::weatherRefreshInterval() const
+{
+    return m_weatherRefreshInterval;
+}
+
 void UserConfigBackend::setDefaultWallpaperPath(const QString &path)
 {
     if (m_defaultWallpaperPath == path)
@@ -511,6 +531,10 @@ void UserConfigBackend::loadConfig()
     updateField(this, m_bodyFontSize, jsonInt(configObject, QLatin1String("bodyFontSize"), 16), &UserConfigBackend::bodyFontSizeChanged);
     updateField(this, m_titleFontSize, jsonInt(configObject, QLatin1String("titleFontSize"), 20), &UserConfigBackend::titleFontSizeChanged);
     updateField(this, m_iconFontSize, jsonInt(configObject, QLatin1String("iconFontSize"), 18), &UserConfigBackend::iconFontSizeChanged);
+    updateField(this, m_weatherEnabled, jsonBool(configObject, QLatin1String("weatherEnabled"), true), &UserConfigBackend::weatherEnabledChanged);
+    updateField(this, m_weatherLocation, jsonString(configObject, QLatin1String("weatherLocation"), QString()), &UserConfigBackend::weatherLocationChanged);
+    updateField(this, m_weatherUnits, jsonString(configObject, QLatin1String("weatherUnits"), QStringLiteral("metric")), &UserConfigBackend::weatherUnitsChanged);
+    updateField(this, m_weatherRefreshInterval, jsonBoundedInt(configObject, QLatin1String("weatherRefreshInterval"), 1800000, 60000, 86400000), &UserConfigBackend::weatherRefreshIntervalChanged);
 
     updateWatchedPaths();
 }

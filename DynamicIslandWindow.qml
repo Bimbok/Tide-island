@@ -60,6 +60,16 @@ PanelWindow {
 
     readonly property var userConfig: UserConfig
 
+    WeatherService {
+        id: fallbackWeatherService
+        weatherEnabled: (!root.shellRootController || !root.shellRootController.weatherService)
+            && (userConfig ? userConfig.weatherEnabled : true)
+    }
+
+    readonly property var weatherService: (root.shellRootController && root.shellRootController.weatherService)
+        ? root.shellRootController.weatherService
+        : fallbackWeatherService
+
     Loader {
         id: hyprlandIntegrationLoader
 
@@ -682,6 +692,22 @@ PanelWindow {
             islandContainer.smartRestoreState();
     }
 
+    function toggleWeatherWindow() {
+        if (islandContainer.islandState === "weather")
+            islandContainer.smartRestoreState();
+        else
+            islandContainer.showWeather();
+    }
+
+    function showWeatherWindow() {
+        islandContainer.showWeather();
+    }
+
+    function closeWeatherWindow() {
+        if (islandContainer.islandState === "weather")
+            islandContainer.smartRestoreState();
+    }
+
     onOverviewVisibleChanged: {
         if (overviewVisible && monitorFocused) overviewFocusTimer.restart();
         if (overviewVisible)
@@ -891,6 +917,7 @@ PanelWindow {
             || applicationLauncherLayerVisible
             || fileShelfLayerVisible
             || clipboardLayerVisible
+            || weatherLayerVisible
             || expandedPlayerKeyboardFocusRequested
             || (root.monitorFocused && (root.overviewVisible || root.connectivityPromptActive))
 
@@ -911,16 +938,20 @@ PanelWindow {
         property string notificationSummary: ""
         property string notificationBody: ""
         property bool notificationExpanded: false
+        property bool isEmergencyAlert: false
+        property real customCapsuleWidth: userConfig.islandWidth
+        property real lyricsCapsuleWidth: userConfig.islandWidth
+        property string transientCapsuleIcon: ""
+        property real transientCapsuleProgress: -1.0
+        property string transientCapsuleText: ""
+        property string restingState: normalizeRestingState(userConfig.dynamicIslandRestingState)
+        property string workspaceOriginSide: "none"
+        property string splitOriginSide: "none"
         property var bluetoothExpandedDevice: null
         property var notificationHistoryModel: ListModel {}
         readonly property var cavaLevels: systemState.cavaLevels
         property real swipeTransitionProgress: 0
-        property string workspaceOriginSide: "none"
-        property string splitOriginSide: "none"
-        property string restingState: "normal"
         property bool expandedByPlayerAutoOpen: false
-        property real customCapsuleWidth: 220
-        property real lyricsCapsuleWidth: 220
         property bool sideSwipeSettling: false
         property bool hoverExpandedActive: false
         property bool expandedPlayerKeyboardFocusRequested: false
@@ -939,6 +970,19 @@ PanelWindow {
         readonly property int notificationAutoHideInterval: 4200
         readonly property int bluetoothExpandedAutoHideInterval: 2500
         readonly property int swipeAnimationDuration: 220
+        readonly property bool showsMediaInNormal: restingState === "lyrics"
+            || (restingState === "normal" && !!currentTrack)
+            || (restingState === "custom" && !hasCustomLeftItems && !!currentTrack)
+        readonly property bool fileShelfLayerInteractive: !root.overviewVisible
+            && (islandState === "file_shelf" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool clipboardLayerInteractive: !root.overviewVisible
+            && (islandState === "clipboard" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool weatherLayerInteractive: !root.overviewVisible
+            && (islandState === "weather" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool fileShelfOverlayActive: fileShelfLayerInteractive && fileShelfLoader.item && fileShelfLoader.item.hasVisibleCards
+        readonly property bool fileShelfAcceptingDrop: islandFileDropArea.containsDrag
+            && !root.overviewVisible
+            && (islandState === "normal" || islandState === "lyrics" || islandState === "custom")
         readonly property real timerProgress: timerActive && timerTotalSeconds > 0
             ? Math.max(0, Math.min(1, timerRemainingSeconds / timerTotalSeconds))
             : 0
@@ -958,6 +1002,7 @@ PanelWindow {
             || islandState === "application_launcher"
             || islandState === "file_shelf"
             || islandState === "clipboard"
+            || islandState === "weather"
         readonly property bool splitShowsProgress: islandState === "split" && osdProgress >= 0
         readonly property bool splitShowsText: islandState === "split" && osdProgress < 0 && osdCustomText !== ""
         readonly property bool splitShowsIconOnly: islandState === "split" && osdProgress < 0 && osdCustomText === ""
@@ -1003,6 +1048,7 @@ PanelWindow {
         readonly property bool applicationLauncherLayerVisible: !root.overviewVisible && islandState === "application_launcher"
         readonly property bool fileShelfLayerVisible: !root.overviewVisible && islandState === "file_shelf"
         readonly property bool clipboardLayerVisible: !root.overviewVisible && islandState === "clipboard"
+        readonly property bool weatherLayerVisible: !root.overviewVisible && islandState === "weather"
         readonly property var activePlayer: mediaController.activePlayer
         readonly property string lyricsDisplayText: mediaController.displayText
         readonly property string currentTrack: mediaController.currentTrack
@@ -1074,6 +1120,7 @@ PanelWindow {
         IslandSystemState {
             id: systemState
 
+            weatherService: root.weatherService
             configuredLeftSwipeItems: userConfig.dynamicIslandLeftSwipeItems
             timeText: timeObj.currentTime
             dateText: timeObj.currentDateLabel
@@ -1256,6 +1303,20 @@ PanelWindow {
                 return;
             case "closeClipboard":
                 if (islandState === "clipboard")
+                    smartRestoreState();
+                return;
+            case "toggleWeather":
+                if (islandState === "weather")
+                    smartRestoreState();
+                else
+                    showWeather();
+                return;
+            case "openWeather":
+            case "showWeather":
+                showWeather();
+                return;
+            case "closeWeather":
+                if (islandState === "weather")
                     smartRestoreState();
                 return;
             default:
@@ -1781,6 +1842,15 @@ PanelWindow {
             stopAutoHideTimer();
         }
 
+        function showWeather() {
+            cancelSideSwipeSettle();
+            abortSideTransientMode();
+            clearTransientCapsule();
+            islandState = "weather";
+            mainCapsule.displayedWidth = mainCapsule.baseTargetWidth;
+            stopAutoHideTimer();
+        }
+
         function showCustomCapsule() {
             if (!hasCustomLeftItems) {
                 showTimeCapsule();
@@ -1958,6 +2028,8 @@ PanelWindow {
                     return 1100;
                 case "clipboard":
                     return 520;
+                case "weather":
+                    return 460;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 410;
@@ -1987,6 +2059,8 @@ PanelWindow {
                     return 260;
                 case "clipboard":
                     return clipboardLoader.item && clipboardLoader.item.imgFullPreview ? 400 : 350;
+                case "weather":
+                    return 340;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 165;
@@ -2010,6 +2084,7 @@ PanelWindow {
                 case "application_launcher":
                 case "file_shelf":
                 case "clipboard":
+                case "weather":
                     return 34;
                 case "expanded":
                 case "bluetooth_expanded":
@@ -2617,6 +2692,8 @@ PanelWindow {
                         onConnectivityPanelRequested: function(kind, open) {
                             root.setConnectivityDetailVisible(kind, open);
                         }
+                        weatherService: root.weatherService
+                        onWeatherRequested: islandContainer.showWeather()
                     }
                 }
             }
@@ -2716,6 +2793,25 @@ PanelWindow {
                         iconFontFamily: root.iconFontFamily
                         textFontFamily: root.textFontFamily
                         showCondition: islandContainer.clipboardLayerVisible
+                        onCloseRequested: islandContainer.smartRestoreState()
+                    }
+                }
+            }
+
+            Loader {
+                id: weatherLoader
+                anchors.fill: parent
+                active: islandContainer.weatherLayerVisible
+                asynchronous: false
+                visible: islandContainer.weatherLayerVisible
+
+                sourceComponent: Component {
+                    WeatherLayer {
+                        weatherService: root.weatherService
+                        iconFontFamily: root.iconFontFamily
+                        textFontFamily: root.textFontFamily
+                        heroFontFamily: root.heroFontFamily
+                        showCondition: islandContainer.weatherLayerVisible
                         onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }
