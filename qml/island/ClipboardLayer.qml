@@ -95,7 +95,14 @@ FocusScope {
         const q = searchQuery.trim().toLowerCase();
         const list = q.length === 0
             ? allEntries
-            : allEntries.filter(e => String(e.label).toLowerCase().includes(q));
+            : allEntries.filter(e => {
+                const labelStr = String(e.label).toLowerCase();
+                if (labelStr.includes(q))
+                    return true;
+                if (e.imagePath && formatImageLabel(e.label).toLowerCase().includes(q))
+                    return true;
+                return false;
+            });
 
         for (let i = 0; i < list.length; i++) {
             listModel.append(list[i]);
@@ -168,9 +175,63 @@ FocusScope {
         if (!raw)
             return "Image";
         const match = String(raw).match(/\[\[ binary data (.+) \]\]/);
-        if (match && match[1])
+        if (match && match[1]) {
+            const parts = match[1].trim().split(/\s+/);
+            if (parts.length >= 3) {
+                const res = parts[parts.length - 1].replace("x", "×");
+                const fmt = parts[parts.length - 2].toUpperCase();
+                const size = parts.slice(0, parts.length - 2).join(" ");
+                return res + " • " + fmt + " (" + size + ")";
+            }
             return match[1];
+        }
         return String(raw);
+    }
+
+    function getClipType(entry) {
+        if (!entry)
+            return "text";
+        if (entry.imagePath || entry.isImage)
+            return "image";
+        const str = String(entry.label).trim();
+        if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(str)) {
+            return "color";
+        }
+        if (/^(https?:\/\/|www\.|git@[\w.-]+:)/i.test(str)) {
+            return "link";
+        }
+        if (/^(sudo\s|pacman\s|yay\s|git\s|cd\s|ls\s|rm\s|mkdir\s|curl\s|wget\s|systemctl\s|kill\s|grep\s|find\s|cat\s|echo\s|chmod\s|chown\s|ssh\s|docker\s|podman\s|cargo\s|npm\s|yarn\s|pnpm\s|python|node|bash|sh|zsh|powerprofilesctl)/.test(str)
+            || (/^[\w./~-]+(\s+-[a-zA-Z0-9]+|\s+--[a-zA-Z0-9-]+)/.test(str))
+            || (/[{};]/.test(str) && (str.includes("const ") || str.includes("let ") || str.includes("var ") || str.includes("function") || str.includes("class ") || str.includes("return ") || str.includes("#include") || str.includes("import ")))) {
+            return "code";
+        }
+        return "text";
+    }
+
+    function getClipMeta(entry) {
+        if (!entry)
+            return "";
+        if (entry.imagePath || entry.isImage) {
+            return "Image • Press Tab to preview";
+        }
+        const type = root.getClipType(entry);
+        const str = String(entry.label);
+        const charCount = str.length;
+        const lines = str.split("\n").length;
+
+        let typeLabel = "Text";
+        if (type === "color")
+            return "Color Hex • " + str;
+        if (type === "link")
+            return "Web Link • " + charCount + " chars";
+        if (type === "code") {
+            typeLabel = lines > 1 ? "Code Snippet" : "Terminal Command";
+        }
+
+        if (lines > 1) {
+            return typeLabel + " • " + lines + " lines (" + charCount + " chars)";
+        }
+        return typeLabel + " • " + charCount + " chars";
     }
 
     Timer {
@@ -271,7 +332,7 @@ FocusScope {
                 root.rebuildFilteredModel();
             }
         }
-        onExited: (code) => {
+        onExited: (code, status) => {
             if (code === 127)
                 root.cliphistAvailable = false;
         }
@@ -322,23 +383,33 @@ FocusScope {
 
     Column {
         anchors.fill: parent
-        anchors.margins: 14
+        anchors.leftMargin: 18
+        anchors.rightMargin: 18
+        anchors.topMargin: 14
+        anchors.bottomMargin: 12
         spacing: 10
         clip: true
 
-        // Header
+        // ══════════════════════════════════════════════
+        // HEADER BAR
+        // ══════════════════════════════════════════════
         RowLayout {
             width: parent.width
-            height: 28
+            height: 30
 
-            // Clipboard Icon + Title
+            // Left: Icon badge + Title + Search query chip
             Row {
                 Layout.alignment: Qt.AlignLeft
                 spacing: 8
 
-                Item {
-                    width: 20
-                    height: 20
+                // Clipboard icon container
+                Rectangle {
+                    width: 26
+                    height: 26
+                    radius: 8
+                    color: "#1a1d24"
+                    border.width: 1
+                    border.color: "#282c38"
                     anchors.verticalCenter: parent.verticalCenter
 
                     Shape {
@@ -347,27 +418,25 @@ FocusScope {
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: "#ffffff"
-                            strokeWidth: 1.6
+                            strokeColor: "#f0f1f5"
+                            strokeWidth: 1.4
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
 
-                            // Clipboard board outline
                             PathSvg {
-                                path: "M7 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"
+                                path: "M8 4.5H6.5A1.5 1.5 0 0 0 5 6v13a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H16"
                             }
                         }
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: "#ffffff"
-                            strokeWidth: 1.6
+                            strokeColor: "#f0f1f5"
+                            strokeWidth: 1.4
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
 
-                            // Clipboard clip on top
                             PathSvg {
-                                path: "M7 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2H7V3z"
+                                path: "M8 3.5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1.5H8V3.5z"
                             }
                         }
                     }
@@ -375,11 +444,36 @@ FocusScope {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.imgFullPreview ? "Image Preview" : "Clipboard History"
+                    text: root.imgFullPreview ? "Image Preview" : "Clipboard"
                     color: "#ffffff"
                     font.family: root.textFontFamily
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
+                    font.letterSpacing: 0.2
+                }
+
+                // Active search tag pill
+                Rectangle {
+                    visible: !root.imgFullPreview && root.searchQuery !== ""
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 20
+                    radius: 6
+                    color: Qt.rgba(10/255, 132/255, 255/255, 0.15)
+                    border.width: 1
+                    border.color: Qt.rgba(10/255, 132/255, 255/255, 0.35)
+                    width: searchTagText.implicitWidth + 14
+
+                    Text {
+                        id: searchTagText
+                        anchors.centerIn: parent
+                        text: "\"" + root.searchQuery + "\""
+                        color: "#6ea8ff"
+                        font.family: root.textFontFamily
+                        font.pixelSize: 10
+                        font.weight: Font.Medium
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
                 }
             }
 
@@ -387,50 +481,119 @@ FocusScope {
                 Layout.fillWidth: true
             }
 
-            // Count badge
-            Text {
-                text: listModel.count === 0
-                    ? "0 items"
-                    : (root.selectedIndex >= 0 ? (root.selectedIndex + 1) : 0) + " / " + listModel.count
-                        + (root.totalCount > listModel.count ? " (" + root.totalCount + " total)" : "")
-                color: StyleTokens.textMuted
-                font.family: root.textFontFamily
-                font.pixelSize: 11
-                Layout.alignment: Qt.AlignVCenter
+            // Right: Count capsule badge
+            Rectangle {
                 visible: !root.imgFullPreview
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredHeight: 24
+                Layout.preferredWidth: countLayout.implicitWidth + 16
+                radius: 12
+                color: "#16181f"
+                border.width: 1
+                border.color: "#252833"
+
+                Row {
+                    id: countLayout
+                    anchors.centerIn: parent
+                    spacing: 3
+
+                    Text {
+                        text: listModel.count === 0
+                            ? "0"
+                            : String(root.selectedIndex >= 0 ? root.selectedIndex + 1 : 0)
+                        color: "#0a84ff"
+                        font.family: root.textFontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        text: "of " + listModel.count
+                        color: "#838692"
+                        font.family: root.textFontFamily
+                        font.pixelSize: 11
+                    }
+
+                    Text {
+                        visible: root.totalCount > listModel.count
+                        text: "(" + root.totalCount + ")"
+                        color: "#5b5e68"
+                        font.family: root.textFontFamily
+                        font.pixelSize: 10
+                    }
+                }
             }
 
-            // Wipe history button
+            // Wipe history button (with animated lid)
             Rectangle {
-                width: 26
-                height: 26
-                radius: 7
-                color: wipeMouse.containsMouse ? StyleTokens.danger : StyleTokens.module
-                opacity: listModel.count > 0 ? (wipeMouse.containsMouse ? 0.9 : 0.6) : 0.2
+                id: wipeBtn
                 Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: 26
+                Layout.preferredHeight: 26
+                radius: 8
+                color: wipeMouse.containsMouse
+                    ? Qt.rgba(255/255, 59/255, 48/255, 0.18)
+                    : (wipeMouse.pressed ? "#22252e" : "#16181f")
+                border.width: 1
+                border.color: wipeMouse.containsMouse
+                    ? Qt.rgba(255/255, 59/255, 48/255, 0.45)
+                    : "#252833"
+                opacity: listModel.count > 0 ? 1 : 0.25
                 visible: !root.imgFullPreview
 
-                Behavior on color { ColorAnimation { duration: 120 } }
-                Behavior on opacity { NumberAnimation { duration: 120 } }
+                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: 150 } }
 
                 Item {
                     anchors.centerIn: parent
-                    width: 14
-                    height: 14
+                    width: 16
+                    height: 16
 
                     Shape {
+                        id: trashBodyShape
                         anchors.fill: parent
+                        y: wipeMouse.containsMouse ? 0.8 : 0
                         preferredRendererType: Shape.CurveRenderer
+
+                        Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: "#ffffff"
-                            strokeWidth: 1.4
+                            strokeColor: wipeMouse.containsMouse ? "#ff453a" : "#8e919c"
+                            strokeWidth: 1.3
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
 
                             PathSvg {
-                                path: "M2 3.5h10 M5 3.5V2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5 M3 3.5l.8 8.5a1.5 1.5 0 0 0 1.5 1.4h3.4a1.5 1.5 0 0 0 1.5-1.4L11 3.5"
+                                path: "M3.5 5.5v7.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5v-7.5 M6.5 8v4 M9.5 8v4"
+                            }
+                        }
+                    }
+
+                    Item {
+                        id: trashLidItem
+                        anchors.fill: parent
+                        transformOrigin: Item.Right
+                        y: wipeMouse.containsMouse ? -1.5 : 0
+                        rotation: wipeMouse.containsMouse ? 14 : 0
+
+                        Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                        Behavior on rotation { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+
+                        Shape {
+                            anchors.fill: parent
+                            preferredRendererType: Shape.CurveRenderer
+
+                            ShapePath {
+                                fillColor: StyleTokens.transparent
+                                strokeColor: wipeMouse.containsMouse ? "#ff453a" : "#8e919c"
+                                strokeWidth: 1.3
+                                capStyle: ShapePath.RoundCap
+                                joinStyle: ShapePath.RoundJoin
+
+                                PathSvg {
+                                    path: "M2 5.5h12 M5.5 5.5V4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"
+                                }
                             }
                         }
                     }
@@ -449,19 +612,35 @@ FocusScope {
                 }
             }
 
-            // Close button
+            // Close button (sleek circular)
             Rectangle {
-                width: 26
-                height: 26
-                radius: 7
-                color: closeMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.transparent
                 Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: 26
+                Layout.preferredHeight: 26
+                radius: 13
+                color: closeMouse.containsMouse ? "#262934" : "transparent"
+                border.width: closeMouse.containsMouse ? 1 : 0
+                border.color: "#353846"
 
-                Text {
+                Behavior on color { ColorAnimation { duration: 120 } }
+
+                Shape {
                     anchors.centerIn: parent
-                    text: "✕"
-                    color: closeMouse.containsMouse ? "#ffffff" : StyleTokens.textMuted
-                    font.pixelSize: 12
+                    width: 10
+                    height: 10
+                    preferredRendererType: Shape.CurveRenderer
+
+                    ShapePath {
+                        fillColor: StyleTokens.transparent
+                        strokeColor: closeMouse.containsMouse ? "#ffffff" : "#8a8d98"
+                        strokeWidth: 1.4
+                        capStyle: ShapePath.RoundCap
+                        joinStyle: ShapePath.RoundJoin
+
+                        PathSvg {
+                            path: "M1 1l8 8 M9 1l-8 8"
+                        }
+                    }
                 }
 
                 MouseArea {
@@ -480,30 +659,33 @@ FocusScope {
             }
         }
 
-        // Search Input Box
+        // ══════════════════════════════════════════════
+        // SEARCH INPUT BAR (Pill Style)
+        // ══════════════════════════════════════════════
         Rectangle {
             id: searchContainer
             width: parent.width
-            height: 32
-            radius: 8
-            color: StyleTokens.input
-            border.color: searchInput.activeFocus ? StyleTokens.accent : StyleTokens.inputBorder
+            height: 36
+            radius: 18
+            color: searchInput.activeFocus ? "#171a22" : "#131419"
+            border.color: searchInput.activeFocus ? "#3b4864" : "#242630"
             border.width: 1
             visible: !root.imgFullPreview
 
-            Behavior on border.color { ColorAnimation { duration: 150 } }
+            Behavior on color { ColorAnimation { duration: 140 } }
+            Behavior on border.color { ColorAnimation { duration: 140 } }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 8
-                spacing: 8
+                anchors.leftMargin: 12
+                anchors.rightMargin: 10
+                spacing: 9
 
                 // Magnifying glass icon
                 Item {
-                    width: 14
-                    height: 14
                     Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: 16
+                    Layout.preferredHeight: 16
 
                     Shape {
                         anchors.fill: parent
@@ -511,13 +693,13 @@ FocusScope {
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: StyleTokens.textMuted
-                            strokeWidth: 1.5
+                            strokeColor: searchInput.activeFocus ? "#0a84ff" : "#6f727e"
+                            strokeWidth: 1.4
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
 
                             PathSvg {
-                                path: "M6 10.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z M9.5 9.5l3.5 3.5"
+                                path: "M6.5 11.5a5 5 0 1 0 0-10 5 5 0 0 0 0 10z M10 10l3.5 3.5"
                             }
                         }
                     }
@@ -528,21 +710,21 @@ FocusScope {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     verticalAlignment: TextInput.AlignVCenter
-                    color: StyleTokens.textPrimary
+                    color: "#ffffff"
                     font.family: root.textFontFamily
                     font.pixelSize: 12
                     clip: true
                     selectByMouse: true
                     selectedTextColor: "#ffffff"
-                    selectionColor: StyleTokens.accent
+                    selectionColor: "#0a84ff"
 
                     onTextChanged: {
                         root.searchQuery = text;
                     }
 
                     Text {
-                        text: "Search clipboard..."
-                        color: StyleTokens.textDim
+                        text: "Search clipboard history..."
+                        color: "#595c67"
                         font: searchInput.font
                         visible: searchInput.text.length === 0
                         anchors.verticalCenter: parent.verticalCenter
@@ -579,20 +761,32 @@ FocusScope {
                     }
                 }
 
-                // Clear text button
+                // Clear query button
                 Rectangle {
-                    width: 18
-                    height: 18
-                    radius: 9
-                    color: clearQueryMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.transparent
-                    visible: searchInput.text.length > 0
                     Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 20
+                    radius: 10
+                    color: clearQueryMouse.containsMouse ? "#2f3340" : "#1f222a"
+                    visible: searchInput.text.length > 0
 
-                    Text {
+                    Shape {
                         anchors.centerIn: parent
-                        text: "✕"
-                        color: StyleTokens.textMuted
-                        font.pixelSize: 10
+                        width: 8
+                        height: 8
+                        preferredRendererType: Shape.CurveRenderer
+
+                        ShapePath {
+                            fillColor: StyleTokens.transparent
+                            strokeColor: clearQueryMouse.containsMouse ? "#ffffff" : "#8f929d"
+                            strokeWidth: 1.3
+                            capStyle: ShapePath.RoundCap
+                            joinStyle: ShapePath.RoundJoin
+
+                            PathSvg {
+                                path: "M1 1l6 6 M7 1l-6 6"
+                            }
+                        }
                     }
 
                     MouseArea {
@@ -609,13 +803,17 @@ FocusScope {
             }
         }
 
-        // Main Content Area: List View or Full Image Preview
+        // ══════════════════════════════════════════════
+        // MAIN CONTENT AREA: LIST VIEW OR FULL IMAGE PREVIEW
+        // ══════════════════════════════════════════════
         Item {
             width: parent.width
-            height: parent.height - (root.imgFullPreview ? 38 : 78)
+            height: parent.height - (root.imgFullPreview ? 42 : 88)
             clip: true
 
-            // Full Image Preview Mode
+            // ──────────────────────────────────────────
+            // FULL IMAGE PREVIEW MODE
+            // ──────────────────────────────────────────
             FocusScope {
                 id: previewArea
                 anchors.fill: parent
@@ -663,19 +861,21 @@ FocusScope {
                     anchors.fill: parent
                     spacing: 8
 
-                    // Image container
+                    // Image container card
                     Rectangle {
                         width: parent.width
-                        height: parent.height - 36
-                        radius: 12
-                        color: StyleTokens.module
+                        height: parent.height - 34
+                        radius: 14
+                        color: "#121318"
+                        border.width: 1
+                        border.color: "#252834"
                         clip: true
 
                         Image {
                             id: fullPreviewImg
                             anchors.centerIn: parent
-                            width: parent.width - 20
-                            height: parent.height - 20
+                            width: parent.width - 24
+                            height: parent.height - 24
                             fillMode: Image.PreserveAspectFit
                             asynchronous: true
                             cache: false
@@ -687,7 +887,7 @@ FocusScope {
                             transform: Translate { y: fullPreviewImg.slideY }
 
                             onSourceChanged: {
-                                slideY = root.previewSlideDir * 20;
+                                slideY = root.previewSlideDir * 24;
                                 slideAnim.restart();
                             }
 
@@ -701,52 +901,158 @@ FocusScope {
                             }
                         }
 
-                        // Image info badge
+                        // Top-left image info badge
                         Rectangle {
                             anchors.top: parent.top
                             anchors.left: parent.left
                             anchors.margins: 10
-                            height: 22
-                            width: previewInfoText.implicitWidth + 16
-                            radius: 6
-                            color: "#aa121214"
+                            height: 24
+                            width: previewInfoText.implicitWidth + 18
+                            radius: 8
+                            color: "#d012141a"
+                            border.width: 1
+                            border.color: "#2b2e3a"
 
                             Text {
                                 id: previewInfoText
                                 anchors.centerIn: parent
                                 text: previewArea.currentEntry
                                     ? root.formatImageLabel(previewArea.currentEntry.label)
-                                    : ""
+                                    : "Image"
                                 color: "#ffffff"
                                 font.family: root.textFontFamily
-                                font.pixelSize: 10
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
                             }
+                        }
+
+                        // Deletion flash overlay
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 14
+                            color: "#ff3b30"
+                            opacity: (previewArea.currentEntry && String(previewArea.currentEntry.id) === root.deletingId) ? 0.65 : 0
+                            Behavior on opacity { NumberAnimation { duration: 120 } }
+                        }
+
+                        // Deletion label
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Deleted"
+                            color: "#ffffff"
+                            font.family: root.textFontFamily
+                            font.pixelSize: 14
+                            font.weight: Font.Bold
+                            opacity: (previewArea.currentEntry && String(previewArea.currentEntry.id) === root.deletingId) ? 1 : 0
+                            scale: (previewArea.currentEntry && String(previewArea.currentEntry.id) === root.deletingId) ? 1 : 0.85
+                            Behavior on opacity { NumberAnimation { duration: 120 } }
+                            Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
                         }
                     }
 
-                    // Navigation bar & shortcuts hint
+                    // Navigation bar & shortcuts hint pills
                     RowLayout {
                         width: parent.width
-                        height: 24
+                        height: 26
 
-                        Text {
-                            text: "[Enter] Copy   [Del] Delete   [↑/↓] Navigate   [Tab/Esc] Back"
-                            color: StyleTokens.textMuted
-                            font.family: root.textFontFamily
-                            font.pixelSize: 11
+                        Row {
                             Layout.alignment: Qt.AlignLeft
+                            spacing: 6
+
+                            // Shortcut pill: Enter
+                            Rectangle {
+                                height: 22
+                                radius: 6
+                                color: "#191b22"
+                                border.width: 1
+                                border.color: "#282a36"
+                                width: enterHint.implicitWidth + 12
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Text {
+                                    id: enterHint
+                                    anchors.centerIn: parent
+                                    text: "↵ Copy"
+                                    color: "#a4a7b4"
+                                    font.family: root.textFontFamily
+                                    font.pixelSize: 10
+                                }
+                            }
+
+                            // Shortcut pill: Del
+                            Rectangle {
+                                height: 22
+                                radius: 6
+                                color: "#191b22"
+                                border.width: 1
+                                border.color: "#282a36"
+                                width: delHint.implicitWidth + 12
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Text {
+                                    id: delHint
+                                    anchors.centerIn: parent
+                                    text: "Del Delete"
+                                    color: "#a4a7b4"
+                                    font.family: root.textFontFamily
+                                    font.pixelSize: 10
+                                }
+                            }
+
+                            // Shortcut pill: Navigate
+                            Rectangle {
+                                height: 22
+                                radius: 6
+                                color: "#191b22"
+                                border.width: 1
+                                border.color: "#282a36"
+                                width: navHint.implicitWidth + 12
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Text {
+                                    id: navHint
+                                    anchors.centerIn: parent
+                                    text: "↑/↓ Navigate"
+                                    color: "#a4a7b4"
+                                    font.family: root.textFontFamily
+                                    font.pixelSize: 10
+                                }
+                            }
+
+                            // Shortcut pill: Back
+                            Rectangle {
+                                height: 22
+                                radius: 6
+                                color: "#191b22"
+                                border.width: 1
+                                border.color: "#282a36"
+                                width: backHint.implicitWidth + 12
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Text {
+                                    id: backHint
+                                    anchors.centerIn: parent
+                                    text: "Tab/Esc Back"
+                                    color: "#a4a7b4"
+                                    font.family: root.textFontFamily
+                                    font.pixelSize: 10
+                                }
+                            }
                         }
 
                         Item {
                             Layout.fillWidth: true
                         }
 
+                        // Copy button
                         Rectangle {
-                            height: 24
-                            width: 72
-                            radius: 6
-                            color: StyleTokens.accent
-                            opacity: copyBtnMouse.containsMouse ? 0.9 : 1
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: 72
+                            Layout.preferredHeight: 24
+                            radius: 12
+                            color: copyBtnMouse.containsMouse ? "#1c8fff" : "#0a84ff"
+                            border.width: 1
+                            border.color: "#4ca2ff"
 
                             Text {
                                 anchors.centerIn: parent
@@ -769,7 +1075,9 @@ FocusScope {
                 }
             }
 
-            // Normal List View Mode
+            // ──────────────────────────────────────────
+            // NORMAL LIST VIEW MODE
+            // ──────────────────────────────────────────
             ListView {
                 id: listView
                 anchors.fill: parent
@@ -778,19 +1086,19 @@ FocusScope {
                 currentIndex: root.selectedIndex
                 highlightFollowsCurrentItem: false
                 visible: !root.imgFullPreview && listModel.count > 0
-                spacing: 5
+                spacing: 6
                 boundsBehavior: Flickable.StopAtBounds
 
                 ScrollBar.vertical: ScrollBar {
                     id: vbar
-                    active: true
-                    width: 4
+                    active: listView.moving || listView.dragging
+                    width: 3
                     policy: listView.contentHeight > listView.height ? ScrollBar.AlwaysOn : ScrollBar.AsNeeded
                     contentItem: Rectangle {
-                        implicitWidth: 4
-                        radius: 2
-                        color: StyleTokens.textMuted
-                        opacity: 0.4
+                        implicitWidth: 3
+                        radius: 1.5
+                        color: "#5b5e68"
+                        opacity: 0.6
                     }
                 }
 
@@ -799,90 +1107,207 @@ FocusScope {
                     required property int index
                     required property var model
 
-                    width: listView.width - (vbar.visible ? 8 : 0)
-                    height: model.id === root.collapsingId
-                        ? 0
-                        : (model.imagePath !== "" ? 56 : 38)
-                    radius: 8
-                    clip: true
-                    opacity: model.id === root.collapsingId ? 0 : 1
-                    scale: model.id === root.collapsingId ? 0.8 : 1
+                    readonly property string clipType: root.getClipType(rowDelegate.model)
+                    readonly property bool isSelected: rowDelegate.index === root.selectedIndex
+                    readonly property bool isDeleting: String(rowDelegate.model.id) === root.deletingId
+                    readonly property bool isCollapsing: String(rowDelegate.model.id) === root.collapsingId
 
+                    width: listView.width - (vbar.visible ? 7 : 0)
+                    height: isCollapsing
+                        ? 0
+                        : (rowDelegate.model.imagePath !== "" ? 60 : 46)
+                    radius: 12
+                    clip: true
+                    opacity: isCollapsing ? 0 : 1
+                    scale: isCollapsing ? 0.85 : 1
+
+                    // Luxury surface with subtle depth and delicate borders
                     color: {
-                        if (model.id === root.deletingId)
-                            return StyleTokens.danger;
-                        if (index === root.selectedIndex)
-                            return StyleTokens.cardFillHover;
+                        if (isDeleting)
+                            return Qt.rgba(255/255, 59/255, 48/255, 0.35);
+                        if (isSelected)
+                            return "#1b2334";
                         if (rowMouse.containsMouse)
-                            return StyleTokens.moduleHover;
-                        return StyleTokens.module;
+                            return "#1b1d24";
+                        return "#15161b";
                     }
 
-                    border.color: index === root.selectedIndex
-                        ? StyleTokens.accent
-                        : StyleTokens.transparent
+                    border.color: {
+                        if (isDeleting)
+                            return "#ff3b30";
+                        if (isSelected)
+                            return "#2e4873";
+                        if (rowMouse.containsMouse)
+                            return "#2d303b";
+                        return "#21232a";
+                    }
                     border.width: 1
 
                     Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                     Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                     Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                    Behavior on color { ColorAnimation { duration: 110 } }
+                    Behavior on border.color { ColorAnimation { duration: 110 } }
+
+                    // Left Accent Indicator Pill (Active item signature marker)
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 3
+                        height: rowDelegate.isSelected ? (parent.height - 18) : 0
+                        radius: 1.5
+                        color: "#0a84ff"
+                        opacity: rowDelegate.isSelected ? 1 : 0
+
+                        Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                        Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                    }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
+                        anchors.leftMargin: rowDelegate.isSelected ? 14 : 11
                         anchors.rightMargin: 8
                         spacing: 10
 
-                        // Icon or Image Thumbnail
-                        Item {
-                            width: model.imagePath !== "" ? 48 : 18
-                            height: model.imagePath !== "" ? 38 : 18
-                            Layout.alignment: Qt.AlignVCenter
+                        Behavior on anchors.leftMargin { NumberAnimation { duration: 120 } }
 
-                            // Image thumbnail
+                        // ── TYPE BADGE / THUMBNAIL ──
+                        Item {
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: rowDelegate.model.imagePath !== "" ? 48 : 28
+                            Layout.preferredHeight: rowDelegate.model.imagePath !== "" ? 44 : 28
+
+                            // Image thumbnail preview
                             Rectangle {
                                 anchors.fill: parent
-                                radius: 5
-                                color: "#1a1a1c"
+                                radius: 8
+                                color: "#0d0e12"
+                                border.width: 1
+                                border.color: "#252834"
                                 clip: true
-                                visible: model.imagePath !== ""
+                                visible: rowDelegate.model.imagePath !== ""
 
                                 Image {
                                     anchors.fill: parent
+                                    anchors.margins: 2
                                     fillMode: Image.PreserveAspectFit
-                                    source: model.imagePath ? ("file://" + model.imagePath) : ""
+                                    source: rowDelegate.model.imagePath ? ("file://" + rowDelegate.model.imagePath) : ""
                                     asynchronous: true
                                     cache: false
-                                    sourceSize: Qt.size(96, 76)
+                                    sourceSize: Qt.size(96, 88)
                                 }
                             }
 
-                            // Text icon for text items
-                            Item {
+                            // Color chip preview
+                            Rectangle {
                                 anchors.fill: parent
-                                visible: model.imagePath === ""
+                                radius: 8
+                                color: "#181a21"
+                                border.width: 1
+                                border.color: "#282a35"
+                                visible: rowDelegate.clipType === "color"
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 16
+                                    height: 16
+                                    radius: 8
+                                    color: rowDelegate.clipType === "color" ? String(rowDelegate.model.label).trim() : "transparent"
+                                    border.width: 1
+                                    border.color: Qt.rgba(255, 255, 255, 0.25)
+                                }
+                            }
+
+                            // Web link badge
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 8
+                                color: Qt.rgba(10/255, 132/255, 255/255, 0.12)
+                                border.width: 1
+                                border.color: Qt.rgba(10/255, 132/255, 255/255, 0.26)
+                                visible: rowDelegate.clipType === "link"
 
                                 Shape {
-                                    anchors.fill: parent
+                                    anchors.centerIn: parent
+                                    width: 14
+                                    height: 14
                                     preferredRendererType: Shape.CurveRenderer
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: StyleTokens.textMuted
-                                        strokeWidth: 1.4
+                                        strokeColor: "#5ea2ff"
+                                        strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
 
                                         PathSvg {
-                                            path: "M3 2h8l4 4v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z M11 2v4h4 M5 9h6 M5 12h6"
+                                            path: "M6 8.5a3 3 0 0 1 0-4.24l2-2a3 3 0 0 1 4.24 4.24l-1 1 M8 5.5a3 3 0 0 1 0 4.24l-2 2a3 3 0 0 1-4.24-4.24l1-1"
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Code / Command badge
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 8
+                                color: Qt.rgba(255/255, 170/255, 64/255, 0.12)
+                                border.width: 1
+                                border.color: Qt.rgba(255/255, 170/255, 64/255, 0.26)
+                                visible: rowDelegate.clipType === "code"
+
+                                Shape {
+                                    anchors.centerIn: parent
+                                    width: 14
+                                    height: 14
+                                    preferredRendererType: Shape.CurveRenderer
+
+                                    ShapePath {
+                                        fillColor: StyleTokens.transparent
+                                        strokeColor: "#ffaa40"
+                                        strokeWidth: 1.3
+                                        capStyle: ShapePath.RoundCap
+                                        joinStyle: ShapePath.RoundJoin
+
+                                        PathSvg {
+                                            path: "M3 4l4 3-4 3 M8 10h4"
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Standard text badge
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 8
+                                color: "#1a1c23"
+                                border.width: 1
+                                border.color: "#282b35"
+                                visible: rowDelegate.clipType === "text"
+
+                                Shape {
+                                    anchors.centerIn: parent
+                                    width: 14
+                                    height: 14
+                                    preferredRendererType: Shape.CurveRenderer
+
+                                    ShapePath {
+                                        fillColor: StyleTokens.transparent
+                                        strokeColor: "#8e919d"
+                                        strokeWidth: 1.3
+                                        capStyle: ShapePath.RoundCap
+                                        joinStyle: ShapePath.RoundJoin
+
+                                        PathSvg {
+                                            path: "M3 2h5.5l3.5 3.5V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z M8.5 2v3.5H12 M4.5 7.5h5 M4.5 9.5h3.5"
                                         }
                                     }
                                 }
                             }
                         }
 
-                        // Label content
+                        // ── TEXT CONTENT COLUMN ──
                         Column {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
@@ -890,61 +1315,71 @@ FocusScope {
 
                             Text {
                                 width: parent.width
-                                text: model.imagePath !== ""
-                                    ? root.formatImageLabel(model.label)
-                                    : model.label
-                                color: StyleTokens.textPrimary
+                                text: rowDelegate.model.imagePath !== ""
+                                    ? root.formatImageLabel(rowDelegate.model.label)
+                                    : rowDelegate.model.label
+                                color: rowDelegate.isSelected ? "#ffffff" : "#eaecf2"
                                 font.family: root.textFontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: 12
+                                font.weight: rowDelegate.isSelected ? Font.Medium : Font.Normal
                                 elide: Text.ElideRight
-                                maximumLineCount: model.imagePath !== "" ? 1 : 2
-                                wrapMode: model.imagePath !== "" ? Text.NoWrap : Text.WrapAnywhere
+                                maximumLineCount: 1
+                                wrapMode: Text.NoWrap
                             }
 
                             Text {
-                                visible: model.imagePath !== ""
-                                text: "Image [Press Tab to full preview]"
-                                color: StyleTokens.accent
+                                width: parent.width
+                                text: root.getClipMeta(rowDelegate.model)
+                                color: rowDelegate.isSelected
+                                    ? (rowDelegate.model.imagePath !== "" ? "#0a84ff" : "#809dc2")
+                                    : (rowDelegate.model.imagePath !== "" ? "#5ea2ff" : "#6f727f")
                                 font.family: root.textFontFamily
-                                font.pixelSize: 9
-                                font.weight: Font.DemiBold
+                                font.pixelSize: 10
+                                font.weight: (rowDelegate.model.imagePath !== "" && rowDelegate.isSelected) ? Font.DemiBold : Font.Normal
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
                             }
                         }
 
-                        // Actions (Copy / Delete)
+                        // ── HOVER / SELECTION ACTION BUTTONS ──
                         Row {
                             Layout.alignment: Qt.AlignVCenter
-                            spacing: 4
-                            opacity: (rowMouse.containsMouse || index === root.selectedIndex) ? 1 : 0
+                            spacing: 6
+                            opacity: (rowMouse.containsMouse || rowDelegate.isSelected) ? 1 : 0
 
-                            Behavior on opacity { NumberAnimation { duration: 100 } }
+                            Behavior on opacity { NumberAnimation { duration: 110 } }
 
-                            // Copy button
+                            // Copy micro-button
                             Rectangle {
-                                width: 24
-                                height: 24
-                                radius: 6
-                                color: copyActionMouse.containsMouse ? StyleTokens.accent : StyleTokens.module
+                                width: 26
+                                height: 26
+                                radius: 13
+                                color: copyActionMouse.containsMouse
+                                    ? "#0a84ff"
+                                    : (rowDelegate.isSelected ? "#27344c" : "#20232c")
+                                border.width: 1
+                                border.color: copyActionMouse.containsMouse
+                                    ? "#5ea2ff"
+                                    : (rowDelegate.isSelected ? "#394d6e" : "#2d303b")
 
-                                Item {
+                                Behavior on color { ColorAnimation { duration: 100 } }
+                                Behavior on border.color { ColorAnimation { duration: 100 } }
+
+                                Shape {
                                     anchors.centerIn: parent
                                     width: 12
                                     height: 12
+                                    preferredRendererType: Shape.CurveRenderer
 
-                                    Shape {
-                                        anchors.fill: parent
-                                        preferredRendererType: Shape.CurveRenderer
+                                    ShapePath {
+                                        fillColor: StyleTokens.transparent
+                                        strokeColor: "#ffffff"
+                                        strokeWidth: 1.3
+                                        capStyle: ShapePath.RoundCap
+                                        joinStyle: ShapePath.RoundJoin
 
-                                        ShapePath {
-                                            fillColor: StyleTokens.transparent
-                                            strokeColor: "#ffffff"
-                                            strokeWidth: 1.3
-                                            capStyle: ShapePath.RoundCap
-                                            joinStyle: ShapePath.RoundJoin
-
-                                            PathSvg {
-                                                path: "M4 1.5h5a1 1 0 0 1 1 1V8 M2 4.5h5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z"
-                                            }
+                                        PathSvg {
+                                            path: "M4.5 2.5h5a1 1 0 0 1 1 1v6 M2.5 5.5h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z"
                                         }
                                     }
                                 }
@@ -960,32 +1395,37 @@ FocusScope {
                                 }
                             }
 
-                            // Delete button
+                            // Delete micro-button
                             Rectangle {
-                                width: 24
-                                height: 24
-                                radius: 6
-                                color: deleteActionMouse.containsMouse ? StyleTokens.danger : StyleTokens.module
+                                width: 26
+                                height: 26
+                                radius: 13
+                                color: deleteActionMouse.containsMouse
+                                    ? "#ff3b30"
+                                    : (rowDelegate.isSelected ? "#27344c" : "#20232c")
+                                border.width: 1
+                                border.color: deleteActionMouse.containsMouse
+                                    ? "#ff6961"
+                                    : (rowDelegate.isSelected ? "#394d6e" : "#2d303b")
 
-                                Item {
+                                Behavior on color { ColorAnimation { duration: 100 } }
+                                Behavior on border.color { ColorAnimation { duration: 100 } }
+
+                                Shape {
                                     anchors.centerIn: parent
                                     width: 12
                                     height: 12
+                                    preferredRendererType: Shape.CurveRenderer
 
-                                    Shape {
-                                        anchors.fill: parent
-                                        preferredRendererType: Shape.CurveRenderer
+                                    ShapePath {
+                                        fillColor: StyleTokens.transparent
+                                        strokeColor: "#ffffff"
+                                        strokeWidth: 1.3
+                                        capStyle: ShapePath.RoundCap
+                                        joinStyle: ShapePath.RoundJoin
 
-                                        ShapePath {
-                                            fillColor: StyleTokens.transparent
-                                            strokeColor: "#ffffff"
-                                            strokeWidth: 1.3
-                                            capStyle: ShapePath.RoundCap
-                                            joinStyle: ShapePath.RoundJoin
-
-                                            PathSvg {
-                                                path: "M1.5 2.5h9 M4 2.5V1.5h4v1 M2.5 2.5l.6 7.5a1 1 0 0 0 1 .9h3.8a1 1 0 0 0 1-.9l.6-7.5"
-                                            }
+                                        PathSvg {
+                                            path: "M1.5 3h9 M4 3V1.8h4V3 M2.5 3l.6 7.5a1 1 0 0 0 1 .9h3.8a1 1 0 0 0 1-.9l.6-7.5"
                                         }
                                     }
                                 }
@@ -1022,21 +1462,71 @@ FocusScope {
                 }
             }
 
-            // Empty or Not Found State
+            // Smooth bottom fade into curved capsule base
+            Rectangle {
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 18
+                enabled: false
+                visible: !root.imgFullPreview && listView.contentHeight > listView.height
+
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: StyleTokens.transparent }
+                    GradientStop { position: 1.0; color: "#0b0c0f" }
+                }
+                opacity: 0.8
+            }
+
+            // ──────────────────────────────────────────
+            // EMPTY OR NOT FOUND STATE
+            // ──────────────────────────────────────────
             Item {
                 anchors.fill: parent
                 visible: !root.imgFullPreview && listModel.count === 0
 
                 Column {
                     anchors.centerIn: parent
-                    spacing: 8
+                    spacing: 10
+
+                    // Circular icon badge
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 44
+                        height: 44
+                        radius: 22
+                        color: "#16181f"
+                        border.width: 1
+                        border.color: "#252833"
+
+                        Shape {
+                            anchors.centerIn: parent
+                            width: 18
+                            height: 18
+                            preferredRendererType: Shape.CurveRenderer
+
+                            ShapePath {
+                                fillColor: StyleTokens.transparent
+                                strokeColor: "#676a77"
+                                strokeWidth: 1.4
+                                capStyle: ShapePath.RoundCap
+                                joinStyle: ShapePath.RoundJoin
+
+                                PathSvg {
+                                    path: root.searchQuery !== ""
+                                        ? "M7.5 13.5a6 6 0 1 0 0-12 6 6 0 0 0 0 12z M12 12l4 4"
+                                        : "M5 3.5H3.5A1.5 1.5 0 0 0 2 5v11a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V5a1.5 1.5 0 0 0-1.5-1.5H11 M5 2.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5H5V2.5z"
+                                }
+                            }
+                        }
+                    }
 
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: !root.cliphistAvailable
                             ? "cliphist or wl-clipboard not found"
-                            : (root.searchQuery !== "" ? "No clips match your search" : "Clipboard is empty")
-                        color: StyleTokens.textSecondary
+                            : (root.searchQuery !== "" ? "No matching clips" : "Clipboard is empty")
+                        color: "#e2e4ea"
                         font.family: root.textFontFamily
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -1047,7 +1537,7 @@ FocusScope {
                         text: !root.cliphistAvailable
                             ? "Install cliphist and wl-clipboard to enable clipboard history"
                             : (root.searchQuery !== "" ? "Try a different search keyword" : "Items you copy will automatically appear here")
-                        color: StyleTokens.textMuted
+                        color: "#6b6e7a"
                         font.family: root.textFontFamily
                         font.pixelSize: 11
                     }
