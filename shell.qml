@@ -262,6 +262,42 @@ Scope {
         function toggleFileShelf() {
             shellRoot.forFocusedWindow((window) => window.toggleFileShelfWindow());
         }
+
+        function toggleClipboard() {
+            shellRoot.forFocusedWindow((window) => window.toggleClipboardWindow());
+        }
+
+        function showClipboard() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function openClipboard() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function closeClipboard() {
+            shellRoot.forFocusedWindow((window) => window.closeClipboardWindow ? window.closeClipboardWindow() : window.toggleClipboardWindow());
+        }
+    }
+
+    IpcHandler {
+        target: "clipboard"
+
+        function toggle() {
+            shellRoot.forFocusedWindow((window) => window.toggleClipboardWindow());
+        }
+
+        function show() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function open() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function close() {
+            shellRoot.forFocusedWindow((window) => window.closeClipboardWindow ? window.closeClipboardWindow() : window.toggleClipboardWindow());
+        }
     }
 
     Connections {

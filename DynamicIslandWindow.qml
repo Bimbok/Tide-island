@@ -167,12 +167,14 @@ PanelWindow {
     WlrLayershell.layer: islandContainer.wallpaperPickerLayerVisible
         || islandContainer.applicationLauncherLayerVisible
         || islandContainer.fileShelfLayerVisible
+        || islandContainer.clipboardLayerVisible
         ? WlrLayer.Overlay
         : WlrLayer.Top
     WlrLayershell.keyboardFocus: {
         if (islandContainer.controlCenterLayerVisible
                 || islandContainer.wallpaperPickerLayerVisible
-                || islandContainer.applicationLauncherLayerVisible)
+                || islandContainer.applicationLauncherLayerVisible
+                || islandContainer.clipboardLayerVisible)
             return WlrKeyboardFocus.Exclusive;
         if (islandContainer.fileShelfLayerVisible)
             return WlrKeyboardFocus.OnDemand;
@@ -198,8 +200,10 @@ PanelWindow {
     readonly property real overviewWindowCornerRadius: 12
     readonly property int dynamicIslandAcceptedButtons: userConfig.mouseButtonsMask([
         1,
+        2,
         userConfig.dynamicIslandPrimaryButton,
-        userConfig.dynamicIslandSecondaryButton
+        userConfig.dynamicIslandSecondaryButton,
+        userConfig.dynamicIslandMiddleButton
     ])
     readonly property int configuredHoverExpandAction: {
         const action = Number(userConfig.hoverExpandAction);
@@ -662,6 +666,22 @@ PanelWindow {
             islandContainer.showFileShelf(true);
     }
 
+    function toggleClipboardWindow() {
+        if (islandContainer.islandState === "clipboard")
+            islandContainer.smartRestoreState();
+        else
+            islandContainer.showClipboard();
+    }
+
+    function showClipboardWindow() {
+        islandContainer.showClipboard();
+    }
+
+    function closeClipboardWindow() {
+        if (islandContainer.islandState === "clipboard")
+            islandContainer.smartRestoreState();
+    }
+
     onOverviewVisibleChanged: {
         if (overviewVisible && monitorFocused) overviewFocusTimer.restart();
         if (overviewVisible)
@@ -767,6 +787,12 @@ PanelWindow {
             fileShelfLoader.item.grabKeyboardFocus();
     }
 
+    function focusClipboard() {
+        islandContainer.forceActiveFocus();
+        if (clipboardLoader.item && clipboardLoader.item.grabKeyboardFocus)
+            clipboardLoader.item.grabKeyboardFocus();
+    }
+
     function dragCarriesFiles(dragEvent) {
         if (!dragEvent)
             return false;
@@ -864,6 +890,7 @@ PanelWindow {
             || wallpaperPickerLayerVisible
             || applicationLauncherLayerVisible
             || fileShelfLayerVisible
+            || clipboardLayerVisible
             || expandedPlayerKeyboardFocusRequested
             || (root.monitorFocused && (root.overviewVisible || root.connectivityPromptActive))
 
@@ -930,6 +957,7 @@ PanelWindow {
             || islandState === "wallpaper_picker"
             || islandState === "application_launcher"
             || islandState === "file_shelf"
+            || islandState === "clipboard"
         readonly property bool splitShowsProgress: islandState === "split" && osdProgress >= 0
         readonly property bool splitShowsText: islandState === "split" && osdProgress < 0 && osdCustomText !== ""
         readonly property bool splitShowsIconOnly: islandState === "split" && osdProgress < 0 && osdCustomText === ""
@@ -974,6 +1002,7 @@ PanelWindow {
         readonly property bool wallpaperPickerLayerVisible: !root.overviewVisible && islandState === "wallpaper_picker"
         readonly property bool applicationLauncherLayerVisible: !root.overviewVisible && islandState === "application_launcher"
         readonly property bool fileShelfLayerVisible: !root.overviewVisible && islandState === "file_shelf"
+        readonly property bool clipboardLayerVisible: !root.overviewVisible && islandState === "clipboard"
         readonly property var activePlayer: mediaController.activePlayer
         readonly property string lyricsDisplayText: mediaController.displayText
         readonly property string currentTrack: mediaController.currentTrack
@@ -1214,6 +1243,20 @@ PanelWindow {
                 return;
             case "restoreRestingCapsule":
                 smartRestoreState();
+                return;
+            case "toggleClipboard":
+                if (islandState === "clipboard")
+                    smartRestoreState();
+                else
+                    showClipboard();
+                return;
+            case "openClipboard":
+            case "showClipboard":
+                showClipboard();
+                return;
+            case "closeClipboard":
+                if (islandState === "clipboard")
+                    smartRestoreState();
                 return;
             default:
             }
@@ -1729,6 +1772,15 @@ PanelWindow {
                 smartRestoreState();
         }
 
+        function showClipboard() {
+            cancelSideSwipeSettle();
+            abortSideTransientMode();
+            clearTransientCapsule();
+            islandState = "clipboard";
+            mainCapsule.displayedWidth = mainCapsule.baseTargetWidth;
+            stopAutoHideTimer();
+        }
+
         function showCustomCapsule() {
             if (!hasCustomLeftItems) {
                 showTimeCapsule();
@@ -1904,6 +1956,8 @@ PanelWindow {
                 case "application_launcher":
                 case "file_shelf":
                     return 1100;
+                case "clipboard":
+                    return 520;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 410;
@@ -1931,6 +1985,8 @@ PanelWindow {
                 case "application_launcher":
                 case "file_shelf":
                     return 260;
+                case "clipboard":
+                    return clipboardLoader.item && clipboardLoader.item.imgFullPreview ? 400 : 350;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 165;
@@ -1953,6 +2009,7 @@ PanelWindow {
                 case "wallpaper_picker":
                 case "application_launcher":
                 case "file_shelf":
+                case "clipboard":
                     return 34;
                 case "expanded":
                 case "bluetooth_expanded":
@@ -2097,6 +2154,8 @@ PanelWindow {
                         pressedAction = userConfig.dynamicIslandPrimaryAction;
                     } else if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandSecondaryButton)) {
                         pressedAction = userConfig.dynamicIslandSecondaryAction;
+                    } else if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandMiddleButton)) {
+                        pressedAction = userConfig.dynamicIslandMiddleAction;
                     }
 
                     preparedOverviewOnPress = pressedAction === "openOverview"
@@ -2212,6 +2271,13 @@ PanelWindow {
                     if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandSecondaryButton)) {
                         preparedOverviewOnPress = false;
                         islandContainer.handleConfiguredClickAction(userConfig.dynamicIslandSecondaryAction);
+                        return;
+                    }
+
+                    if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandMiddleButton)) {
+                        preparedOverviewOnPress = false;
+                        islandContainer.handleConfiguredClickAction(userConfig.dynamicIslandMiddleAction);
+                        return;
                     }
                 }
             }
@@ -2632,6 +2698,24 @@ PanelWindow {
                         textFontFamily: root.textFontFamily
                         showCondition: islandContainer.fileShelfLayerVisible
                         dropPreviewOnly: !islandContainer.fileShelfOpenedManually
+                        onCloseRequested: islandContainer.smartRestoreState()
+                    }
+                }
+            }
+
+            Loader {
+                id: clipboardLoader
+                anchors.fill: parent
+                active: islandContainer.clipboardLayerVisible
+                asynchronous: false
+                visible: islandContainer.clipboardLayerVisible
+                onLoaded: root.focusClipboard()
+
+                sourceComponent: Component {
+                    ClipboardLayer {
+                        iconFontFamily: root.iconFontFamily
+                        textFontFamily: root.textFontFamily
+                        showCondition: islandContainer.clipboardLayerVisible
                         onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }

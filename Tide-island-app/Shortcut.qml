@@ -104,6 +104,13 @@ PagePanel {
                 "method": "toggleFileShelf"
             },
             {
+                "action": "Clipboard manager",
+                "mods": "SUPER",
+                "key": "V",
+                "target": "tide",
+                "method": "toggleClipboard"
+            },
+            {
                 "action": "Toggle island",
                 "mods": "SUPER",
                 "key": "F",

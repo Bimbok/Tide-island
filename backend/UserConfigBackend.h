@@ -44,6 +44,8 @@ class UserConfigBackend final : public QObject {
     Q_PROPERTY(QString dynamicIslandPrimaryAction READ dynamicIslandPrimaryAction NOTIFY dynamicIslandPrimaryActionChanged FINAL)
     Q_PROPERTY(int dynamicIslandSecondaryButton READ dynamicIslandSecondaryButton NOTIFY dynamicIslandSecondaryButtonChanged FINAL)
     Q_PROPERTY(QString dynamicIslandSecondaryAction READ dynamicIslandSecondaryAction NOTIFY dynamicIslandSecondaryActionChanged FINAL)
+    Q_PROPERTY(int dynamicIslandMiddleButton READ dynamicIslandMiddleButton NOTIFY dynamicIslandMiddleButtonChanged FINAL)
+    Q_PROPERTY(QString dynamicIslandMiddleAction READ dynamicIslandMiddleAction NOTIFY dynamicIslandMiddleActionChanged FINAL)
     Q_PROPERTY(QVariantList dynamicIslandLeftSwipeItems READ dynamicIslandLeftSwipeItems NOTIFY dynamicIslandLeftSwipeItemsChanged FINAL)
     Q_PROPERTY(bool disableAutoExpandOnTrackChange READ disableAutoExpandOnTrackChange NOTIFY disableAutoExpandOnTrackChangeChanged FINAL)
     Q_PROPERTY(int hoverExpandAction READ hoverExpandAction NOTIFY hoverExpandActionChanged FINAL)
@@ -94,6 +96,8 @@ public:
     QString dynamicIslandPrimaryAction() const;
     int dynamicIslandSecondaryButton() const;
     QString dynamicIslandSecondaryAction() const;
+    int dynamicIslandMiddleButton() const;
+    QString dynamicIslandMiddleAction() const;
     const QVariantList &dynamicIslandLeftSwipeItems() const;
     bool disableAutoExpandOnTrackChange() const;
     int hoverExpandAction() const;
@@ -146,6 +150,8 @@ signals:
     void dynamicIslandPrimaryActionChanged();
     void dynamicIslandSecondaryButtonChanged();
     void dynamicIslandSecondaryActionChanged();
+    void dynamicIslandMiddleButtonChanged();
+    void dynamicIslandMiddleActionChanged();
     void dynamicIslandLeftSwipeItemsChanged();
     void disableAutoExpandOnTrackChangeChanged();
     void islandShowWorkspaceOnAutoHideChanged();
@@ -198,6 +204,8 @@ private:
     QString m_dynamicIslandPrimaryAction = QStringLiteral("toggleExpandedPlayer");
     int m_dynamicIslandSecondaryButton = 3;
     QString m_dynamicIslandSecondaryAction = QStringLiteral("toggleControlCenter");
+    int m_dynamicIslandMiddleButton = 2;
+    QString m_dynamicIslandMiddleAction = QStringLiteral("toggleClipboard");
     QVariantList m_dynamicIslandLeftSwipeItems;
     bool m_islandShowWorkspaceOnAutoHide = true;
     bool m_disableAutoExpandOnTrackChange = false;

@@ -45,6 +45,7 @@ private slots:
     void defaultsIncludeNotificationHistory();
     void defaultsIncludeApplicationLauncher();
     void defaultsIncludeFileShelf();
+    void defaultsIncludeClipboard();
     void applicationLauncherFavoritesPersistAndResolveNames();
     void disabledShortcutPersistsAndIsNotGenerated();
     void disabledShortcutUpdatesActiveHyprlandLuaBlock();
@@ -127,6 +128,27 @@ void ShortcutConfigTests::defaultsIncludeFileShelf()
     }
 
     QVERIFY(foundFileShelf);
+}
+
+void ShortcutConfigTests::defaultsIncludeClipboard()
+{
+    QTemporaryDir configHome;
+    QVERIFY(configHome.isValid());
+    qputenv("XDG_CONFIG_HOME", configHome.path().toLocal8Bit());
+    qputenv("TIDE_ISLAND_COMPOSITOR", "hyprland");
+
+    Backend backend;
+    bool foundClipboard = false;
+    for (const QVariant &value : backend.shortcutBindings()) {
+        const QVariantMap binding = value.toMap();
+        foundClipboard = foundClipboard
+            || (binding.value(QStringLiteral("mods")).toString() == QStringLiteral("SUPER")
+                && binding.value(QStringLiteral("key")).toString() == QStringLiteral("V")
+                && binding.value(QStringLiteral("target")).toString() == QStringLiteral("tide")
+                && binding.value(QStringLiteral("method")).toString() == QStringLiteral("toggleClipboard"));
+    }
+
+    QVERIFY(foundClipboard);
 }
 
 void ShortcutConfigTests::defaultsIncludeTimer()
@@ -418,7 +440,7 @@ void ShortcutConfigTests::niriDefaultsExcludeWorkspaceOverview()
     Backend backend;
     QVERIFY(!backend.supportsTideWorkspaceOverview());
     QVERIFY(backend.supportsNiriShortcutSnippets());
-    QCOMPARE(backend.shortcutBindings().size(), 12);
+    QCOMPARE(backend.shortcutBindings().size(), 13);
 
     for (const QVariant &value : backend.shortcutBindings()) {
         const QVariantMap binding = value.toMap();

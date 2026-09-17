@@ -87,6 +87,11 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
       <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/Workspace overview_2.png" width="100%" alt="工作区总览" />
     </td>
   </tr>
+  <tr>
+    <td colspan="2">
+      <img src="./assets/clipboard.png" width="100%" alt="剪贴板历史" />
+    </td>
+  </tr>
 </table>
 
 ### 配置应用
@@ -103,6 +108,7 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 - 歌词显示
 - 应用启动器
 - 文件中转站
+- 剪贴板历史管理器
 - 壁纸切换器
 - 工作区总览
 - 自定义页面
@@ -217,7 +223,14 @@ hl.exec_once("tide-island")
 
 ## 配置
 
-在任意应用启动器中搜索 `Tide Island Settings`。
+在任意应用启动器中搜索 `Tide Island Settings`，或者运行：
+
+```bash
+tide-island-config-app
+```
+
+- **快捷键**：配置工作区总览、应用启动器、音乐播放器、通知中心、控制中心以及剪贴板历史管理器（默认 `Super + V`）的快捷键。
+- **交互**：配置灵动岛胶囊的鼠标点击动作（支持为音乐播放器、控制中心、剪贴板历史自定义左键、中键、右键映射）。
 
 ## 常用命令
 
@@ -245,6 +258,9 @@ journalctl --user -u tide-island -f
 
 | 命令 | 操作 |
 | --- | --- |
+| `quickshell ipc call tide toggleClipboard` | 打开或关闭剪贴板历史 |
+| `quickshell ipc call tide openClipboard` | 打开剪贴板历史 |
+| `quickshell ipc call tide closeClipboard` | 关闭剪贴板历史 |
 | `quickshell ipc call tide toggleNotificationCenter` | 打开或关闭通知中心 |
 | `quickshell ipc call tide openNotificationCenter` | 打开通知中心 |
 | `quickshell ipc call tide closeNotificationCenter` | 关闭通知中心 |
