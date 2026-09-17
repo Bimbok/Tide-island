@@ -1178,6 +1178,18 @@ PanelWindow {
                     return;
                 }
 
+                if (islandContainer.clipboardLayerVisible) {
+                    islandContainer.smartRestoreState();
+                    event.accepted = true;
+                    return;
+                }
+
+                if (islandContainer.weatherLayerVisible) {
+                    islandContainer.smartRestoreState();
+                    event.accepted = true;
+                    return;
+                }
+
                 if (islandContainer.expandedLayerVisible) {
                     islandContainer.smartRestoreState();
                     event.accepted = true;

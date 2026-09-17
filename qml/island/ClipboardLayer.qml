@@ -46,6 +46,15 @@ FocusScope {
         }
     }
 
+    Keys.onEscapePressed: function(event) {
+        if (root.imgFullPreview) {
+            root.imgFullPreview = false;
+        } else {
+            root.closeRequested();
+        }
+        event.accepted = true;
+    }
+
     ListModel {
         id: listModel
     }
@@ -394,62 +403,24 @@ FocusScope {
         // HEADER BAR
         // ══════════════════════════════════════════════
         RowLayout {
+            id: headerBar
             width: parent.width
-            height: 30
+            height: 28
 
-            // Left: Icon badge + Title + Search query chip
+            // Left: Clean Title + Search query chip
             Row {
                 Layout.alignment: Qt.AlignLeft
                 spacing: 8
 
-                // Clipboard icon container
-                Rectangle {
-                    width: 26
-                    height: 26
-                    radius: 8
-                    color: "#1a1d24"
-                    border.width: 1
-                    border.color: "#282c38"
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    Shape {
-                        anchors.fill: parent
-                        preferredRendererType: Shape.CurveRenderer
-
-                        ShapePath {
-                            fillColor: StyleTokens.transparent
-                            strokeColor: "#f0f1f5"
-                            strokeWidth: 1.4
-                            capStyle: ShapePath.RoundCap
-                            joinStyle: ShapePath.RoundJoin
-
-                            PathSvg {
-                                path: "M8 4.5H6.5A1.5 1.5 0 0 0 5 6v13a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H16"
-                            }
-                        }
-
-                        ShapePath {
-                            fillColor: StyleTokens.transparent
-                            strokeColor: "#f0f1f5"
-                            strokeWidth: 1.4
-                            capStyle: ShapePath.RoundCap
-                            joinStyle: ShapePath.RoundJoin
-
-                            PathSvg {
-                                path: "M8 3.5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1.5H8V3.5z"
-                            }
-                        }
-                    }
-                }
-
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.imgFullPreview ? "Image Preview" : "Clipboard"
-                    color: "#ffffff"
+                    textFormat: Text.PlainText
+                    color: "#f7f7f7"
+                    font.pixelSize: 15
                     font.family: root.textFontFamily
-                    font.pixelSize: 14
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.2
+                    font.weight: Font.Bold
+                    font.letterSpacing: 0.1
                 }
 
                 // Active search tag pill
@@ -481,178 +452,107 @@ FocusScope {
                 Layout.fillWidth: true
             }
 
-            // Right: Count capsule badge
-            Rectangle {
+            // Right: Count text + frameless wipe button (matching Notification Center style)
+            Row {
+                Layout.alignment: Qt.AlignRight
+                spacing: 10
                 visible: !root.imgFullPreview
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: 24
-                Layout.preferredWidth: countLayout.implicitWidth + 16
-                radius: 12
-                color: "#16181f"
-                border.width: 1
-                border.color: "#252833"
 
-                Row {
-                    id: countLayout
-                    anchors.centerIn: parent
-                    spacing: 3
-
-                    Text {
-                        text: listModel.count === 0
-                            ? "0"
-                            : String(root.selectedIndex >= 0 ? root.selectedIndex + 1 : 0)
-                        color: "#0a84ff"
-                        font.family: root.textFontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
-                    }
-
-                    Text {
-                        text: "of " + listModel.count
-                        color: "#838692"
-                        font.family: root.textFontFamily
-                        font.pixelSize: 11
-                    }
-
-                    Text {
-                        visible: root.totalCount > listModel.count
-                        text: "(" + root.totalCount + ")"
-                        color: "#5b5e68"
-                        font.family: root.textFontFamily
-                        font.pixelSize: 10
-                    }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: listModel.count === 0
+                        ? "0 items"
+                        : (root.totalCount > listModel.count
+                            ? (listModel.count + " of " + root.totalCount)
+                            : (listModel.count + " items"))
+                    color: StyleTokens.textDim
+                    font.family: root.textFontFamily
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
                 }
-            }
 
-            // Wipe history button (with animated lid)
-            Rectangle {
-                id: wipeBtn
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
-                radius: 8
-                color: wipeMouse.containsMouse
-                    ? Qt.rgba(255/255, 59/255, 48/255, 0.18)
-                    : (wipeMouse.pressed ? "#22252e" : "#16181f")
-                border.width: 1
-                border.color: wipeMouse.containsMouse
-                    ? Qt.rgba(255/255, 59/255, 48/255, 0.45)
-                    : "#252833"
-                opacity: listModel.count > 0 ? 1 : 0.25
-                visible: !root.imgFullPreview
-
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
-
+                // Wipe history button (frameless, matching NotificationCenterLayer.qml style)
                 Item {
-                    anchors.centerIn: parent
-                    width: 16
-                    height: 16
+                    id: wipeBtn
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 24
+                    height: 24
+                    opacity: listModel.count > 0 ? (wipeMouse.containsMouse ? 1 : 0.6) : 0.25
 
-                    Shape {
-                        id: trashBodyShape
-                        anchors.fill: parent
-                        y: wipeMouse.containsMouse ? 0.8 : 0
-                        preferredRendererType: Shape.CurveRenderer
-
-                        Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-
-                        ShapePath {
-                            fillColor: StyleTokens.transparent
-                            strokeColor: wipeMouse.containsMouse ? "#ff453a" : "#8e919c"
-                            strokeWidth: 1.3
-                            capStyle: ShapePath.RoundCap
-                            joinStyle: ShapePath.RoundJoin
-
-                            PathSvg {
-                                path: "M3.5 5.5v7.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5v-7.5 M6.5 8v4 M9.5 8v4"
-                            }
-                        }
-                    }
+                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
                     Item {
-                        id: trashLidItem
-                        anchors.fill: parent
-                        transformOrigin: Item.Right
-                        y: wipeMouse.containsMouse ? -1.5 : 0
-                        rotation: wipeMouse.containsMouse ? 14 : 0
+                        id: trashIcon
+                        anchors.centerIn: parent
+                        width: 24
+                        height: 24
+                        scale: wipeMouse.pressed ? 0.70 : 0.75
 
-                        Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-                        Behavior on rotation { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                        Behavior on scale { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
                         Shape {
-                            anchors.fill: parent
+                            id: trashBodyShape
+                            x: 0
+                            y: wipeMouse.containsMouse ? 1 : 0
+                            width: parent.width
+                            height: parent.height
                             preferredRendererType: Shape.CurveRenderer
+
+                            Behavior on y { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
 
                             ShapePath {
                                 fillColor: StyleTokens.transparent
-                                strokeColor: wipeMouse.containsMouse ? "#ff453a" : "#8e919c"
-                                strokeWidth: 1.3
+                                strokeColor: wipeMouse.containsMouse ? "#ff453a" : StyleTokens.textDim
+                                strokeWidth: 1.8
                                 capStyle: ShapePath.RoundCap
                                 joinStyle: ShapePath.RoundJoin
 
                                 PathSvg {
-                                    path: "M2 5.5h12 M5.5 5.5V4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"
+                                    path: "M5 6v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6 M10 11v6 M14 11v6"
+                                }
+                            }
+                        }
+
+                        Item {
+                            id: trashLidItem
+                            x: 0
+                            transformOrigin: Item.Right
+                            y: wipeMouse.containsMouse ? -1.5 : 0
+                            width: parent.width
+                            height: parent.height
+                            rotation: wipeMouse.containsMouse ? 12 : 0
+
+                            Behavior on y { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
+                            Behavior on rotation { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
+
+                            Shape {
+                                anchors.fill: parent
+                                preferredRendererType: Shape.CurveRenderer
+
+                                ShapePath {
+                                    fillColor: StyleTokens.transparent
+                                    strokeColor: wipeMouse.containsMouse ? "#ff453a" : StyleTokens.textDim
+                                    strokeWidth: 1.8
+                                    capStyle: ShapePath.RoundCap
+                                    joinStyle: ShapePath.RoundJoin
+
+                                    PathSvg {
+                                        path: "M3 6h18 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                MouseArea {
-                    id: wipeMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    enabled: listModel.count > 0
-                    onClicked: {
-                        wipeProc.running = false;
-                        wipeProc.running = true;
-                    }
-                }
-            }
-
-            // Close button (sleek circular)
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
-                radius: 13
-                color: closeMouse.containsMouse ? "#262934" : "transparent"
-                border.width: closeMouse.containsMouse ? 1 : 0
-                border.color: "#353846"
-
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                Shape {
-                    anchors.centerIn: parent
-                    width: 10
-                    height: 10
-                    preferredRendererType: Shape.CurveRenderer
-
-                    ShapePath {
-                        fillColor: StyleTokens.transparent
-                        strokeColor: closeMouse.containsMouse ? "#ffffff" : "#8a8d98"
-                        strokeWidth: 1.4
-                        capStyle: ShapePath.RoundCap
-                        joinStyle: ShapePath.RoundJoin
-
-                        PathSvg {
-                            path: "M1 1l8 8 M9 1l-8 8"
-                        }
-                    }
-                }
-
-                MouseArea {
-                    id: closeMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (root.imgFullPreview) {
-                            root.imgFullPreview = false;
-                        } else {
-                            root.closeRequested();
+                    MouseArea {
+                        id: wipeMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: listModel.count > 0
+                        onClicked: {
+                            wipeProc.running = false;
+                            wipeProc.running = true;
                         }
                     }
                 }
@@ -808,7 +708,7 @@ FocusScope {
         // ══════════════════════════════════════════════
         Item {
             width: parent.width
-            height: parent.height - (root.imgFullPreview ? 42 : 88)
+            height: parent.height - (root.imgFullPreview ? 38 : 84)
             clip: true
 
             // ──────────────────────────────────────────
@@ -1344,37 +1244,32 @@ FocusScope {
                         // ── HOVER / SELECTION ACTION BUTTONS ──
                         Row {
                             Layout.alignment: Qt.AlignVCenter
-                            spacing: 6
+                            spacing: 8
                             opacity: (rowMouse.containsMouse || rowDelegate.isSelected) ? 1 : 0
 
                             Behavior on opacity { NumberAnimation { duration: 110 } }
 
-                            // Copy micro-button
-                            Rectangle {
-                                width: 26
-                                height: 26
-                                radius: 13
-                                color: copyActionMouse.containsMouse
-                                    ? "#0a84ff"
-                                    : (rowDelegate.isSelected ? "#27344c" : "#20232c")
-                                border.width: 1
-                                border.color: copyActionMouse.containsMouse
-                                    ? "#5ea2ff"
-                                    : (rowDelegate.isSelected ? "#394d6e" : "#2d303b")
+                            // Copy micro-button (frameless icon matching Notification Center style)
+                            Item {
+                                width: 22
+                                height: 22
+                                opacity: copyActionMouse.containsMouse ? 1 : 0.65
 
-                                Behavior on color { ColorAnimation { duration: 100 } }
-                                Behavior on border.color { ColorAnimation { duration: 100 } }
+                                Behavior on opacity { NumberAnimation { duration: 120 } }
 
                                 Shape {
                                     anchors.centerIn: parent
-                                    width: 12
-                                    height: 12
+                                    width: 13
+                                    height: 13
+                                    scale: copyActionMouse.pressed ? 0.85 : 1.0
                                     preferredRendererType: Shape.CurveRenderer
+
+                                    Behavior on scale { NumberAnimation { duration: 150 } }
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#ffffff"
-                                        strokeWidth: 1.3
+                                        strokeColor: copyActionMouse.containsMouse ? "#0a84ff" : StyleTokens.textDim
+                                        strokeWidth: 1.4
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
 
@@ -1395,32 +1290,27 @@ FocusScope {
                                 }
                             }
 
-                            // Delete micro-button
-                            Rectangle {
-                                width: 26
-                                height: 26
-                                radius: 13
-                                color: deleteActionMouse.containsMouse
-                                    ? "#ff3b30"
-                                    : (rowDelegate.isSelected ? "#27344c" : "#20232c")
-                                border.width: 1
-                                border.color: deleteActionMouse.containsMouse
-                                    ? "#ff6961"
-                                    : (rowDelegate.isSelected ? "#394d6e" : "#2d303b")
+                            // Delete micro-button (frameless icon matching Notification Center style)
+                            Item {
+                                width: 22
+                                height: 22
+                                opacity: deleteActionMouse.containsMouse ? 1 : 0.65
 
-                                Behavior on color { ColorAnimation { duration: 100 } }
-                                Behavior on border.color { ColorAnimation { duration: 100 } }
+                                Behavior on opacity { NumberAnimation { duration: 120 } }
 
                                 Shape {
                                     anchors.centerIn: parent
-                                    width: 12
-                                    height: 12
+                                    width: 13
+                                    height: 13
+                                    scale: deleteActionMouse.pressed ? 0.85 : 1.0
                                     preferredRendererType: Shape.CurveRenderer
+
+                                    Behavior on scale { NumberAnimation { duration: 150 } }
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#ffffff"
-                                        strokeWidth: 1.3
+                                        strokeColor: deleteActionMouse.containsMouse ? "#ff453a" : StyleTokens.textDim
+                                        strokeWidth: 1.4
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
 
