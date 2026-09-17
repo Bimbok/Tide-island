@@ -104,18 +104,6 @@ Rectangle {
         Rectangle {
             width: parent.width
             height: 1
-            visible: root.isPowerProfilesCtlActive()
-            color: Theme.splitLineColor
-        }
-
-        PowerProfilesCtlStatusRow {
-            visible: root.isPowerProfilesCtlActive()
-            width: parent.width
-        }
-
-        Rectangle {
-            width: parent.width
-            height: 1
             visible: root.isTlpActive()
             color: Theme.splitLineColor
         }
@@ -143,22 +131,50 @@ Rectangle {
 
         height: 49
 
-        Text {
-            id: rowTitle
-
-            text: "Backend"
+        Row {
+            id: headerRow
             anchors.left: parent.left
             anchors.top: parent.top
-            color: Theme.textColor
-            font.family: Theme.textFontFamily
-            font.pixelSize: 18
+            spacing: 8
+            height: rowTitle.implicitHeight
+
+            Text {
+                id: rowTitle
+                text: "Backend"
+                color: Theme.textColor
+                font.family: Theme.textFontFamily
+                font.pixelSize: 18
+            }
+
+            Rectangle {
+                visible: root.isPowerProfilesCtlActive()
+                anchors.verticalCenter: rowTitle.verticalCenter
+                width: statusBadgeText.implicitWidth + 12
+                height: 20
+                radius: 5
+                color: backend.hasPowerProfilesCtl() ? Theme.componentBgColor : Theme.cardBgColor
+                border.width: 1
+                border.color: backend.hasPowerProfilesCtl() ? Theme.selectedColor : Theme.inputBorderColor
+
+                Text {
+                    id: statusBadgeText
+                    anchors.centerIn: parent
+                    text: backend.hasPowerProfilesCtl() ? "Active" : "Not Found"
+                    color: backend.hasPowerProfilesCtl() ? Theme.textColor : Theme.subtleTextColor
+                    font.family: Theme.textFontFamily
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                }
+            }
         }
 
         Text {
             text: {
                 const mode = root.powerProfileDriver();
                 if (mode === "powerprofilesctl")
-                    return "Use power-profiles-daemon via powerprofilesctl (no password required)";
+                    return backend.hasPowerProfilesCtl()
+                        ? "Using power-profiles-daemon via powerprofilesctl (no password required)"
+                        : "powerprofilesctl was not found on your system";
                 if (mode === "tlp")
                     return "Use TLP power management daemon (requires pkexec or sudo password)";
                 if (mode === "disabled")
@@ -169,8 +185,8 @@ Rectangle {
                         ? "Automatic: using TLP (requires pkexec or sudo password)"
                         : "Automatic: no supported power service found";
             }
-            anchors.left: rowTitle.left
-            anchors.top: rowTitle.bottom
+            anchors.left: headerRow.left
+            anchors.top: headerRow.bottom
             anchors.topMargin: 5
             width: Math.max(80, parent.width - backendGroup.width - 28)
             color: Theme.subtleTextColor
@@ -189,61 +205,6 @@ Rectangle {
 
             onSelected: function(value) {
                 root.savePowerProfileDriver(value)
-            }
-        }
-    }
-
-    component PowerProfilesCtlStatusRow: Item {
-        id: row
-
-        height: 49
-
-        Text {
-            id: rowTitle
-
-            text: "powerprofilesctl"
-            anchors.left: parent.left
-            anchors.top: parent.top
-            color: Theme.textColor
-            font.family: Theme.textFontFamily
-            font.pixelSize: 18
-        }
-
-        Text {
-            text: backend.hasPowerProfilesCtl()
-                ? "Service active and responsive. Profiles: power-saver, balanced, performance."
-                : "powerprofilesctl was not found on your system."
-            anchors.left: rowTitle.left
-            anchors.top: rowTitle.bottom
-            anchors.topMargin: 5
-            width: Math.max(80, parent.width - statusChip.width - 28)
-            color: Theme.subtleTextColor
-            elide: Text.ElideRight
-            font.family: Theme.textFontFamily
-            font.pixelSize: 14
-        }
-
-        Rectangle {
-            id: statusChip
-
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: statusChipText.implicitWidth + 24
-            height: 32
-            radius: 6
-            color: backend.hasPowerProfilesCtl() ? Theme.componentBgColor : Theme.cardBgColor
-            border.width: 1
-            border.color: backend.hasPowerProfilesCtl() ? Theme.selectedColor : Theme.inputBorderColor
-
-            Text {
-                id: statusChipText
-
-                anchors.centerIn: parent
-                text: backend.hasPowerProfilesCtl() ? "Available" : "Not Found"
-                color: backend.hasPowerProfilesCtl() ? Theme.textColor : Theme.subtleTextColor
-                font.family: Theme.textFontFamily
-                font.pixelSize: 13
-                font.weight: Font.DemiBold
             }
         }
     }
