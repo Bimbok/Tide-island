@@ -41,6 +41,7 @@ optdepends=(
     'networkmanager: for wifi control'
     'iwd: for wifi control'
     'swaync: for the Focus do-not-disturb toggle'
+    'power-profiles-daemon: for power profile controls via powerprofilesctl'
     'tlp: for TLP power profile controls'
     'polkit: for applying TLP profiles via pkexec'
     'sudo: alternative for applying TLP profiles'

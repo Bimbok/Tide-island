@@ -58,6 +58,7 @@ private slots:
     void niriValidationFailurePreservesManagedConfig();
     void niriValidationFailureDoesNotIncludeManagedFile();
     void configAppColorSchemePersists();
+    void powerProfileDetectionResolvesCorrectly();
 };
 
 void ShortcutConfigTests::hyprlandDefaultsIncludeWorkspaceOverview()
@@ -668,6 +669,45 @@ void ShortcutConfigTests::niriValidationFailureDoesNotIncludeManagedFile()
     QCOMPARE(readTextFile(niriConfig), QString::fromUtf8(originalConfig));
     QVERIFY(!readTextFile(niriConfig).contains(QStringLiteral("niri-shortcuts.kdl")));
     QVERIFY(backend.errorString().contains(QStringLiteral("validation failed")));
+}
+
+void ShortcutConfigTests::powerProfileDetectionResolvesCorrectly()
+{
+    QTemporaryDir fakeBin;
+    QVERIFY(fakeBin.isValid());
+
+    const QByteArray originalPath = qgetenv("PATH");
+    qputenv("PATH", fakeBin.path().toLocal8Bit());
+
+    {
+        Backend backend;
+        QVERIFY(!backend.hasPowerProfilesCtl());
+        QVERIFY(!backend.hasTlp());
+        QCOMPARE(backend.detectedPowerProfileDriver(), QStringLiteral("none"));
+    }
+
+    const QString fakePpc = fakeBin.path() + QStringLiteral("/powerprofilesctl");
+    QVERIFY(writeTextFile(fakePpc, "#!/bin/sh\nexit 0\n", QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner));
+
+    {
+        Backend backend;
+        QVERIFY(backend.hasPowerProfilesCtl());
+        QCOMPARE(backend.detectedPowerProfileDriver(), QStringLiteral("powerprofilesctl"));
+    }
+
+    QFile::remove(fakePpc);
+
+    const QString fakeTlp = fakeBin.path() + QStringLiteral("/tlp");
+    QVERIFY(writeTextFile(fakeTlp, "#!/bin/sh\nexit 0\n", QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner));
+
+    {
+        Backend backend;
+        QVERIFY(!backend.hasPowerProfilesCtl());
+        QVERIFY(backend.hasTlp());
+        QCOMPARE(backend.detectedPowerProfileDriver(), QStringLiteral("tlp"));
+    }
+
+    qputenv("PATH", originalPath);
 }
 
 QTEST_GUILESS_MAIN(ShortcutConfigTests)

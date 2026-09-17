@@ -205,7 +205,7 @@ PagePanel {
 
             Text {
                 id: tlpTitle
-                text: "TLP"
+                text: "Power Profiles"
                 anchors.top: customPagePanel.bottom
                 anchors.topMargin: 34
                 anchors.left: parent.left

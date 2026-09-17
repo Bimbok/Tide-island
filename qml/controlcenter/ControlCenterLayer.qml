@@ -167,7 +167,16 @@ Item {
     readonly property string bluetoothStatusText: buildBluetoothStatusText()
     readonly property string bluetoothAvailabilityMessage: bluetoothAvailable ? "" : "No Bluetooth adapter is available."
     readonly property string batteryModeStatusText: buildBatteryModeStatusText()
-    readonly property bool tlpControlsEnabled: trimString(userConfig.tlpPermissionMode) !== "skip"
+    readonly property string powerDriver: {
+        const d = trimString(userConfig.powerProfileDriver);
+        return d.length > 0 ? d : "auto";
+    }
+    readonly property bool tlpControlsEnabled: {
+        if (powerDriver === "disabled" || powerDriver === "none") return false;
+        if (powerDriver === "powerprofilesctl") return true;
+        if (powerDriver === "tlp") return trimString(userConfig.tlpPermissionMode) !== "skip";
+        return true;
+    }
 
     function clamp01(value) {
         return Math.max(0, Math.min(1, value));
@@ -221,7 +230,7 @@ Item {
             return;
 
         batteryModeStateRunning = true;
-        SystemServices.requestTlpState();
+        SystemServices.requestPowerProfileState(controlCenter.powerDriver);
     }
 
     function applyBatteryModeState(available, profile, output, errorString) {
@@ -231,12 +240,12 @@ Item {
 
         if (!batteryTlpAvailable) {
             batteryModeBusy = false;
-            batteryModeError = trimString(errorString).length > 0 ? errorString : "TLP is not installed.";
+            batteryModeError = trimString(errorString).length > 0 ? errorString : "Power service not available.";
             setBatteryModeVisualIndex(batteryModeAppliedIndex, true);
             return;
         }
 
-        if (batteryModeError === "TLP is not installed.")
+        if (batteryModeError === "TLP is not installed." || batteryModeError === "Power service not available.")
             batteryModeError = "";
 
         let resolvedProfile = trimString(profile);
@@ -262,9 +271,9 @@ Item {
 
     function buildBatteryModeStatusText() {
         if (batteryModeBusy) return "Applying " + batteryModeLabel(batteryModePendingIndex);
-        if (trimString(userConfig.tlpPermissionMode) === "skip") return "TLP disabled";
-        if (!batteryTlpChecked) return "Checking TLP";
-        if (!batteryTlpAvailable) return "TLP is not installed";
+        if (!controlCenter.tlpControlsEnabled) return "Power disabled";
+        if (!batteryTlpChecked) return "Checking power...";
+        if (!batteryTlpAvailable) return "Service not found";
         return batteryModeLabel(batteryModeIndex);
     }
 
@@ -279,6 +288,8 @@ Item {
     function classifyBatteryModeFailure(exitCode) {
         const details = trimString(batteryModeLastCommandOutput).toLowerCase();
 
+        if (details.indexOf("powerprofilesctl") >= 0)
+            return "powerprofilesctl failed to set profile.";
         if (details.indexOf("sorry, try again") >= 0 || details.indexOf("incorrect password attempt") >= 0)
             return "The configured sudo password did not work.";
         if (details.indexOf("pkexec") >= 0 && details.indexOf("not installed") >= 0)
@@ -295,17 +306,19 @@ Item {
         if (details.indexOf("sudo:") >= 0 && details.indexOf("a terminal is required") >= 0)
             return "sudo needs a real terminal, but the panel could not open one.";
         if (details.indexOf("missing root privilege") >= 0)
-            return "TLP needs admin permission.";
+            return "Power service needs admin permission.";
         if (details.indexOf("command not found") >= 0 || details.indexOf("not found") >= 0) {
             if (details.indexOf("tlp") >= 0)
                 return "TLP is not installed.";
+            if (details.indexOf("powerprofilesctl") >= 0)
+                return "powerprofilesctl is not installed.";
         }
 
         if (exitCode === 127)
-            return "TLP is not installed.";
+            return "Power service command not found.";
         if (exitCode === 126)
-            return "Install pkexec or set tlpSudoPassword in userconfig.json.";
-        return "TLP could not apply that mode.";
+            return "Authentication required to apply mode.";
+        return "Could not apply power mode.";
     }
 
     function queueBatteryModeStateRefresh(polls) {
@@ -319,7 +332,7 @@ Item {
     function selectBatteryMode(index) {
         if (batteryModeBusy) {
             if (batteryModeSetterRunning)
-                SystemServices.cancelTlpApply();
+                SystemServices.cancelPowerProfileApply();
             batteryModeBusy = false;
             batteryModeSetterRunning = false;
         }
@@ -328,19 +341,19 @@ Item {
 
         const nextIndex = Math.max(0, Math.min(2, index));
 
-        if (trimString(userConfig.tlpPermissionMode) === "skip") {
-            rollbackBatteryMode("TLP mode switching is disabled in userconfig.json.");
+        if (!controlCenter.tlpControlsEnabled) {
+            rollbackBatteryMode("Power mode switching is disabled in userconfig.json.");
             return;
         }
 
         if (!batteryTlpChecked) {
             refreshBatteryModeState();
-            rollbackBatteryMode("Checking TLP. Try again in a moment.");
+            rollbackBatteryMode("Checking power service. Try again in a moment.");
             return;
         }
 
         if (!batteryTlpAvailable) {
-            rollbackBatteryMode("TLP is not installed.");
+            rollbackBatteryMode(batteryModeError.length > 0 ? batteryModeError : "Power service not available.");
             return;
         }
 
@@ -362,7 +375,7 @@ Item {
         const sudoPassword = permissionMode === "password"
             ? trimString(userConfig.tlpSudoPassword)
             : "";
-        SystemServices.setTlpMode(batteryModeCommand(nextIndex), sudoPassword, permissionMode === "ask");
+        SystemServices.setPowerProfileMode(controlCenter.powerDriver, batteryModeCommand(nextIndex), sudoPassword, permissionMode === "ask");
     }
 
     function finishBatteryModeApply(success, exitCode, output, errorString) {

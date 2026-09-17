@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QVariant>
 #include <QVariantList>
@@ -1248,3 +1249,23 @@ QVariantMap Backend::toVariantMap() const{
 void Backend::setUserConfig(const QVariantMap &userConfig){
     m_userConfig = toUserConfigMap(userConfig);
 }
+
+bool Backend::hasPowerProfilesCtl() const
+{
+    return !QStandardPaths::findExecutable(QStringLiteral("powerprofilesctl")).isEmpty();
+}
+
+bool Backend::hasTlp() const
+{
+    return !QStandardPaths::findExecutable(QStringLiteral("tlp")).isEmpty();
+}
+
+QString Backend::detectedPowerProfileDriver() const
+{
+    if (hasPowerProfilesCtl())
+        return QStringLiteral("powerprofilesctl");
+    if (hasTlp())
+        return QStringLiteral("tlp");
+    return QStringLiteral("none");
+}
+

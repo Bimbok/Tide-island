@@ -46,6 +46,9 @@ public:
     Q_INVOKABLE QVariantList applicationLauncherFavoriteEntries() const;
     Q_INVOKABLE bool saveApplicationLauncherFavorites(const QVariantList &favoriteIds);
     Q_INVOKABLE bool toggleApplicationLauncher();
+    Q_INVOKABLE bool hasPowerProfilesCtl() const;
+    Q_INVOKABLE bool hasTlp() const;
+    Q_INVOKABLE QString detectedPowerProfileDriver() const;
 
 signals:
     void errorStringChanged();
