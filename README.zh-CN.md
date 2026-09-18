@@ -88,6 +88,14 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
     </td>
   </tr>
   <tr>
+    <td width="50%">
+      <img src="./assets/weather.png" width="100%" alt="天气预报" />
+    </td>
+    <td width="50%">
+      <img src="./assets/calendar.png" width="100%" alt="日历" />
+    </td>
+  </tr>
+  <tr>
     <td colspan="2">
       <img src="./assets/clipboard.png" width="100%" alt="剪贴板历史" />
     </td>

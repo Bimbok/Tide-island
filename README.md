@@ -88,6 +88,14 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
     </td>
   </tr>
   <tr>
+    <td width="50%">
+      <img src="./assets/weather.png" width="100%" alt="Weather & Forecast" />
+    </td>
+    <td width="50%">
+      <img src="./assets/calendar.png" width="100%" alt="Calendar" />
+    </td>
+  </tr>
+  <tr>
     <td colspan="2">
       <img src="./assets/clipboard.png" width="100%" alt="Clipboard history" />
     </td>
