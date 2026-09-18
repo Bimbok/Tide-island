@@ -60,6 +60,16 @@ PanelWindow {
 
     readonly property var userConfig: UserConfig
 
+    WeatherService {
+        id: fallbackWeatherService
+        weatherEnabled: (!root.shellRootController || !root.shellRootController.weatherService)
+            && (userConfig ? userConfig.weatherEnabled : true)
+    }
+
+    readonly property var weatherService: (root.shellRootController && root.shellRootController.weatherService)
+        ? root.shellRootController.weatherService
+        : fallbackWeatherService
+
     Loader {
         id: hyprlandIntegrationLoader
 
@@ -167,12 +177,18 @@ PanelWindow {
     WlrLayershell.layer: islandContainer.wallpaperPickerLayerVisible
         || islandContainer.applicationLauncherLayerVisible
         || islandContainer.fileShelfLayerVisible
+        || islandContainer.clipboardLayerVisible
+        || islandContainer.weatherLayerVisible
+        || islandContainer.calendarLayerVisible
         ? WlrLayer.Overlay
         : WlrLayer.Top
     WlrLayershell.keyboardFocus: {
         if (islandContainer.controlCenterLayerVisible
                 || islandContainer.wallpaperPickerLayerVisible
-                || islandContainer.applicationLauncherLayerVisible)
+                || islandContainer.applicationLauncherLayerVisible
+                || islandContainer.clipboardLayerVisible
+                || islandContainer.weatherLayerVisible
+                || islandContainer.calendarLayerVisible)
             return WlrKeyboardFocus.Exclusive;
         if (islandContainer.fileShelfLayerVisible)
             return WlrKeyboardFocus.OnDemand;
@@ -198,8 +214,10 @@ PanelWindow {
     readonly property real overviewWindowCornerRadius: 12
     readonly property int dynamicIslandAcceptedButtons: userConfig.mouseButtonsMask([
         1,
+        2,
         userConfig.dynamicIslandPrimaryButton,
-        userConfig.dynamicIslandSecondaryButton
+        userConfig.dynamicIslandSecondaryButton,
+        userConfig.dynamicIslandMiddleButton
     ])
     readonly property int configuredHoverExpandAction: {
         const action = Number(userConfig.hoverExpandAction);
@@ -264,6 +282,7 @@ PanelWindow {
     property bool powerConnectivityDetailOpen: false
     property bool powerConnectivityDetailMounted: false
     readonly property bool anyConnectivityDetailMounted: wifiConnectivityDetailMounted || bluetoothConnectivityDetailMounted || powerConnectivityDetailMounted
+    readonly property real connectivityDetailWidth: 318
     readonly property real connectivityDetailHeight: 404
     readonly property real controlCenterMaximumExtraHeight: controlCenterLoader.item
         ? controlCenterLoader.item.controlCenterMaximumExtraHeight
@@ -662,6 +681,54 @@ PanelWindow {
             islandContainer.showFileShelf(true);
     }
 
+    function toggleClipboardWindow() {
+        if (islandContainer.islandState === "clipboard")
+            islandContainer.smartRestoreState();
+        else
+            islandContainer.showClipboard();
+    }
+
+    function showClipboardWindow() {
+        islandContainer.showClipboard();
+    }
+
+    function closeClipboardWindow() {
+        if (islandContainer.islandState === "clipboard")
+            islandContainer.smartRestoreState();
+    }
+
+    function toggleWeatherWindow() {
+        if (islandContainer.islandState === "weather")
+            islandContainer.smartRestoreState();
+        else
+            islandContainer.showWeather();
+    }
+
+    function showWeatherWindow() {
+        islandContainer.showWeather();
+    }
+
+    function closeWeatherWindow() {
+        if (islandContainer.islandState === "weather")
+            islandContainer.smartRestoreState();
+    }
+
+    function toggleCalendarWindow() {
+        if (islandContainer.islandState === "calendar")
+            islandContainer.smartRestoreState();
+        else
+            islandContainer.showCalendar();
+    }
+
+    function showCalendarWindow() {
+        islandContainer.showCalendar();
+    }
+
+    function closeCalendarWindow() {
+        if (islandContainer.islandState === "calendar")
+            islandContainer.smartRestoreState();
+    }
+
     onOverviewVisibleChanged: {
         if (overviewVisible && monitorFocused) overviewFocusTimer.restart();
         if (overviewVisible)
@@ -767,6 +834,12 @@ PanelWindow {
             fileShelfLoader.item.grabKeyboardFocus();
     }
 
+    function focusClipboard() {
+        islandContainer.forceActiveFocus();
+        if (clipboardLoader.item && clipboardLoader.item.grabKeyboardFocus)
+            clipboardLoader.item.grabKeyboardFocus();
+    }
+
     function dragCarriesFiles(dragEvent) {
         if (!dragEvent)
             return false;
@@ -864,6 +937,9 @@ PanelWindow {
             || wallpaperPickerLayerVisible
             || applicationLauncherLayerVisible
             || fileShelfLayerVisible
+            || clipboardLayerVisible
+            || weatherLayerVisible
+            || calendarLayerVisible
             || expandedPlayerKeyboardFocusRequested
             || (root.monitorFocused && (root.overviewVisible || root.connectivityPromptActive))
 
@@ -884,16 +960,20 @@ PanelWindow {
         property string notificationSummary: ""
         property string notificationBody: ""
         property bool notificationExpanded: false
+        property bool isEmergencyAlert: false
+        property real customCapsuleWidth: userConfig.islandWidth
+        property real lyricsCapsuleWidth: userConfig.islandWidth
+        property string transientCapsuleIcon: ""
+        property real transientCapsuleProgress: -1.0
+        property string transientCapsuleText: ""
+        property string restingState: normalizeRestingState(userConfig.dynamicIslandRestingState)
+        property string workspaceOriginSide: "none"
+        property string splitOriginSide: "none"
         property var bluetoothExpandedDevice: null
         property var notificationHistoryModel: ListModel {}
         readonly property var cavaLevels: systemState.cavaLevels
         property real swipeTransitionProgress: 0
-        property string workspaceOriginSide: "none"
-        property string splitOriginSide: "none"
-        property string restingState: "normal"
         property bool expandedByPlayerAutoOpen: false
-        property real customCapsuleWidth: 220
-        property real lyricsCapsuleWidth: 220
         property bool sideSwipeSettling: false
         property bool hoverExpandedActive: false
         property bool expandedPlayerKeyboardFocusRequested: false
@@ -912,6 +992,21 @@ PanelWindow {
         readonly property int notificationAutoHideInterval: 4200
         readonly property int bluetoothExpandedAutoHideInterval: 2500
         readonly property int swipeAnimationDuration: 220
+        readonly property bool showsMediaInNormal: restingState === "lyrics"
+            || (restingState === "normal" && !!currentTrack)
+            || (restingState === "custom" && !hasCustomLeftItems && !!currentTrack)
+        readonly property bool fileShelfLayerInteractive: !root.overviewVisible
+            && (islandState === "file_shelf" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool clipboardLayerInteractive: !root.overviewVisible
+            && (islandState === "clipboard" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool weatherLayerInteractive: !root.overviewVisible
+            && (islandState === "weather" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool calendarLayerInteractive: !root.overviewVisible
+            && (islandState === "calendar" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool fileShelfOverlayActive: fileShelfLayerInteractive && fileShelfLoader.item && fileShelfLoader.item.hasVisibleCards
+        readonly property bool fileShelfAcceptingDrop: islandFileDropArea.containsDrag
+            && !root.overviewVisible
+            && (islandState === "normal" || islandState === "lyrics" || islandState === "custom")
         readonly property real timerProgress: timerActive && timerTotalSeconds > 0
             ? Math.max(0, Math.min(1, timerRemainingSeconds / timerTotalSeconds))
             : 0
@@ -930,6 +1025,9 @@ PanelWindow {
             || islandState === "wallpaper_picker"
             || islandState === "application_launcher"
             || islandState === "file_shelf"
+            || islandState === "clipboard"
+            || islandState === "weather"
+            || islandState === "calendar"
         readonly property bool splitShowsProgress: islandState === "split" && osdProgress >= 0
         readonly property bool splitShowsText: islandState === "split" && osdProgress < 0 && osdCustomText !== ""
         readonly property bool splitShowsIconOnly: islandState === "split" && osdProgress < 0 && osdCustomText === ""
@@ -974,6 +1072,9 @@ PanelWindow {
         readonly property bool wallpaperPickerLayerVisible: !root.overviewVisible && islandState === "wallpaper_picker"
         readonly property bool applicationLauncherLayerVisible: !root.overviewVisible && islandState === "application_launcher"
         readonly property bool fileShelfLayerVisible: !root.overviewVisible && islandState === "file_shelf"
+        readonly property bool clipboardLayerVisible: !root.overviewVisible && islandState === "clipboard"
+        readonly property bool weatherLayerVisible: !root.overviewVisible && islandState === "weather"
+        readonly property bool calendarLayerVisible: !root.overviewVisible && islandState === "calendar"
         readonly property var activePlayer: mediaController.activePlayer
         readonly property string lyricsDisplayText: mediaController.displayText
         readonly property string currentTrack: mediaController.currentTrack
@@ -1045,6 +1146,7 @@ PanelWindow {
         IslandSystemState {
             id: systemState
 
+            weatherService: root.weatherService
             configuredLeftSwipeItems: userConfig.dynamicIslandLeftSwipeItems
             timeText: timeObj.currentTime
             dateText: timeObj.currentDateLabel
@@ -1098,6 +1200,24 @@ PanelWindow {
             if (event.key === Qt.Key_Escape) {
                 if (root.overviewVisible) {
                     root.closeOverviewEverywhere();
+                    event.accepted = true;
+                    return;
+                }
+
+                if (islandContainer.clipboardLayerVisible) {
+                    islandContainer.smartRestoreState();
+                    event.accepted = true;
+                    return;
+                }
+
+                if (islandContainer.weatherLayerVisible) {
+                    islandContainer.smartRestoreState();
+                    event.accepted = true;
+                    return;
+                }
+
+                if (islandContainer.calendarLayerVisible) {
+                    islandContainer.smartRestoreState();
                     event.accepted = true;
                     return;
                 }
@@ -1214,6 +1334,48 @@ PanelWindow {
                 return;
             case "restoreRestingCapsule":
                 smartRestoreState();
+                return;
+            case "toggleClipboard":
+                if (islandState === "clipboard")
+                    smartRestoreState();
+                else
+                    showClipboard();
+                return;
+            case "openClipboard":
+            case "showClipboard":
+                showClipboard();
+                return;
+            case "closeClipboard":
+                if (islandState === "clipboard")
+                    smartRestoreState();
+                return;
+            case "toggleWeather":
+                if (islandState === "weather")
+                    smartRestoreState();
+                else
+                    showWeather();
+                return;
+            case "openWeather":
+            case "showWeather":
+                showWeather();
+                return;
+            case "closeWeather":
+                if (islandState === "weather")
+                    smartRestoreState();
+                return;
+            case "toggleCalendar":
+                if (islandState === "calendar")
+                    smartRestoreState();
+                else
+                    showCalendar();
+                return;
+            case "openCalendar":
+            case "showCalendar":
+                showCalendar();
+                return;
+            case "closeCalendar":
+                if (islandState === "calendar")
+                    smartRestoreState();
                 return;
             default:
             }
@@ -1729,6 +1891,33 @@ PanelWindow {
                 smartRestoreState();
         }
 
+        function showClipboard() {
+            cancelSideSwipeSettle();
+            abortSideTransientMode();
+            clearTransientCapsule();
+            islandState = "clipboard";
+            mainCapsule.displayedWidth = mainCapsule.baseTargetWidth;
+            stopAutoHideTimer();
+        }
+
+        function showWeather() {
+            cancelSideSwipeSettle();
+            abortSideTransientMode();
+            clearTransientCapsule();
+            islandState = "weather";
+            mainCapsule.displayedWidth = mainCapsule.baseTargetWidth;
+            stopAutoHideTimer();
+        }
+
+        function showCalendar() {
+            cancelSideSwipeSettle();
+            abortSideTransientMode();
+            clearTransientCapsule();
+            islandState = "calendar";
+            mainCapsule.displayedWidth = mainCapsule.baseTargetWidth;
+            stopAutoHideTimer();
+        }
+
         function showCustomCapsule() {
             if (!hasCustomLeftItems) {
                 showTimeCapsule();
@@ -1904,6 +2093,12 @@ PanelWindow {
                 case "application_launcher":
                 case "file_shelf":
                     return 1100;
+                case "clipboard":
+                    return 520;
+                case "weather":
+                    return 460;
+                case "calendar":
+                    return 420;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 410;
@@ -1931,6 +2126,11 @@ PanelWindow {
                 case "application_launcher":
                 case "file_shelf":
                     return 260;
+                case "clipboard":
+                    return clipboardLoader.item && clipboardLoader.item.imgFullPreview ? 400 : 350;
+                case "weather":
+                case "calendar":
+                    return 340;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 165;
@@ -1953,6 +2153,9 @@ PanelWindow {
                 case "wallpaper_picker":
                 case "application_launcher":
                 case "file_shelf":
+                case "clipboard":
+                case "weather":
+                case "calendar":
                     return 34;
                 case "expanded":
                 case "bluetooth_expanded":
@@ -2097,6 +2300,8 @@ PanelWindow {
                         pressedAction = userConfig.dynamicIslandPrimaryAction;
                     } else if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandSecondaryButton)) {
                         pressedAction = userConfig.dynamicIslandSecondaryAction;
+                    } else if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandMiddleButton)) {
+                        pressedAction = userConfig.dynamicIslandMiddleAction;
                     }
 
                     preparedOverviewOnPress = pressedAction === "openOverview"
@@ -2212,6 +2417,13 @@ PanelWindow {
                     if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandSecondaryButton)) {
                         preparedOverviewOnPress = false;
                         islandContainer.handleConfiguredClickAction(userConfig.dynamicIslandSecondaryAction);
+                        return;
+                    }
+
+                    if (mouse.button === userConfig.mouseButton(userConfig.dynamicIslandMiddleButton)) {
+                        preparedOverviewOnPress = false;
+                        islandContainer.handleConfiguredClickAction(userConfig.dynamicIslandMiddleAction);
+                        return;
                     }
                 }
             }
@@ -2551,6 +2763,9 @@ PanelWindow {
                         onConnectivityPanelRequested: function(kind, open) {
                             root.setConnectivityDetailVisible(kind, open);
                         }
+                        weatherService: root.weatherService
+                        onWeatherRequested: islandContainer.showWeather()
+                        onCalendarRequested: islandContainer.showCalendar()
                     }
                 }
             }
@@ -2632,6 +2847,63 @@ PanelWindow {
                         textFontFamily: root.textFontFamily
                         showCondition: islandContainer.fileShelfLayerVisible
                         dropPreviewOnly: !islandContainer.fileShelfOpenedManually
+                        onCloseRequested: islandContainer.smartRestoreState()
+                    }
+                }
+            }
+
+            Loader {
+                id: clipboardLoader
+                anchors.fill: parent
+                active: islandContainer.clipboardLayerVisible
+                asynchronous: false
+                visible: islandContainer.clipboardLayerVisible
+                onLoaded: root.focusClipboard()
+
+                sourceComponent: Component {
+                    ClipboardLayer {
+                        iconFontFamily: root.iconFontFamily
+                        textFontFamily: root.textFontFamily
+                        showCondition: islandContainer.clipboardLayerVisible
+                        onCloseRequested: islandContainer.smartRestoreState()
+                    }
+                }
+            }
+
+            Loader {
+                id: weatherLoader
+                anchors.fill: parent
+                active: islandContainer.weatherLayerVisible
+                asynchronous: false
+                visible: islandContainer.weatherLayerVisible
+                onLoaded: islandContainer.forceActiveFocus()
+
+                sourceComponent: Component {
+                    WeatherLayer {
+                        weatherService: root.weatherService
+                        iconFontFamily: root.iconFontFamily
+                        textFontFamily: root.textFontFamily
+                        heroFontFamily: root.heroFontFamily
+                        showCondition: islandContainer.weatherLayerVisible
+                        onCloseRequested: islandContainer.smartRestoreState()
+                    }
+                }
+            }
+
+            Loader {
+                id: calendarLoader
+                anchors.fill: parent
+                active: islandContainer.calendarLayerVisible
+                asynchronous: false
+                visible: islandContainer.calendarLayerVisible
+                onLoaded: islandContainer.forceActiveFocus()
+
+                sourceComponent: Component {
+                    CalendarLayer {
+                        iconFontFamily: root.iconFontFamily
+                        textFontFamily: root.textFontFamily
+                        heroFontFamily: root.heroFontFamily
+                        showCondition: islandContainer.calendarLayerVisible
                         onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }

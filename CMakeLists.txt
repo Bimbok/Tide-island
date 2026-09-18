@@ -283,9 +283,12 @@ install(FILES
 configure_file(tide-island-launcher ${CMAKE_CURRENT_BINARY_DIR}/tide-island @ONLY)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tide-island DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-# Install helper executables
+# Install helper executables and scripts
 install(TARGETS lyricsmpris
     RUNTIME DESTINATION ${CMAKE_INSTALL_DATADIR}/tide-island/bin
+)
+install(PROGRAMS scripts/cliphist-helper.sh
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/tide-island/scripts
 )
 
 # Install desktop entry

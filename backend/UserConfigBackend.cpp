@@ -252,6 +252,11 @@ QString UserConfigBackend::tlpPermissionMode() const
     return m_tlpPermissionMode;
 }
 
+QString UserConfigBackend::powerProfileDriver() const
+{
+    return m_powerProfileDriver;
+}
+
 int UserConfigBackend::workspaceOverviewWindowDragButton() const
 {
     return m_workspaceOverviewWindowDragButton;
@@ -275,6 +280,16 @@ int UserConfigBackend::dynamicIslandSecondaryButton() const
 QString UserConfigBackend::dynamicIslandSecondaryAction() const
 {
     return m_dynamicIslandSecondaryAction;
+}
+
+int UserConfigBackend::dynamicIslandMiddleButton() const
+{
+    return m_dynamicIslandMiddleButton;
+}
+
+QString UserConfigBackend::dynamicIslandMiddleAction() const
+{
+    return m_dynamicIslandMiddleAction;
 }
 
 const QVariantList &UserConfigBackend::dynamicIslandLeftSwipeItems() const
@@ -350,6 +365,26 @@ int UserConfigBackend::titleFontSize() const
 int UserConfigBackend::iconFontSize() const
 {
     return m_iconFontSize;
+}
+
+bool UserConfigBackend::weatherEnabled() const
+{
+    return m_weatherEnabled;
+}
+
+QString UserConfigBackend::weatherLocation() const
+{
+    return m_weatherLocation;
+}
+
+QString UserConfigBackend::weatherUnits() const
+{
+    return m_weatherUnits;
+}
+
+int UserConfigBackend::weatherRefreshInterval() const
+{
+    return m_weatherRefreshInterval;
 }
 
 void UserConfigBackend::setDefaultWallpaperPath(const QString &path)
@@ -473,12 +508,15 @@ void UserConfigBackend::loadConfig()
     updateField(this, m_clockFormat, configuredClockFormat == QLatin1String("24") ? QStringLiteral("24") : QStringLiteral("12"), &UserConfigBackend::clockFormatChanged);
     updateField(this, m_tlpSudoPassword, jsonString(configObject, QLatin1String("tlpSudoPassword"), m_defaultTlpSudoPassword), &UserConfigBackend::tlpSudoPasswordChanged);
     updateField(this, m_tlpPermissionMode, jsonString(configObject, QLatin1String("tlpPermissionMode"), QStringLiteral("skip")), &UserConfigBackend::tlpPermissionModeChanged);
+    updateField(this, m_powerProfileDriver, jsonString(configObject, QLatin1String("powerProfileDriver"), QStringLiteral("auto")), &UserConfigBackend::powerProfileDriverChanged);
     updateField(this, m_workspaceOverviewWindowDragButton, jsonInt(configObject, QLatin1String("workspaceOverviewWindowDragButton"), 1), &UserConfigBackend::workspaceOverviewWindowDragButtonChanged);
     updateField(this, m_dynamicIslandPrimaryButton, jsonInt(configObject, QLatin1String("dynamicIslandPrimaryButton"), 1), &UserConfigBackend::dynamicIslandPrimaryButtonChanged);
     updateField(this, m_dynamicIslandPrimaryAction, jsonString(configObject, QLatin1String("dynamicIslandPrimaryAction"), QStringLiteral("toggleExpandedPlayer")), &UserConfigBackend::dynamicIslandPrimaryActionChanged);
     updateField(this, m_dynamicIslandSecondaryButton, jsonInt(configObject, QLatin1String("dynamicIslandSecondaryButton"), 3), &UserConfigBackend::dynamicIslandSecondaryButtonChanged);
     updateField(this, m_islandShowWorkspaceOnAutoHide, jsonBool(configObject, QLatin1String("islandShowWorkspaceOnAutoHide"), true), &UserConfigBackend::islandShowWorkspaceOnAutoHideChanged);
     updateField(this, m_dynamicIslandSecondaryAction, jsonString(configObject, QLatin1String("dynamicIslandSecondaryAction"), QStringLiteral("toggleControlCenter")), &UserConfigBackend::dynamicIslandSecondaryActionChanged);
+    updateField(this, m_dynamicIslandMiddleButton, jsonInt(configObject, QLatin1String("dynamicIslandMiddleButton"), 2), &UserConfigBackend::dynamicIslandMiddleButtonChanged);
+    updateField(this, m_dynamicIslandMiddleAction, jsonString(configObject, QLatin1String("dynamicIslandMiddleAction"), QStringLiteral("toggleClipboard")), &UserConfigBackend::dynamicIslandMiddleActionChanged);
     updateField(this, m_dynamicIslandLeftSwipeItems, jsonArray(configObject, QLatin1String("dynamicIslandLeftSwipeItems"), defaultDynamicIslandLeftSwipeItems()), &UserConfigBackend::dynamicIslandLeftSwipeItemsChanged);
     updateField(this, m_disableAutoExpandOnTrackChange, jsonBool(configObject, QLatin1String("disableAutoExpandOnTrackChange"), false), &UserConfigBackend::disableAutoExpandOnTrackChangeChanged);
     updateField(this, m_hoverExpandAction, jsonInt(configObject, QLatin1String("hoverExpandAction"), 1), &UserConfigBackend::hoverExpandActionChanged);
@@ -493,6 +531,10 @@ void UserConfigBackend::loadConfig()
     updateField(this, m_bodyFontSize, jsonInt(configObject, QLatin1String("bodyFontSize"), 16), &UserConfigBackend::bodyFontSizeChanged);
     updateField(this, m_titleFontSize, jsonInt(configObject, QLatin1String("titleFontSize"), 20), &UserConfigBackend::titleFontSizeChanged);
     updateField(this, m_iconFontSize, jsonInt(configObject, QLatin1String("iconFontSize"), 18), &UserConfigBackend::iconFontSizeChanged);
+    updateField(this, m_weatherEnabled, jsonBool(configObject, QLatin1String("weatherEnabled"), true), &UserConfigBackend::weatherEnabledChanged);
+    updateField(this, m_weatherLocation, jsonString(configObject, QLatin1String("weatherLocation"), QString()), &UserConfigBackend::weatherLocationChanged);
+    updateField(this, m_weatherUnits, jsonString(configObject, QLatin1String("weatherUnits"), QStringLiteral("metric")), &UserConfigBackend::weatherUnitsChanged);
+    updateField(this, m_weatherRefreshInterval, jsonBoundedInt(configObject, QLatin1String("weatherRefreshInterval"), 1800000, 60000, 86400000), &UserConfigBackend::weatherRefreshIntervalChanged);
 
     updateWatchedPaths();
 }

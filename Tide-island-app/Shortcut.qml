@@ -104,6 +104,27 @@ PagePanel {
                 "method": "toggleFileShelf"
             },
             {
+                "action": "Clipboard manager",
+                "mods": "SUPER",
+                "key": "V",
+                "target": "tide",
+                "method": "toggleClipboard"
+            },
+            {
+                "action": "Weather",
+                "mods": "SUPER",
+                "key": "E",
+                "target": "tide",
+                "method": "toggleWeather"
+            },
+            {
+                "action": "Calendar",
+                "mods": "SUPER",
+                "key": "K",
+                "target": "tide",
+                "method": "toggleCalendar"
+            },
+            {
                 "action": "Toggle island",
                 "mods": "SUPER",
                 "key": "F",

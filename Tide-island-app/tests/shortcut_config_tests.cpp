@@ -45,6 +45,9 @@ private slots:
     void defaultsIncludeNotificationHistory();
     void defaultsIncludeApplicationLauncher();
     void defaultsIncludeFileShelf();
+    void defaultsIncludeClipboard();
+    void defaultsIncludeWeather();
+    void defaultsIncludeCalendar();
     void applicationLauncherFavoritesPersistAndResolveNames();
     void disabledShortcutPersistsAndIsNotGenerated();
     void disabledShortcutUpdatesActiveHyprlandLuaBlock();
@@ -57,6 +60,7 @@ private slots:
     void niriValidationFailurePreservesManagedConfig();
     void niriValidationFailureDoesNotIncludeManagedFile();
     void configAppColorSchemePersists();
+    void powerProfileDetectionResolvesCorrectly();
 };
 
 void ShortcutConfigTests::hyprlandDefaultsIncludeWorkspaceOverview()
@@ -127,6 +131,69 @@ void ShortcutConfigTests::defaultsIncludeFileShelf()
     }
 
     QVERIFY(foundFileShelf);
+}
+
+void ShortcutConfigTests::defaultsIncludeClipboard()
+{
+    QTemporaryDir configHome;
+    QVERIFY(configHome.isValid());
+    qputenv("XDG_CONFIG_HOME", configHome.path().toLocal8Bit());
+    qputenv("TIDE_ISLAND_COMPOSITOR", "hyprland");
+
+    Backend backend;
+    bool foundClipboard = false;
+    for (const QVariant &value : backend.shortcutBindings()) {
+        const QVariantMap binding = value.toMap();
+        foundClipboard = foundClipboard
+            || (binding.value(QStringLiteral("mods")).toString() == QStringLiteral("SUPER")
+                && binding.value(QStringLiteral("key")).toString() == QStringLiteral("V")
+                && binding.value(QStringLiteral("target")).toString() == QStringLiteral("tide")
+                && binding.value(QStringLiteral("method")).toString() == QStringLiteral("toggleClipboard"));
+    }
+
+    QVERIFY(foundClipboard);
+}
+
+void ShortcutConfigTests::defaultsIncludeWeather()
+{
+    QTemporaryDir configHome;
+    QVERIFY(configHome.isValid());
+    qputenv("XDG_CONFIG_HOME", configHome.path().toLocal8Bit());
+    qputenv("TIDE_ISLAND_COMPOSITOR", "hyprland");
+
+    Backend backend;
+    bool foundWeather = false;
+    for (const QVariant &value : backend.shortcutBindings()) {
+        const QVariantMap binding = value.toMap();
+        foundWeather = foundWeather
+            || (binding.value(QStringLiteral("mods")).toString() == QStringLiteral("SUPER")
+                && binding.value(QStringLiteral("key")).toString() == QStringLiteral("E")
+                && binding.value(QStringLiteral("target")).toString() == QStringLiteral("tide")
+                && binding.value(QStringLiteral("method")).toString() == QStringLiteral("toggleWeather"));
+    }
+
+    QVERIFY(foundWeather);
+}
+
+void ShortcutConfigTests::defaultsIncludeCalendar()
+{
+    QTemporaryDir configHome;
+    QVERIFY(configHome.isValid());
+    qputenv("XDG_CONFIG_HOME", configHome.path().toLocal8Bit());
+    qputenv("TIDE_ISLAND_COMPOSITOR", "hyprland");
+
+    Backend backend;
+    bool foundCalendar = false;
+    for (const QVariant &value : backend.shortcutBindings()) {
+        const QVariantMap binding = value.toMap();
+        foundCalendar = foundCalendar
+            || (binding.value(QStringLiteral("mods")).toString() == QStringLiteral("SUPER")
+                && binding.value(QStringLiteral("key")).toString() == QStringLiteral("K")
+                && binding.value(QStringLiteral("target")).toString() == QStringLiteral("tide")
+                && binding.value(QStringLiteral("method")).toString() == QStringLiteral("toggleCalendar"));
+    }
+
+    QVERIFY(foundCalendar);
 }
 
 void ShortcutConfigTests::defaultsIncludeTimer()
@@ -418,7 +485,7 @@ void ShortcutConfigTests::niriDefaultsExcludeWorkspaceOverview()
     Backend backend;
     QVERIFY(!backend.supportsTideWorkspaceOverview());
     QVERIFY(backend.supportsNiriShortcutSnippets());
-    QCOMPARE(backend.shortcutBindings().size(), 12);
+    QCOMPARE(backend.shortcutBindings().size(), 15);
 
     for (const QVariant &value : backend.shortcutBindings()) {
         const QVariantMap binding = value.toMap();
@@ -646,6 +713,45 @@ void ShortcutConfigTests::niriValidationFailureDoesNotIncludeManagedFile()
     QCOMPARE(readTextFile(niriConfig), QString::fromUtf8(originalConfig));
     QVERIFY(!readTextFile(niriConfig).contains(QStringLiteral("niri-shortcuts.kdl")));
     QVERIFY(backend.errorString().contains(QStringLiteral("validation failed")));
+}
+
+void ShortcutConfigTests::powerProfileDetectionResolvesCorrectly()
+{
+    QTemporaryDir fakeBin;
+    QVERIFY(fakeBin.isValid());
+
+    const QByteArray originalPath = qgetenv("PATH");
+    qputenv("PATH", fakeBin.path().toLocal8Bit());
+
+    {
+        Backend backend;
+        QVERIFY(!backend.hasPowerProfilesCtl());
+        QVERIFY(!backend.hasTlp());
+        QCOMPARE(backend.detectedPowerProfileDriver(), QStringLiteral("none"));
+    }
+
+    const QString fakePpc = fakeBin.path() + QStringLiteral("/powerprofilesctl");
+    QVERIFY(writeTextFile(fakePpc, "#!/bin/sh\nexit 0\n", QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner));
+
+    {
+        Backend backend;
+        QVERIFY(backend.hasPowerProfilesCtl());
+        QCOMPARE(backend.detectedPowerProfileDriver(), QStringLiteral("powerprofilesctl"));
+    }
+
+    QFile::remove(fakePpc);
+
+    const QString fakeTlp = fakeBin.path() + QStringLiteral("/tlp");
+    QVERIFY(writeTextFile(fakeTlp, "#!/bin/sh\nexit 0\n", QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner));
+
+    {
+        Backend backend;
+        QVERIFY(!backend.hasPowerProfilesCtl());
+        QVERIFY(backend.hasTlp());
+        QCOMPARE(backend.detectedPowerProfileDriver(), QStringLiteral("tlp"));
+    }
+
+    qputenv("PATH", originalPath);
 }
 
 QTEST_GUILESS_MAIN(ShortcutConfigTests)

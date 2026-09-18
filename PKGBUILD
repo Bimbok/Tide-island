@@ -41,10 +41,13 @@ optdepends=(
     'networkmanager: for wifi control'
     'iwd: for wifi control'
     'swaync: for the Focus do-not-disturb toggle'
+    'power-profiles-daemon: for power profile controls via powerprofilesctl'
     'tlp: for TLP power profile controls'
     'polkit: for applying TLP profiles via pkexec'
     'sudo: alternative for applying TLP profiles'
     'zenity: for Ask-mode TLP password prompts when no Polkit agent is running'
+    'cliphist: for clipboard history manager'
+    'wl-clipboard: for clipboard copy/paste support'
 )
 conflicts=('tide-island-git')
 install='tide-island.install'

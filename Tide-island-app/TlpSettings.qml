@@ -6,6 +6,12 @@ Rectangle {
     id: root
 
     property int revision: 0
+    readonly property var backendOptions: [
+        { "label": "Auto", "value": "auto" },
+        { "label": "powerprofilesctl", "value": "powerprofilesctl" },
+        { "label": "TLP", "value": "tlp" },
+        { "label": "Disabled", "value": "disabled" }
+    ]
     readonly property var permissionOptions: [
         { "label": "Disabled", "value": "skip" },
         { "label": "Ask", "value": "ask" },
@@ -20,6 +26,34 @@ Rectangle {
 
     function textValue(key, fallback) {
         return String(ConfigStore.value(key, fallback))
+    }
+
+    function powerProfileDriver() {
+        revision
+        const d = textValue("powerProfileDriver", "auto").trim().toLowerCase()
+        if (d === "powerprofilesctl" || d === "tlp" || d === "disabled")
+            return d
+        return "auto"
+    }
+
+    function savePowerProfileDriver(value) {
+        ConfigStore.setValue("powerProfileDriver", value)
+        ConfigStore.save()
+        revision += 1
+    }
+
+    function isPowerProfilesCtlActive() {
+        const d = powerProfileDriver()
+        if (d === "powerprofilesctl") return true
+        if (d === "auto" && backend.hasPowerProfilesCtl()) return true
+        return false
+    }
+
+    function isTlpActive() {
+        const d = powerProfileDriver()
+        if (d === "tlp") return true
+        if (d === "auto" && !backend.hasPowerProfilesCtl()) return true
+        return false
     }
 
     function permissionMode() {
@@ -63,20 +97,115 @@ Rectangle {
         anchors.rightMargin: 18
         spacing: 16
 
-        PermissionModeRow {
+        BackendModeRow {
             width: parent.width
         }
 
         Rectangle {
             width: parent.width
             height: 1
-            visible: root.permissionMode() === "password"
+            visible: root.isTlpActive()
+            color: Theme.splitLineColor
+        }
+
+        PermissionModeRow {
+            visible: root.isTlpActive()
+            width: parent.width
+        }
+
+        Rectangle {
+            width: parent.width
+            height: 1
+            visible: root.isTlpActive() && root.permissionMode() === "password"
             color: Theme.splitLineColor
         }
 
         PasswordRow {
-            visible: root.permissionMode() === "password"
+            visible: root.isTlpActive() && root.permissionMode() === "password"
             width: parent.width
+        }
+    }
+
+    component BackendModeRow: Item {
+        id: row
+
+        height: 49
+
+        Row {
+            id: headerRow
+            anchors.left: parent.left
+            anchors.top: parent.top
+            spacing: 8
+            height: rowTitle.implicitHeight
+
+            Text {
+                id: rowTitle
+                text: "Backend"
+                color: Theme.textColor
+                font.family: Theme.textFontFamily
+                font.pixelSize: 18
+            }
+
+            Rectangle {
+                visible: root.isPowerProfilesCtlActive()
+                anchors.verticalCenter: rowTitle.verticalCenter
+                width: statusBadgeText.implicitWidth + 12
+                height: 20
+                radius: 5
+                color: backend.hasPowerProfilesCtl() ? Theme.componentBgColor : Theme.cardBgColor
+                border.width: 1
+                border.color: backend.hasPowerProfilesCtl() ? Theme.selectedColor : Theme.inputBorderColor
+
+                Text {
+                    id: statusBadgeText
+                    anchors.centerIn: parent
+                    text: backend.hasPowerProfilesCtl() ? "Active" : "Not Found"
+                    color: backend.hasPowerProfilesCtl() ? Theme.textColor : Theme.subtleTextColor
+                    font.family: Theme.textFontFamily
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                }
+            }
+        }
+
+        Text {
+            text: {
+                const mode = root.powerProfileDriver();
+                if (mode === "powerprofilesctl")
+                    return backend.hasPowerProfilesCtl()
+                        ? "Using power-profiles-daemon via powerprofilesctl (no password required)"
+                        : "powerprofilesctl was not found on your system";
+                if (mode === "tlp")
+                    return "Use TLP power management daemon (requires pkexec or sudo password)";
+                if (mode === "disabled")
+                    return "Hide power profile controls from the Control Center";
+                return backend.hasPowerProfilesCtl()
+                    ? "Automatic: using powerprofilesctl (no root password needed)"
+                    : backend.hasTlp()
+                        ? "Automatic: using TLP (requires pkexec or sudo password)"
+                        : "Automatic: no supported power service found";
+            }
+            anchors.left: headerRow.left
+            anchors.top: headerRow.bottom
+            anchors.topMargin: 5
+            width: Math.max(80, parent.width - backendGroup.width - 28)
+            color: Theme.subtleTextColor
+            elide: Text.ElideRight
+            font.family: Theme.textFontFamily
+            font.pixelSize: 14
+        }
+
+        ButtonGroup {
+            id: backendGroup
+
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            options: root.backendOptions
+            selectedValue: root.powerProfileDriver()
+
+            onSelected: function(value) {
+                root.savePowerProfileDriver(value)
+            }
         }
     }
 

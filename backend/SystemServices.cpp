@@ -945,26 +945,76 @@ QString SystemServices::parseTlpProfile(const QString &text) const {
     return match.hasMatch() ? match.captured(1).toLower() : QString();
 }
 
-void SystemServices::requestTlpState() {
-    if (findExecutable(QStringLiteral("tlp")).isEmpty()) {
-        emit tlpStateReady(false, QString(), QString(), QStringLiteral("TLP is not installed."));
-        return;
-    }
+QString SystemServices::resolvePowerProfileDriver(const QString &requestedDriver) const {
+    const QString driver = requestedDriver.trimmed().toLower();
+    if (driver == QLatin1String("disabled") || driver == QLatin1String("none"))
+        return QStringLiteral("disabled");
+    if (driver == QLatin1String("powerprofilesctl"))
+        return QStringLiteral("powerprofilesctl");
+    if (driver == QLatin1String("tlp"))
+        return QStringLiteral("tlp");
 
-    if (findExecutable(QStringLiteral("tlp-stat")).isEmpty()) {
-        emit tlpStateReady(true, QString(), QString(), QString());
-        return;
-    }
+    // Auto-detect
+    if (!findExecutable(QStringLiteral("powerprofilesctl")).isEmpty())
+        return QStringLiteral("powerprofilesctl");
+    if (!findExecutable(QStringLiteral("tlp")).isEmpty())
+        return QStringLiteral("tlp");
 
-    startCommand(QStringLiteral("tlp-stat"), {QStringLiteral("-s")}, 2000,
-        [this](const CommandResult &result) {
-            const QString output = trimCommandOutput(result.stdoutData, result.stderrData);
-            const QString errorText = commandErrorText(QStringLiteral("tlp-stat"), result);
-            emit tlpStateReady(errorText.isEmpty(), parseTlpProfile(output), output, errorText);
-        });
+    return QString();
 }
 
-void SystemServices::setTlpMode(const QString &mode, const QString &sudoPassword, bool promptForPassword) {
+void SystemServices::requestPowerProfileState(const QString &driver) {
+    const QString resolved = resolvePowerProfileDriver(driver);
+    if (resolved.isEmpty()) {
+        emit tlpStateReady(false, QString(), QString(), QStringLiteral("No power profile service found (install power-profiles-daemon or tlp)."));
+        return;
+    }
+
+    if (resolved == QLatin1String("disabled")) {
+        emit tlpStateReady(false, QString(), QString(), QStringLiteral("Power profile controls are disabled."));
+        return;
+    }
+
+    if (resolved == QLatin1String("powerprofilesctl")) {
+        startCommand(QStringLiteral("powerprofilesctl"), {QStringLiteral("get")}, 2000,
+            [this](const CommandResult &result) {
+                const QString output = trimCommandOutput(result.stdoutData, result.stderrData).trimmed();
+                const QString errorText = commandErrorText(QStringLiteral("powerprofilesctl"), result);
+                bool ok = errorText.isEmpty() && (result.exitCode == 0) && !output.isEmpty();
+                emit tlpStateReady(ok, output.toLower(), output, errorText);
+            });
+        return;
+    }
+
+    if (resolved == QLatin1String("tlp")) {
+        if (findExecutable(QStringLiteral("tlp")).isEmpty()) {
+            emit tlpStateReady(false, QString(), QString(), QStringLiteral("TLP is not installed."));
+            return;
+        }
+
+        if (findExecutable(QStringLiteral("tlp-stat")).isEmpty()) {
+            emit tlpStateReady(true, QString(), QString(), QString());
+            return;
+        }
+
+        startCommand(QStringLiteral("tlp-stat"), {QStringLiteral("-s")}, 2000,
+            [this](const CommandResult &result) {
+                const QString output = trimCommandOutput(result.stdoutData, result.stderrData);
+                const QString errorText = commandErrorText(QStringLiteral("tlp-stat"), result);
+                emit tlpStateReady(errorText.isEmpty(), parseTlpProfile(output), output, errorText);
+            });
+        return;
+    }
+}
+
+void SystemServices::requestTlpState() {
+    requestPowerProfileState(QString());
+}
+
+void SystemServices::setPowerProfileMode(const QString &driver,
+                                        const QString &mode,
+                                        const QString &sudoPassword,
+                                        bool promptForPassword) {
     static const QSet<QString> allowedModes = {
         QStringLiteral("power-saver"),
         QStringLiteral("balanced"),
@@ -973,12 +1023,18 @@ void SystemServices::setTlpMode(const QString &mode, const QString &sudoPassword
 
     const QString normalizedMode = mode.trimmed().toLower();
     if (!allowedModes.contains(normalizedMode)) {
-        emit tlpSetFinished(false, 125, QString(), QStringLiteral("Unsupported TLP mode."));
+        emit tlpSetFinished(false, 125, QString(), QStringLiteral("Unsupported power profile mode."));
         return;
     }
 
-    if (findExecutable(QStringLiteral("tlp")).isEmpty()) {
-        emit tlpSetFinished(false, 127, QString(), QStringLiteral("TLP is not installed."));
+    const QString resolved = resolvePowerProfileDriver(driver);
+    if (resolved.isEmpty()) {
+        emit tlpSetFinished(false, 127, QString(), QStringLiteral("No power profile service found."));
+        return;
+    }
+
+    if (resolved == QLatin1String("disabled")) {
+        emit tlpSetFinished(false, 125, QString(), QStringLiteral("Power profile controls are disabled."));
         return;
     }
 
@@ -988,91 +1044,124 @@ void SystemServices::setTlpMode(const QString &mode, const QString &sudoPassword
         m_tlpSetter = nullptr;
     }
 
-#ifdef Q_OS_UNIX
-    if (::getuid() != 0
-        && promptForPassword
-        && !findExecutable(QStringLiteral("zenity")).isEmpty()
-        && !findExecutable(QStringLiteral("sudo")).isEmpty()) {
-        const int promptGeneration = ++m_tlpCommandGeneration;
+    if (resolved == QLatin1String("powerprofilesctl")) {
+        const int commandGeneration = ++m_tlpCommandGeneration;
         m_tlpSetter = startCommand(
-            QStringLiteral("zenity"),
-            {
-                QStringLiteral("--password"),
-                QStringLiteral("--title=Tide Island"),
-                QStringLiteral("--text=Enter your sudo password to change the TLP profile."),
-            },
-            0,
-            [this, normalizedMode, promptGeneration](const CommandResult &result) {
-                if (promptGeneration != m_tlpCommandGeneration)
+            QStringLiteral("powerprofilesctl"),
+            {QStringLiteral("set"), normalizedMode},
+            5000,
+            [this, commandGeneration, driver](const CommandResult &result) {
+                if (commandGeneration != m_tlpCommandGeneration)
                     return;
 
                 m_tlpSetter = nullptr;
-                if (result.exitCode != 0 || result.exitStatus != QProcess::NormalExit) {
-                    emit tlpSetFinished(false, result.exitCode, QString(), QStringLiteral("Authentication canceled."));
-                    return;
-                }
-
-                QString password = QString::fromUtf8(result.stdoutData);
-                while (password.endsWith(QLatin1Char('\n')) || password.endsWith(QLatin1Char('\r')))
-                    password.chop(1);
-                if (password.isEmpty()) {
-                    emit tlpSetFinished(false, 126, QString(), QStringLiteral("A sudo password is required."));
-                    return;
-                }
-
-                setTlpMode(normalizedMode, password, false);
+                const QString output = trimCommandOutput(result.stdoutData, result.stderrData);
+                const QString errorText = commandErrorText(QStringLiteral("powerprofilesctl"), result);
+                bool success = errorText.isEmpty() && (result.exitCode == 0);
+                emit tlpSetFinished(success, result.exitCode, output, errorText);
+                if (success)
+                    requestPowerProfileState(driver);
             });
         return;
     }
-#endif
 
-    QString program;
-    QStringList arguments;
-    QByteArray stdinData;
+    if (resolved == QLatin1String("tlp")) {
+        if (findExecutable(QStringLiteral("tlp")).isEmpty()) {
+            emit tlpSetFinished(false, 127, QString(), QStringLiteral("TLP is not installed."));
+            return;
+        }
 
 #ifdef Q_OS_UNIX
-    if (::getuid() == 0) {
-        program = QStringLiteral("tlp");
-        arguments = {normalizedMode};
-    } else
-#endif
-    {
-        const QString password = sudoPassword.trimmed();
-        if (password.isEmpty() && !findExecutable(QStringLiteral("pkexec")).isEmpty()) {
-            program = QStringLiteral("pkexec");
-            arguments = {QStringLiteral("tlp"), normalizedMode};
-        } else if (password.isEmpty()) {
-            if (findExecutable(QStringLiteral("sudo")).isEmpty()) {
-                emit tlpSetFinished(false, 126, QString(), QStringLiteral("pkexec or sudo is not installed."));
-                return;
-            }
-            program = QStringLiteral("sudo");
-            arguments = {QStringLiteral("-n"), QStringLiteral("tlp"), normalizedMode};
-        } else {
-            if (findExecutable(QStringLiteral("sudo")).isEmpty()) {
-                emit tlpSetFinished(false, 126, QString(), QStringLiteral("sudo is not installed."));
-                return;
-            }
-            program = QStringLiteral("sudo");
-            arguments = {QStringLiteral("-S"), QStringLiteral("-p"), QString(), QStringLiteral("tlp"), normalizedMode};
-            stdinData = (password + QLatin1Char('\n')).toUtf8();
+        if (::getuid() != 0
+            && promptForPassword
+            && !findExecutable(QStringLiteral("zenity")).isEmpty()
+            && !findExecutable(QStringLiteral("sudo")).isEmpty()) {
+            const int promptGeneration = ++m_tlpCommandGeneration;
+            m_tlpSetter = startCommand(
+                QStringLiteral("zenity"),
+                {
+                    QStringLiteral("--password"),
+                    QStringLiteral("--title=Tide Island"),
+                    QStringLiteral("--text=Enter your sudo password to change the TLP profile."),
+                },
+                0,
+                [this, normalizedMode, promptGeneration, driver](const CommandResult &result) {
+                    if (promptGeneration != m_tlpCommandGeneration)
+                        return;
+
+                    m_tlpSetter = nullptr;
+                    if (result.exitCode != 0 || result.exitStatus != QProcess::NormalExit) {
+                        emit tlpSetFinished(false, result.exitCode, QString(), QStringLiteral("Authentication canceled."));
+                        return;
+                    }
+
+                    QString password = QString::fromUtf8(result.stdoutData);
+                    while (password.endsWith(QLatin1Char('\n')) || password.endsWith(QLatin1Char('\r')))
+                        password.chop(1);
+                    if (password.isEmpty()) {
+                        emit tlpSetFinished(false, 126, QString(), QStringLiteral("A sudo password is required."));
+                        return;
+                    }
+
+                    setPowerProfileMode(driver, normalizedMode, password, false);
+                });
+            return;
         }
+#endif
+
+        QString program;
+        QStringList arguments;
+        QByteArray stdinData;
+
+#ifdef Q_OS_UNIX
+        if (::getuid() == 0) {
+            program = QStringLiteral("tlp");
+            arguments = {normalizedMode};
+        } else
+#endif
+        {
+            const QString password = sudoPassword.trimmed();
+            if (password.isEmpty() && !findExecutable(QStringLiteral("pkexec")).isEmpty()) {
+                program = QStringLiteral("pkexec");
+                arguments = {QStringLiteral("tlp"), normalizedMode};
+            } else if (password.isEmpty()) {
+                if (findExecutable(QStringLiteral("sudo")).isEmpty()) {
+                    emit tlpSetFinished(false, 126, QString(), QStringLiteral("pkexec or sudo is not installed."));
+                    return;
+                }
+                program = QStringLiteral("sudo");
+                arguments = {QStringLiteral("-n"), QStringLiteral("tlp"), normalizedMode};
+            } else {
+                if (findExecutable(QStringLiteral("sudo")).isEmpty()) {
+                    emit tlpSetFinished(false, 126, QString(), QStringLiteral("sudo is not installed."));
+                    return;
+                }
+                program = QStringLiteral("sudo");
+                arguments = {QStringLiteral("-S"), QStringLiteral("-p"), QString(), QStringLiteral("tlp"), normalizedMode};
+                stdinData = (password + QLatin1Char('\n')).toUtf8();
+            }
+        }
+
+        const int commandGeneration = ++m_tlpCommandGeneration;
+        m_tlpSetter = startCommand(program, arguments, 10000,
+            [this, program, commandGeneration, driver](const CommandResult &result) {
+                if (commandGeneration != m_tlpCommandGeneration)
+                    return;
+
+                m_tlpSetter = nullptr;
+                const QString output = trimCommandOutput(result.stdoutData, result.stderrData);
+                const QString errorText = commandErrorText(program, result);
+                emit tlpSetFinished(errorText.isEmpty(), result.exitCode, output, errorText);
+                if (errorText.isEmpty())
+                    requestPowerProfileState(driver);
+            },
+            stdinData);
+        return;
     }
+}
 
-    const int commandGeneration = ++m_tlpCommandGeneration;
-    m_tlpSetter = startCommand(program, arguments, 10000,
-        [this, program, commandGeneration](const CommandResult &result) {
-            if (commandGeneration != m_tlpCommandGeneration)
-                return;
-
-            m_tlpSetter = nullptr;
-            const QString output = trimCommandOutput(result.stdoutData, result.stderrData);
-            const QString errorText = commandErrorText(program, result);
-            emit tlpSetFinished(errorText.isEmpty(), result.exitCode, output, errorText);
-            if (errorText.isEmpty())
-                requestTlpState();
-        },
-        stdinData);
+void SystemServices::setTlpMode(const QString &mode, const QString &sudoPassword, bool promptForPassword) {
+    setPowerProfileMode(QString(), mode, sudoPassword, promptForPassword);
 }
 
 void SystemServices::cancelTlpApply() {
@@ -1080,6 +1169,10 @@ void SystemServices::cancelTlpApply() {
     ++m_tlpCommandGeneration;
     m_tlpSetter->kill();
     m_tlpSetter = nullptr;
+}
+
+void SystemServices::cancelPowerProfileApply() {
+    cancelTlpApply();
 }
 
 void SystemServices::setCavaClientActive(const QString &clientId, bool active) {

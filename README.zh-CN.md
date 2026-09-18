@@ -87,11 +87,24 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
       <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/Workspace overview_2.png" width="100%" alt="工作区总览" />
     </td>
   </tr>
+  <tr>
+    <td width="50%">
+      <img src="./assets/weather.png" width="100%" alt="天气预报" />
+    </td>
+    <td width="50%">
+      <img src="./assets/calendar.png" width="100%" alt="日历" />
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <img src="./assets/clipboard.png" width="100%" alt="剪贴板历史" />
+    </td>
+  </tr>
 </table>
 
 ### 配置应用
 
-<img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/config_app.png" width = "90%">
+<img src="./assets/config_app.png" width = "90%">
 <br>
 
 ## 功能
@@ -103,6 +116,9 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 - 歌词显示
 - 应用启动器
 - 文件中转站
+- 剪贴板历史管理器
+- 天气预报
+- 日历
 - 壁纸切换器
 - 工作区总览
 - 自定义页面
@@ -130,6 +146,7 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 - 亮度
 - Cava
 - 存储占用
+- 天气
 
 ### 合成器支持
 
@@ -217,7 +234,17 @@ hl.exec_once("tide-island")
 
 ## 配置
 
-在任意应用启动器中搜索 `Tide Island Settings`。
+在任意应用启动器中搜索 `Tide Island Settings`，或者运行：
+
+```bash
+tide-island-config-app
+```
+
+- **快捷键**：配置工作区总览、应用启动器、音乐播放器、通知中心、控制中心、剪贴板历史管理器（默认 `Super + V`）、天气（默认 `Super + E`）以及日历（默认 `Super + K`）的快捷键。
+- **交互**：配置灵动岛胶囊的鼠标点击动作（支持为音乐播放器、控制中心、剪贴板历史自定义左键、中键、右键映射）。
+- **天气**：配置自动定位或自定义城市名称、温度单位（°C 或 °F）以及刷新间隔。
+- **日历**：快速月历视图，提供周数与相对日期显示。可在控制中心点击日期、使用 `Super + K` 快捷键打开，支持鼠标滚轮与方向键切换月份、`Home` 键返回今天、`Esc` 快速关闭。
+
 
 ## 常用命令
 
@@ -245,6 +272,16 @@ journalctl --user -u tide-island -f
 
 | 命令 | 操作 |
 | --- | --- |
+| `quickshell ipc call tide toggleCalendar` | 打开或关闭日历视图 |
+| `quickshell ipc call tide openCalendar` | 打开日历视图 |
+| `quickshell ipc call tide closeCalendar` | 关闭日历视图 |
+| `quickshell ipc call tide toggleWeather` | 打开或关闭天气视图 |
+| `quickshell ipc call tide openWeather` | 打开天气视图 |
+| `quickshell ipc call tide closeWeather` | 关闭天气视图 |
+| `quickshell ipc call weather refresh` | 立即刷新天气数据 |
+| `quickshell ipc call tide toggleClipboard` | 打开或关闭剪贴板历史 |
+| `quickshell ipc call tide openClipboard` | 打开剪贴板历史 |
+| `quickshell ipc call tide closeClipboard` | 关闭剪贴板历史 |
 | `quickshell ipc call tide toggleNotificationCenter` | 打开或关闭通知中心 |
 | `quickshell ipc call tide openNotificationCenter` | 打开通知中心 |
 | `quickshell ipc call tide closeNotificationCenter` | 关闭通知中心 |

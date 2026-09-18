@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QVariant>
 #include <QVariantList>
@@ -61,6 +62,9 @@ QVariantList defaultShortcutBindings()
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("W"), QStringLiteral("tide"), QStringLiteral("toggleWallpaperPicker")),
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("slash"), QStringLiteral("tide"), QStringLiteral("toggleApplicationLauncher")),
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("O"), QStringLiteral("tide"), QStringLiteral("toggleFileShelf")),
+        shortcutMap(QStringLiteral("SUPER"), QStringLiteral("V"), QStringLiteral("tide"), QStringLiteral("toggleClipboard")),
+        shortcutMap(QStringLiteral("SUPER"), QStringLiteral("E"), QStringLiteral("tide"), QStringLiteral("toggleWeather")),
+        shortcutMap(QStringLiteral("SUPER"), QStringLiteral("K"), QStringLiteral("tide"), QStringLiteral("toggleCalendar")),
         shortcutMap(QStringLiteral("SUPER"), QStringLiteral("F"), QStringLiteral("island"), QStringLiteral("toggle")),
     };
 }
@@ -1247,3 +1251,23 @@ QVariantMap Backend::toVariantMap() const{
 void Backend::setUserConfig(const QVariantMap &userConfig){
     m_userConfig = toUserConfigMap(userConfig);
 }
+
+bool Backend::hasPowerProfilesCtl() const
+{
+    return !QStandardPaths::findExecutable(QStringLiteral("powerprofilesctl")).isEmpty();
+}
+
+bool Backend::hasTlp() const
+{
+    return !QStandardPaths::findExecutable(QStringLiteral("tlp")).isEmpty();
+}
+
+QString Backend::detectedPowerProfileDriver() const
+{
+    if (hasPowerProfilesCtl())
+        return QStringLiteral("powerprofilesctl");
+    if (hasTlp())
+        return QStringLiteral("tlp");
+    return QStringLiteral("none");
+}
+

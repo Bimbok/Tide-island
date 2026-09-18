@@ -64,6 +64,7 @@ Tide-island/
 .cache/
 .code-review-graph
 CODE_QUALITY_REVIEW.md
+PULL_REQUEST.md
 
 # Local agent/tooling state
 .agents/

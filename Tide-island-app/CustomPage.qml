@@ -25,7 +25,8 @@ Rectangle {
         { itemId: "ram", displayName: "RAM", previewText: "RAM 61%", previewIcon: "\u{F061A}", previewKind: "iconText", previewWidth: 96 },
         { itemId: "cava", displayName: "Cava", previewText: "", previewIcon: "", previewKind: "cava", previewWidth: 76 },
         { itemId: "albumcover", displayName: "Album cover", previewText: "", previewIcon: "", previewKind: "albumArt", previewWidth: 48 },
-        { itemId: "trackname", displayName: "Song name", previewText: "Song title", previewIcon: "", previewKind: "text", previewWidth: 100 }
+        { itemId: "trackname", displayName: "Song name", previewText: "Song title", previewIcon: "", previewKind: "text", previewWidth: 100 },
+        { itemId: "weather", displayName: "Weather", previewText: "21°C", previewIcon: "\ue30d", previewKind: "iconText", previewWidth: 84 }
     ]
 
     property bool dragActive: false

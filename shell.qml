@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import IslandBackend
+import "qml/island"
 
 Scope {
     id: shellRoot
@@ -13,6 +14,11 @@ Scope {
     property bool islandAutoHideRuntimeEnabled: true
 
     readonly property var userConfig: UserConfig
+
+    WeatherService {
+        id: globalWeatherService
+    }
+    readonly property var weatherService: globalWeatherService
 
     function forEachWindow(callback) {
         const windows = panelVariants.instances ? panelVariants.instances : [];
@@ -261,6 +267,119 @@ Scope {
 
         function toggleFileShelf() {
             shellRoot.forFocusedWindow((window) => window.toggleFileShelfWindow());
+        }
+
+        function toggleClipboard() {
+            shellRoot.forFocusedWindow((window) => window.toggleClipboardWindow());
+        }
+
+        function showClipboard() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function openClipboard() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function closeClipboard() {
+            shellRoot.forFocusedWindow((window) => window.closeClipboardWindow ? window.closeClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function toggleWeather() {
+            shellRoot.forFocusedWindow((window) => window.toggleWeatherWindow());
+        }
+
+        function showWeather() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function openWeather() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function closeWeather() {
+            shellRoot.forFocusedWindow((window) => window.closeWeatherWindow ? window.closeWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function toggleCalendar() {
+            shellRoot.forFocusedWindow((window) => window.toggleCalendarWindow());
+        }
+
+        function showCalendar() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function openCalendar() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function closeCalendar() {
+            shellRoot.forFocusedWindow((window) => window.closeCalendarWindow ? window.closeCalendarWindow() : window.toggleCalendarWindow());
+        }
+    }
+
+    IpcHandler {
+        target: "clipboard"
+
+        function toggle() {
+            shellRoot.forFocusedWindow((window) => window.toggleClipboardWindow());
+        }
+
+        function show() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function open() {
+            shellRoot.forFocusedWindow((window) => window.showClipboardWindow ? window.showClipboardWindow() : window.toggleClipboardWindow());
+        }
+
+        function close() {
+            shellRoot.forFocusedWindow((window) => window.closeClipboardWindow ? window.closeClipboardWindow() : window.toggleClipboardWindow());
+        }
+    }
+
+    IpcHandler {
+        target: "weather"
+
+        function toggle() {
+            shellRoot.forFocusedWindow((window) => window.toggleWeatherWindow());
+        }
+
+        function show() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function open() {
+            shellRoot.forFocusedWindow((window) => window.showWeatherWindow ? window.showWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function close() {
+            shellRoot.forFocusedWindow((window) => window.closeWeatherWindow ? window.closeWeatherWindow() : window.toggleWeatherWindow());
+        }
+
+        function refresh() {
+            if (shellRoot.weatherService)
+                shellRoot.weatherService.refresh();
+        }
+    }
+
+    IpcHandler {
+        target: "calendar"
+
+        function toggle() {
+            shellRoot.forFocusedWindow((window) => window.toggleCalendarWindow());
+        }
+
+        function show() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function open() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function close() {
+            shellRoot.forFocusedWindow((window) => window.closeCalendarWindow ? window.closeCalendarWindow() : window.toggleCalendarWindow());
         }
     }
 

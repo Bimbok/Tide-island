@@ -7,6 +7,7 @@ PagePanel {
 
     readonly property string playerAction: "toggleExpandedPlayer"
     readonly property string controlAction: "toggleControlCenter"
+    readonly property string clipboardAction: "toggleClipboard"
     readonly property var mouseButtonOptions: [
         { "label": "Left", "value": 1 },
         { "label": "Middle", "value": 2 },
@@ -51,29 +52,25 @@ PagePanel {
 
         const primaryAction = String(ConfigStore.value("dynamicIslandPrimaryAction", root.playerAction))
         const secondaryAction = String(ConfigStore.value("dynamicIslandSecondaryAction", root.controlAction))
+        const middleAction = String(ConfigStore.value("dynamicIslandMiddleAction", root.clipboardAction))
 
         if (primaryAction === actionName)
             return normalizedButton(ConfigStore.value("dynamicIslandPrimaryButton", fallback), fallback)
         if (secondaryAction === actionName)
             return normalizedButton(ConfigStore.value("dynamicIslandSecondaryButton", fallback), fallback)
+        if (middleAction === actionName)
+            return normalizedButton(ConfigStore.value("dynamicIslandMiddleButton", fallback), fallback)
 
         return fallback
     }
 
-    function firstFreeButton(usedButton) {
-        const buttons = [1, 2, 3]
-        for (let i = 0; i < buttons.length; ++i) {
-            if (buttons[i] !== usedButton)
-                return buttons[i]
-        }
-        return 1
-    }
-
-    function saveClickMappings(playerButton, controlButton) {
+    function saveClickMappings(playerButton, controlButton, clipboardButton) {
         ConfigStore.setValue("dynamicIslandPrimaryAction", root.playerAction)
         ConfigStore.setValue("dynamicIslandPrimaryButton", playerButton)
         ConfigStore.setValue("dynamicIslandSecondaryAction", root.controlAction)
         ConfigStore.setValue("dynamicIslandSecondaryButton", controlButton)
+        ConfigStore.setValue("dynamicIslandMiddleAction", root.clipboardAction)
+        ConfigStore.setValue("dynamicIslandMiddleButton", clipboardButton)
         ConfigStore.save()
         revision += 1
     }
@@ -81,24 +78,33 @@ PagePanel {
     function setButtonForAction(actionName, button) {
         let playerButton = buttonForAction(root.playerAction, 1)
         let controlButton = buttonForAction(root.controlAction, 3)
-        const previousPlayerButton = playerButton
-        const previousControlButton = controlButton
+        let clipboardButton = buttonForAction(root.clipboardAction, 2)
+
+        const oldButton = (actionName === root.playerAction) ? playerButton
+                        : (actionName === root.controlAction) ? controlButton
+                        : clipboardButton
 
         if (actionName === root.playerAction) {
             playerButton = button
-            if (controlButton === playerButton)
-                controlButton = normalizedButton(previousPlayerButton, 1)
-            if (controlButton === playerButton)
-                controlButton = firstFreeButton(playerButton)
+            if (controlButton === button)
+                controlButton = oldButton
+            else if (clipboardButton === button)
+                clipboardButton = oldButton
         } else if (actionName === root.controlAction) {
             controlButton = button
-            if (playerButton === controlButton)
-                playerButton = normalizedButton(previousControlButton, 3)
-            if (playerButton === controlButton)
-                playerButton = firstFreeButton(controlButton)
+            if (playerButton === button)
+                playerButton = oldButton
+            else if (clipboardButton === button)
+                clipboardButton = oldButton
+        } else if (actionName === root.clipboardAction) {
+            clipboardButton = button
+            if (playerButton === button)
+                playerButton = oldButton
+            else if (controlButton === button)
+                controlButton = oldButton
         }
 
-        saveClickMappings(playerButton, controlButton)
+        saveClickMappings(playerButton, controlButton, clipboardButton)
     }
 
     function hoverActionValue() {
@@ -262,6 +268,16 @@ PagePanel {
                         description: "Mouse button that toggles the control center"
                         actionName: root.controlAction
                         fallbackButton: 3
+                        width: parent.width
+                    }
+
+                    SplitLine { width: parent.width }
+
+                    ActionButtonRow {
+                        title: "Clipboard History"
+                        description: "Mouse button that toggles clipboard history"
+                        actionName: root.clipboardAction
+                        fallbackButton: 2
                         width: parent.width
                     }
                 }

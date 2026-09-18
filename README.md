@@ -87,11 +87,24 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
       <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/Workspace overview_2.png" width="100%" alt="Workspace overview" />
     </td>
   </tr>
+  <tr>
+    <td width="50%">
+      <img src="./assets/weather.png" width="100%" alt="Weather & Forecast" />
+    </td>
+    <td width="50%">
+      <img src="./assets/calendar.png" width="100%" alt="Calendar" />
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <img src="./assets/clipboard.png" width="100%" alt="Clipboard history" />
+    </td>
+  </tr>
 </table>
 
 ### Config App
 
-<img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/config_app.png" width = "90%">
+<img src="./assets/config_app.png" width = "90%">
 <br>
 
 ## Features
@@ -103,6 +116,9 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - Lyrics displayer
 - Application launcher
 - File shelf
+- Clipboard history manager
+- Weather & Forecast
+- Calendar
 - Wallpaper switcher
 - Workspace overview
 - Custom page
@@ -134,6 +150,7 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - Brightness
 - Cava
 - Storage usage
+- Weather
 
 ### Compositor support
 
@@ -227,7 +244,17 @@ If the systemd service is already enabled, you do not need to add `exec-once`.
 
 ## Configuration
 
-Search `Tide Island Settings` in any application launcher
+Search `Tide Island Settings` in any application launcher, or run:
+
+```bash
+tide-island-config-app
+```
+
+- **Shortcuts**: Configure shortcuts for Workspace Overview, Application Launcher, Music Player, Notification Center, Control Center, Clipboard History (`Super + V`), Weather (`Super + E`), and Calendar (`Super + K` by default).
+- **Interaction**: Configure click actions for the dynamic island pill (Left, Middle, and Right mouse buttons for Player, Control Center, and Clipboard History).
+- **Weather**: Configure auto-detection or custom city name, temperature units (°C or °F), and refresh interval.
+- **Calendar**: Quick month view with week numbers and relative date indicators. Click the date in the Control Center, press `Super + K`, or use the scroll wheel / arrow keys to browse months. Press `Home` to return to today, and `Esc` to close.
+
 
 ## Common Commands
 
@@ -248,6 +275,33 @@ systemctl --user stop tide-island
 ```bash
 journalctl --user -u tide-island -f
 ```
+
+#### IPC Commands
+
+You can control Tide Island remotely using `quickshell ipc call`:
+
+| Command | Action |
+| --- | --- |
+| `quickshell ipc call tide toggleCalendar` | Open or close calendar view |
+| `quickshell ipc call tide openCalendar` | Open calendar view |
+| `quickshell ipc call tide closeCalendar` | Close calendar view |
+| `quickshell ipc call tide toggleWeather` | Open or close weather view |
+| `quickshell ipc call tide openWeather` | Open weather view |
+| `quickshell ipc call tide closeWeather` | Close weather view |
+| `quickshell ipc call weather refresh` | Refresh weather data immediately |
+| `quickshell ipc call tide toggleClipboard` | Open or close clipboard history |
+| `quickshell ipc call tide openClipboard` | Open clipboard history |
+| `quickshell ipc call tide closeClipboard` | Close clipboard history |
+| `quickshell ipc call tide toggleNotificationCenter` | Open or close notification center |
+| `quickshell ipc call tide openNotificationCenter` | Open notification center |
+| `quickshell ipc call tide closeNotificationCenter` | Close notification center |
+| `quickshell ipc call tide toggleApplicationLauncher` | Open or close application launcher |
+
+<br>
+
+### Notification Centre
+
+Click the × button on a notification card to dismiss it. Use **Clear All** to dismiss all notifications at once.
 
 <br>
 

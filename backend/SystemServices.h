@@ -44,6 +44,12 @@ public:
                                 const QString &sudoPassword = QString(),
                                 bool promptForPassword = false);
     Q_INVOKABLE void cancelTlpApply();
+    Q_INVOKABLE void requestPowerProfileState(const QString &driver = QString());
+    Q_INVOKABLE void setPowerProfileMode(const QString &driver,
+                                        const QString &mode,
+                                        const QString &sudoPassword = QString(),
+                                        bool promptForPassword = false);
+    Q_INVOKABLE void cancelPowerProfileApply();
     Q_INVOKABLE void setCavaClientActive(const QString &clientId, bool active);
     Q_INVOKABLE void ensureUserConfigAvailable();
 
@@ -87,6 +93,7 @@ private:
                            const QByteArray &stdinData = QByteArray());
     QString findExecutable(const QString &program) const;
     QString commandErrorText(const QString &program, const CommandResult &result) const;
+    QString resolvePowerProfileDriver(const QString &requestedDriver) const;
 
     void startNotificationMonitor();
     void startPipeWireMonitor();
