@@ -74,9 +74,11 @@ FocusScope {
         event.accepted = true;
     }
 
-    Keys.onHomePressed: function(event) {
-        root.goToToday();
-        event.accepted = true;
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Home) {
+            root.goToToday();
+            event.accepted = true;
+        }
     }
 
     onShowConditionChanged: {
