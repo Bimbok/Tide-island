@@ -709,6 +709,22 @@ PanelWindow {
             islandContainer.smartRestoreState();
     }
 
+    function toggleCalendarWindow() {
+        if (islandContainer.islandState === "calendar")
+            islandContainer.smartRestoreState();
+        else
+            islandContainer.showCalendar();
+    }
+
+    function showCalendarWindow() {
+        islandContainer.showCalendar();
+    }
+
+    function closeCalendarWindow() {
+        if (islandContainer.islandState === "calendar")
+            islandContainer.smartRestoreState();
+    }
+
     onOverviewVisibleChanged: {
         if (overviewVisible && monitorFocused) overviewFocusTimer.restart();
         if (overviewVisible)
@@ -980,6 +996,8 @@ PanelWindow {
             && (islandState === "clipboard" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
         readonly property bool weatherLayerInteractive: !root.overviewVisible
             && (islandState === "weather" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
+        readonly property bool calendarLayerInteractive: !root.overviewVisible
+            && (islandState === "calendar" || islandState === "normal" || islandState === "lyrics" || islandState === "custom")
         readonly property bool fileShelfOverlayActive: fileShelfLayerInteractive && fileShelfLoader.item && fileShelfLoader.item.hasVisibleCards
         readonly property bool fileShelfAcceptingDrop: islandFileDropArea.containsDrag
             && !root.overviewVisible
@@ -1004,6 +1022,7 @@ PanelWindow {
             || islandState === "file_shelf"
             || islandState === "clipboard"
             || islandState === "weather"
+            || islandState === "calendar"
         readonly property bool splitShowsProgress: islandState === "split" && osdProgress >= 0
         readonly property bool splitShowsText: islandState === "split" && osdProgress < 0 && osdCustomText !== ""
         readonly property bool splitShowsIconOnly: islandState === "split" && osdProgress < 0 && osdCustomText === ""
@@ -1050,6 +1069,7 @@ PanelWindow {
         readonly property bool fileShelfLayerVisible: !root.overviewVisible && islandState === "file_shelf"
         readonly property bool clipboardLayerVisible: !root.overviewVisible && islandState === "clipboard"
         readonly property bool weatherLayerVisible: !root.overviewVisible && islandState === "weather"
+        readonly property bool calendarLayerVisible: !root.overviewVisible && islandState === "calendar"
         readonly property var activePlayer: mediaController.activePlayer
         readonly property string lyricsDisplayText: mediaController.displayText
         readonly property string currentTrack: mediaController.currentTrack
@@ -1186,6 +1206,12 @@ PanelWindow {
                 }
 
                 if (islandContainer.weatherLayerVisible) {
+                    islandContainer.smartRestoreState();
+                    event.accepted = true;
+                    return;
+                }
+
+                if (islandContainer.calendarLayerVisible) {
                     islandContainer.smartRestoreState();
                     event.accepted = true;
                     return;
@@ -1330,6 +1356,20 @@ PanelWindow {
                 return;
             case "closeWeather":
                 if (islandState === "weather")
+                    smartRestoreState();
+                return;
+            case "toggleCalendar":
+                if (islandState === "calendar")
+                    smartRestoreState();
+                else
+                    showCalendar();
+                return;
+            case "openCalendar":
+            case "showCalendar":
+                showCalendar();
+                return;
+            case "closeCalendar":
+                if (islandState === "calendar")
                     smartRestoreState();
                 return;
             default:
@@ -1864,6 +1904,15 @@ PanelWindow {
             stopAutoHideTimer();
         }
 
+        function showCalendar() {
+            cancelSideSwipeSettle();
+            abortSideTransientMode();
+            clearTransientCapsule();
+            islandState = "calendar";
+            mainCapsule.displayedWidth = mainCapsule.baseTargetWidth;
+            stopAutoHideTimer();
+        }
+
         function showCustomCapsule() {
             if (!hasCustomLeftItems) {
                 showTimeCapsule();
@@ -2043,6 +2092,8 @@ PanelWindow {
                     return 520;
                 case "weather":
                     return 460;
+                case "calendar":
+                    return 420;
                 case "expanded":
                 case "bluetooth_expanded":
                     return 410;
@@ -2073,6 +2124,7 @@ PanelWindow {
                 case "clipboard":
                     return clipboardLoader.item && clipboardLoader.item.imgFullPreview ? 400 : 350;
                 case "weather":
+                case "calendar":
                     return 340;
                 case "expanded":
                 case "bluetooth_expanded":
@@ -2098,6 +2150,7 @@ PanelWindow {
                 case "file_shelf":
                 case "clipboard":
                 case "weather":
+                case "calendar":
                     return 34;
                 case "expanded":
                 case "bluetooth_expanded":
@@ -2707,6 +2760,7 @@ PanelWindow {
                         }
                         weatherService: root.weatherService
                         onWeatherRequested: islandContainer.showWeather()
+                        onCalendarRequested: islandContainer.showCalendar()
                     }
                 }
             }
@@ -2825,6 +2879,24 @@ PanelWindow {
                         textFontFamily: root.textFontFamily
                         heroFontFamily: root.heroFontFamily
                         showCondition: islandContainer.weatherLayerVisible
+                        onCloseRequested: islandContainer.smartRestoreState()
+                    }
+                }
+            }
+
+            Loader {
+                id: calendarLoader
+                anchors.fill: parent
+                active: islandContainer.calendarLayerVisible
+                asynchronous: false
+                visible: islandContainer.calendarLayerVisible
+
+                sourceComponent: Component {
+                    CalendarLayer {
+                        iconFontFamily: root.iconFontFamily
+                        textFontFamily: root.textFontFamily
+                        heroFontFamily: root.heroFontFamily
+                        showCondition: islandContainer.calendarLayerVisible
                         onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }

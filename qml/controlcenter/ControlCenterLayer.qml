@@ -14,6 +14,7 @@ Item {
     signal nightLightModeChanged(bool enabled)
     signal requestNotification(string appName, string summary, string body)
     signal weatherRequested()
+    signal calendarRequested()
 
     readonly property var userConfig: UserConfig
 
@@ -1506,10 +1507,20 @@ Item {
                     anchors.leftMargin: 10
                     anchors.baseline: timeLabel.baseline
                     text: currentDateLabel
-                    color: textSecondary
+                    color: dateMouse.containsMouse ? StyleTokens.textPrimaryBright : textSecondary
                     font.pixelSize: 12
                     font.family: textFontFamily
                     font.weight: Font.Medium
+
+                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                    MouseArea {
+                        id: dateMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: controlCenter.calendarRequested()
+                    }
                 }
 
                 Rectangle {

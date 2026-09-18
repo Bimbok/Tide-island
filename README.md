@@ -110,6 +110,7 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - File shelf
 - Clipboard history manager
 - Weather & Forecast
+- Calendar
 - Wallpaper switcher
 - Workspace overview
 - Custom page
@@ -241,7 +242,7 @@ Search `Tide Island Settings` in any application launcher, or run:
 tide-island-config-app
 ```
 
-- **Shortcuts**: Configure shortcuts for Workspace Overview, Application Launcher, Music Player, Notification Center, Control Center, Clipboard History (`Super + V`), and Weather (`Super + E` by default).
+- **Shortcuts**: Configure shortcuts for Workspace Overview, Application Launcher, Music Player, Notification Center, Control Center, Clipboard History (`Super + V`), Weather (`Super + E`), and Calendar (`Super + K` by default).
 - **Interaction**: Configure click actions for the dynamic island pill (Left, Middle, and Right mouse buttons for Player, Control Center, and Clipboard History).
 - **Weather**: Configure auto-detection or custom city name, temperature units (°C or °F), and refresh interval.
 
@@ -271,6 +272,9 @@ You can control Tide Island remotely using `quickshell ipc call`:
 
 | Command | Action |
 | --- | --- |
+| `quickshell ipc call tide toggleCalendar` | Open or close calendar view |
+| `quickshell ipc call tide openCalendar` | Open calendar view |
+| `quickshell ipc call tide closeCalendar` | Close calendar view |
 | `quickshell ipc call tide toggleWeather` | Open or close weather view |
 | `quickshell ipc call tide openWeather` | Open weather view |
 | `quickshell ipc call tide closeWeather` | Close weather view |

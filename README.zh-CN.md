@@ -110,6 +110,7 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 - 文件中转站
 - 剪贴板历史管理器
 - 天气预报
+- 日历
 - 壁纸切换器
 - 工作区总览
 - 自定义页面
@@ -260,6 +261,9 @@ journalctl --user -u tide-island -f
 
 | 命令 | 操作 |
 | --- | --- |
+| `quickshell ipc call tide toggleCalendar` | 打开或关闭日历视图 |
+| `quickshell ipc call tide openCalendar` | 打开日历视图 |
+| `quickshell ipc call tide closeCalendar` | 关闭日历视图 |
 | `quickshell ipc call tide toggleWeather` | 打开或关闭天气视图 |
 | `quickshell ipc call tide openWeather` | 打开天气视图 |
 | `quickshell ipc call tide closeWeather` | 关闭天气视图 |

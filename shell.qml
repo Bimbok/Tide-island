@@ -300,6 +300,22 @@ Scope {
         function closeWeather() {
             shellRoot.forFocusedWindow((window) => window.closeWeatherWindow ? window.closeWeatherWindow() : window.toggleWeatherWindow());
         }
+
+        function toggleCalendar() {
+            shellRoot.forFocusedWindow((window) => window.toggleCalendarWindow());
+        }
+
+        function showCalendar() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function openCalendar() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function closeCalendar() {
+            shellRoot.forFocusedWindow((window) => window.closeCalendarWindow ? window.closeCalendarWindow() : window.toggleCalendarWindow());
+        }
     }
 
     IpcHandler {
@@ -344,6 +360,26 @@ Scope {
         function refresh() {
             if (shellRoot.weatherService)
                 shellRoot.weatherService.refresh();
+        }
+    }
+
+    IpcHandler {
+        target: "calendar"
+
+        function toggle() {
+            shellRoot.forFocusedWindow((window) => window.toggleCalendarWindow());
+        }
+
+        function show() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function open() {
+            shellRoot.forFocusedWindow((window) => window.showCalendarWindow ? window.showCalendarWindow() : window.toggleCalendarWindow());
+        }
+
+        function close() {
+            shellRoot.forFocusedWindow((window) => window.closeCalendarWindow ? window.closeCalendarWindow() : window.toggleCalendarWindow());
         }
     }
 
