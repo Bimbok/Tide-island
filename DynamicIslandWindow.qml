@@ -178,13 +178,17 @@ PanelWindow {
         || islandContainer.applicationLauncherLayerVisible
         || islandContainer.fileShelfLayerVisible
         || islandContainer.clipboardLayerVisible
+        || islandContainer.weatherLayerVisible
+        || islandContainer.calendarLayerVisible
         ? WlrLayer.Overlay
         : WlrLayer.Top
     WlrLayershell.keyboardFocus: {
         if (islandContainer.controlCenterLayerVisible
                 || islandContainer.wallpaperPickerLayerVisible
                 || islandContainer.applicationLauncherLayerVisible
-                || islandContainer.clipboardLayerVisible)
+                || islandContainer.clipboardLayerVisible
+                || islandContainer.weatherLayerVisible
+                || islandContainer.calendarLayerVisible)
             return WlrKeyboardFocus.Exclusive;
         if (islandContainer.fileShelfLayerVisible)
             return WlrKeyboardFocus.OnDemand;
@@ -935,6 +939,7 @@ PanelWindow {
             || fileShelfLayerVisible
             || clipboardLayerVisible
             || weatherLayerVisible
+            || calendarLayerVisible
             || expandedPlayerKeyboardFocusRequested
             || (root.monitorFocused && (root.overviewVisible || root.connectivityPromptActive))
 
@@ -2871,6 +2876,7 @@ PanelWindow {
                 active: islandContainer.weatherLayerVisible
                 asynchronous: false
                 visible: islandContainer.weatherLayerVisible
+                onLoaded: islandContainer.forceActiveFocus()
 
                 sourceComponent: Component {
                     WeatherLayer {
@@ -2890,6 +2896,7 @@ PanelWindow {
                 active: islandContainer.calendarLayerVisible
                 asynchronous: false
                 visible: islandContainer.calendarLayerVisible
+                onLoaded: islandContainer.forceActiveFocus()
 
                 sourceComponent: Component {
                     CalendarLayer {

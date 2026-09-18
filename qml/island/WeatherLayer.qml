@@ -33,6 +33,13 @@ FocusScope {
         event.accepted = true;
     }
 
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+            root.closeRequested();
+            event.accepted = true;
+        }
+    }
+
     onShowConditionChanged: {
         if (root.showCondition) {
             root.forceActiveFocus();
@@ -130,30 +137,6 @@ FocusScope {
                     onClicked: {
                         if (root.weatherService) root.weatherService.refresh();
                     }
-                }
-            }
-
-            // Close Button
-            Rectangle {
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
-                radius: 13
-                color: closeMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.module
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "\uf00d" // nf-fa-times
-                    color: closeMouse.containsMouse ? StyleTokens.textPrimaryBright : StyleTokens.textSecondary
-                    font.family: root.iconFontFamily && root.iconFontFamily.length > 0 ? root.iconFontFamily : "JetBrainsMono Nerd Font"
-                    font.pixelSize: 12
-                }
-
-                MouseArea {
-                    id: closeMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.closeRequested()
                 }
             }
         }
