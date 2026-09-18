@@ -170,7 +170,7 @@ Item {
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: parent.radius
+                            radius: root.albumCoverRadius
                             color: "transparent"
                             border.width: 1
                             border.color: "#2effffff"
