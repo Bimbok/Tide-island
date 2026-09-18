@@ -46,6 +46,32 @@ FocusScope {
 
     readonly property bool isViewingCurrentMonth: viewYear === todayYear && viewMonth === todayMonth
 
+    property var calendarCells: []
+
+    readonly property string selectedDateFullText: {
+        const d = new Date(root.selectedYear, root.selectedMonth, root.selectedDay);
+        const dayName = root.weekdayNamesFull[d.getDay()];
+        const monthName = root.monthNamesShort[root.selectedMonth];
+        return dayName + ", " + root.selectedDay + " " + monthName + " " + root.selectedYear;
+    }
+
+    readonly property string relativeDateText: {
+        const sel = new Date(root.selectedYear, root.selectedMonth, root.selectedDay);
+        const tod = new Date(root.todayYear, root.todayMonth, root.todayDay);
+        const diffMs = sel.getTime() - tod.getTime();
+        const diffDays = Math.round(diffMs / 86400000);
+
+        if (diffDays === 0) return "Today";
+        if (diffDays === 1) return "Tomorrow";
+        if (diffDays === -1) return "Yesterday";
+        if (diffDays > 1) return "In " + diffDays + " days";
+        return Math.abs(diffDays) + " days ago";
+    }
+
+    readonly property int selectedWeekNumber: {
+        return root.getWeekNumber(root.selectedYear, root.selectedMonth, root.selectedDay);
+    }
+
     focus: root.showCondition
     activeFocusOnTab: true
     anchors.fill: parent
@@ -81,11 +107,26 @@ FocusScope {
         }
     }
 
+    WheelHandler {
+        orientation: Qt.Vertical
+        onWheel: event => {
+            if (event.angleDelta.y > 0) {
+                root.prevMonth();
+            } else if (event.angleDelta.y < 0) {
+                root.nextMonth();
+            }
+        }
+    }
+
     onShowConditionChanged: {
         if (root.showCondition) {
             root.forceActiveFocus();
             root.goToToday();
         }
+    }
+
+    Component.onCompleted: {
+        root.updateCalendarModel();
     }
 
     function daysInMonth(y, m) {
@@ -102,6 +143,39 @@ FocusScope {
         return (day + 6) % 7;
     }
 
+    function updateCalendarModel() {
+        const cells = [];
+        const firstDay = root.firstDayOfWeek(root.viewYear, root.viewMonth);
+        const daysCur = root.daysInMonth(root.viewYear, root.viewMonth);
+        const daysPrev = root.daysInPrevMonth(root.viewYear, root.viewMonth);
+
+        for (let i = 0; i < 42; i++) {
+            let d, m, y, isCur = false;
+            if (i < firstDay) {
+                d = daysPrev - firstDay + i + 1;
+                m = (root.viewMonth === 0 ? 11 : root.viewMonth - 1);
+                y = (root.viewMonth === 0 ? root.viewYear - 1 : root.viewYear);
+            } else if (i < firstDay + daysCur) {
+                d = i - firstDay + 1;
+                m = root.viewMonth;
+                y = root.viewYear;
+                isCur = true;
+            } else {
+                d = i - (firstDay + daysCur) + 1;
+                m = (root.viewMonth === 11 ? 0 : root.viewMonth + 1);
+                y = (root.viewMonth === 11 ? root.viewYear + 1 : root.viewYear);
+            }
+
+            cells.push({
+                day: d,
+                month: m,
+                year: y,
+                isCurMonth: isCur
+            });
+        }
+        root.calendarCells = cells;
+    }
+
     function prevMonth() {
         if (viewMonth === 0) {
             viewMonth = 11;
@@ -109,6 +183,7 @@ FocusScope {
         } else {
             viewMonth -= 1;
         }
+        root.updateCalendarModel();
     }
 
     function nextMonth() {
@@ -118,43 +193,35 @@ FocusScope {
         } else {
             viewMonth += 1;
         }
+        root.updateCalendarModel();
     }
 
     function goToToday() {
-        viewYear = todayYear;
-        viewMonth = todayMonth;
-        selectedYear = todayYear;
-        selectedMonth = todayMonth;
-        selectedDay = todayDay;
+        const now = new Date();
+        viewYear = now.getFullYear();
+        viewMonth = now.getMonth();
+        selectedYear = now.getFullYear();
+        selectedMonth = now.getMonth();
+        selectedDay = now.getDate();
+        root.updateCalendarModel();
     }
 
     function selectDate(y, m, d) {
         const target = new Date(y, m, d);
-        selectedYear = target.getFullYear();
-        selectedMonth = target.getMonth();
-        selectedDay = target.getDate();
-        viewYear = selectedYear;
-        viewMonth = selectedMonth;
-    }
+        const targetY = target.getFullYear();
+        const targetM = target.getMonth();
+        const targetD = target.getDate();
 
-    function formatSelectedDateFull() {
-        const d = new Date(selectedYear, selectedMonth, selectedDay);
-        const dayName = weekdayNamesFull[d.getDay()];
-        const monthName = monthNamesShort[selectedMonth];
-        return dayName + ", " + selectedDay + " " + monthName + " " + selectedYear;
-    }
+        const monthChanged = (targetY !== root.viewYear || targetM !== root.viewMonth);
+        root.selectedYear = targetY;
+        root.selectedMonth = targetM;
+        root.selectedDay = targetD;
+        root.viewYear = targetY;
+        root.viewMonth = targetM;
 
-    function getRelativeDescription() {
-        const sel = new Date(selectedYear, selectedMonth, selectedDay);
-        const tod = new Date(todayYear, todayMonth, todayDay);
-        const diffMs = sel.getTime() - tod.getTime();
-        const diffDays = Math.round(diffMs / 86400000);
-
-        if (diffDays === 0) return "Today";
-        if (diffDays === 1) return "Tomorrow";
-        if (diffDays === -1) return "Yesterday";
-        if (diffDays > 1) return "In " + diffDays + " days";
-        return Math.abs(diffDays) + " days ago";
+        if (monthChanged) {
+            root.updateCalendarModel();
+        }
     }
 
     function getWeekNumber(y, m, d) {
@@ -325,22 +392,30 @@ FocusScope {
         // ──────────────────────────────────────────
         // 2. DAY NAMES HEADER (Mo, Tu, We, Th, Fr, Sa, Su)
         // ──────────────────────────────────────────
-        RowLayout {
+        Grid {
+            id: dayNamesGrid
             Layout.fillWidth: true
             Layout.preferredHeight: 18
-            spacing: 4
+            columns: 7
+            columnSpacing: 4
+
+            readonly property real colWidth: Math.max(0, (width - 6 * columnSpacing) / 7)
 
             Repeater {
                 model: root.dayNames
 
-                Item {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: parent.height
+                delegate: Item {
+                    id: dayHeaderItem
+                    required property string modelData
+                    required property int index
+
+                    width: dayNamesGrid.colWidth
+                    height: dayNamesGrid.height
 
                     Text {
                         anchors.centerIn: parent
-                        text: String(modelData)
-                        color: (index >= 5) ? StyleTokens.accentSoft : StyleTokens.textMuted
+                        text: dayHeaderItem.modelData
+                        color: (dayHeaderItem.index >= 5) ? StyleTokens.accentSoft : StyleTokens.textMuted
                         font.family: root.textFontFamily
                         font.pixelSize: 11
                         font.weight: Font.DemiBold
@@ -361,48 +436,25 @@ FocusScope {
             columnSpacing: 4
             rowSpacing: 3
 
-            readonly property real cellWidth: (width - 6 * columnSpacing) / 7
-            readonly property real cellHeight: (height - 5 * rowSpacing) / 6
-            readonly property int firstDay: root.firstDayOfWeek(root.viewYear, root.viewMonth)
-            readonly property int daysInCur: root.daysInMonth(root.viewYear, root.viewMonth)
-            readonly property int daysInPrev: root.daysInPrevMonth(root.viewYear, root.viewMonth)
+            readonly property real cellWidth: Math.max(0, (width - 6 * columnSpacing) / 7)
+            readonly property real cellHeight: Math.max(0, (height - 5 * rowSpacing) / 6)
 
             Repeater {
-                model: 42
+                model: root.calendarCells
 
-                Rectangle {
+                delegate: Rectangle {
                     id: cellRect
+                    required property var modelData
+                    required property int index
+
                     width: daysGrid.cellWidth
                     height: daysGrid.cellHeight
                     radius: 7
 
-                    // Cell date resolution
-                    readonly property int cellIndex: index
-                    readonly property bool isPrevMonth: cellIndex < daysGrid.firstDay
-                    readonly property bool isNextMonth: cellIndex >= daysGrid.firstDay + daysGrid.daysInCur
-                    readonly property bool isCurMonth: !isPrevMonth && !isNextMonth
-
-                    readonly property int cellDay: {
-                        if (isPrevMonth) {
-                            return daysGrid.daysInPrev - daysGrid.firstDay + cellIndex + 1;
-                        } else if (isCurMonth) {
-                            return cellIndex - daysGrid.firstDay + 1;
-                        } else {
-                            return cellIndex - (daysGrid.firstDay + daysGrid.daysInCur) + 1;
-                        }
-                    }
-
-                    readonly property int cellMonth: {
-                        if (isPrevMonth) return (root.viewMonth === 0 ? 11 : root.viewMonth - 1);
-                        if (isNextMonth) return (root.viewMonth === 11 ? 0 : root.viewMonth + 1);
-                        return root.viewMonth;
-                    }
-
-                    readonly property int cellYear: {
-                        if (isPrevMonth && root.viewMonth === 0) return root.viewYear - 1;
-                        if (isNextMonth && root.viewMonth === 11) return root.viewYear + 1;
-                        return root.viewYear;
-                    }
+                    readonly property int cellDay: modelData.day
+                    readonly property int cellMonth: modelData.month
+                    readonly property int cellYear: modelData.year
+                    readonly property bool isCurMonth: modelData.isCurMonth
 
                     readonly property bool isToday: cellYear === root.todayYear
                         && cellMonth === root.todayMonth
@@ -470,7 +522,7 @@ FocusScope {
 
                 // Selected date readable string
                 Text {
-                    text: root.formatSelectedDateFull()
+                    text: root.selectedDateFullText
                     color: StyleTokens.textPrimaryBright
                     font.family: root.textFontFamily
                     font.pixelSize: 11
@@ -485,15 +537,15 @@ FocusScope {
                     Layout.preferredHeight: 18
                     Layout.preferredWidth: relativeText.implicitWidth + 12
                     radius: 9
-                    color: root.getRelativeDescription() === "Today" ? "#192842" : "#1e2129"
+                    color: root.relativeDateText === "Today" ? "#192842" : "#1e2129"
                     border.width: 1
-                    border.color: root.getRelativeDescription() === "Today" ? "#2b4570" : "#282c37"
+                    border.color: root.relativeDateText === "Today" ? "#2b4570" : "#282c37"
 
                     Text {
                         id: relativeText
                         anchors.centerIn: parent
-                        text: root.getRelativeDescription()
-                        color: root.getRelativeDescription() === "Today" ? StyleTokens.accent : StyleTokens.textSecondary
+                        text: root.relativeDateText
+                        color: root.relativeDateText === "Today" ? StyleTokens.accent : StyleTokens.textSecondary
                         font.family: root.textFontFamily
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
@@ -510,7 +562,7 @@ FocusScope {
                     Text {
                         id: weekText
                         anchors.centerIn: parent
-                        text: "W" + root.getWeekNumber(root.selectedYear, root.selectedMonth, root.selectedDay)
+                        text: "W" + root.selectedWeekNumber
                         color: StyleTokens.textMuted
                         font.family: root.textFontFamily
                         font.pixelSize: 10
