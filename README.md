@@ -104,7 +104,7 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 
 ### Config App
 
-<img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/config_app.png" width = "90%">
+<img src="./assets/config_app.png" width = "90%">
 <br>
 
 ## Features

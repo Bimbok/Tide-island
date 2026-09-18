@@ -104,7 +104,7 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 
 ### 配置应用
 
-<img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/config_app.png" width = "90%">
+<img src="./assets/config_app.png" width = "90%">
 <br>
 
 ## 功能
