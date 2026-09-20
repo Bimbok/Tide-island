@@ -89,22 +89,22 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
   </tr>
   <tr>
     <td width="50%">
-      <img src="./assets/weather.png" width="100%" alt="Weather & Forecast" />
+      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/weather.png" width="100%" alt="Weather & Forecast" />
     </td>
     <td width="50%">
-      <img src="./assets/calendar.png" width="100%" alt="Calendar" />
+      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/calendar.png" width="100%" alt="Calendar" />
     </td>
   </tr>
   <tr>
     <td colspan="2">
-      <img src="./assets/clipboard.png" width="100%" alt="Clipboard history" />
+      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/clipboard.png" width="100%" alt="Clipboard history" />
     </td>
   </tr>
 </table>
 
 ### Config App
 
-<img src="./assets/config_app.png" width = "90%">
+<img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/config_app.png" width = "90%">
 <br>
 
 ## Features
