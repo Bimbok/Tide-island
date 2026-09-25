@@ -69,6 +69,9 @@ class UserConfigBackend final : public QObject {
     Q_PROPERTY(QString weatherUnits READ weatherUnits NOTIFY weatherUnitsChanged FINAL)
     Q_PROPERTY(int weatherRefreshInterval READ weatherRefreshInterval NOTIFY weatherRefreshIntervalChanged FINAL)
 
+    Q_PROPERTY(bool colorPaletteEnabled READ colorPaletteEnabled NOTIFY colorPaletteEnabledChanged FINAL)
+    Q_PROPERTY(QString colorsFilePath READ colorsFilePath NOTIFY colorsFilePathChanged FINAL)
+
 public:
     explicit UserConfigBackend(QObject *parent = nullptr);
 
@@ -124,6 +127,8 @@ public:
     QString weatherLocation() const;
     QString weatherUnits() const;
     int weatherRefreshInterval() const;
+    bool colorPaletteEnabled() const;
+    QString colorsFilePath() const;
     void setDefaultWallpaperPath(const QString &path);
     void setDefaultTlpSudoPassword(const QString &password);
 
@@ -183,6 +188,8 @@ signals:
     void weatherLocationChanged();
     void weatherUnitsChanged();
     void weatherRefreshIntervalChanged();
+    void colorPaletteEnabledChanged();
+    void colorsFilePathChanged();
 
 private:
     void scheduleReload();
@@ -242,6 +249,8 @@ private:
     QString m_weatherLocation;
     QString m_weatherUnits = QStringLiteral("metric");
     int m_weatherRefreshInterval = 1800000;
+    bool m_colorPaletteEnabled = true;
+    QString m_colorsFilePath;
 
     QFileSystemWatcher m_watcher;
     QTimer m_reloadTimer;

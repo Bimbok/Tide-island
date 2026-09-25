@@ -133,6 +133,27 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/user_config_backend_tests.cpp")
     add_test(NAME user_config_backend COMMAND user_config_backend_tests)
 endif()
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/style_tokens_backend_tests.cpp")
+    add_executable(style_tokens_backend_tests
+        tests/style_tokens_backend_tests.cpp
+        backend/StyleTokensBackend.h
+        backend/StyleTokensBackend.cpp
+    )
+
+    target_include_directories(style_tokens_backend_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/backend
+    )
+
+    target_link_libraries(style_tokens_backend_tests PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Qml
+        Qt6::Test
+    )
+
+    add_test(NAME style_tokens_backend COMMAND style_tokens_backend_tests)
+endif()
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/compositor_backend_tests.cpp")
     add_executable(compositor_backend_tests
         tests/compositor_backend_tests.cpp
@@ -258,6 +279,11 @@ install(DIRECTORY qml
         PATTERN "*.js"
         PATTERN "*.svg"
         PATTERN "*.json"
+)
+
+install(FILES
+    templates/tide-island-colors.json
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/tide-island/templates
 )
 
 # Install IslandBackend backing library to /usr/lib

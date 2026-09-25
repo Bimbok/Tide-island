@@ -12,14 +12,14 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: root.radius
-        color: root.pressed ? "#24262c" : (root.hovered ? "#30333a" : "#25282e")
+        color: root.pressed ? StyleTokens.cardFillActive : (root.hovered ? StyleTokens.moduleHover : StyleTokens.module)
     }
 
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
         radius: root.innerRadius
-        color: root.pressed ? "#101116" : (root.hovered ? "#1f2127" : "#17191e")
+        color: root.pressed ? StyleTokens.panel : (root.hovered ? StyleTokens.cardFillActive : StyleTokens.module)
     }
 
     Rectangle {
@@ -28,6 +28,6 @@ Item {
         radius: root.innerRadius
         color: StyleTokens.transparent
         border.width: 1
-        border.color: root.hovered ? "#3d4149" : "#2b2e35"
+        border.color: root.hovered ? StyleTokens.inputBorder : StyleTokens.track
     }
 }

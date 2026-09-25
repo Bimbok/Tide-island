@@ -9,6 +9,11 @@ PagePanel {
         return String(ConfigStore.value(key, fallback))
     }
 
+    function boolValue(key, fallback) {
+        const val = ConfigStore.value(key, fallback);
+        return val === undefined || val === null ? fallback : Boolean(val);
+    }
+
     function saveInt(key, value, fallback, minimumValue, maximumValue) {
         if (String(value).trim().length === 0) {
             return fallback
@@ -179,9 +184,136 @@ PagePanel {
             }
 
             Text {
+                id: paletteTitle
+                text: "Color Palette"
+                anchors.top: apperance.bottom
+                anchors.topMargin: 34
+                anchors.left: parent.left
+                anchors.leftMargin: 32
+                anchors.right: parent.right
+                anchors.rightMargin: 40
+                font.family: Theme.titleFontFamily
+                font.pixelSize: 23
+                color: Theme.textColor
+            }
+
+            Rectangle {
+                id: palettePanel
+                color: Theme.cardBgColor
+                radius: 16
+                border.width: 1
+                border.color: Theme.splitLineColor
+
+                anchors.top: paletteTitle.bottom
+                anchors.topMargin: 15
+                anchors.left: parent.left
+                anchors.leftMargin: 30
+                anchors.right: parent.right
+                anchors.rightMargin: 40
+                height: paletteColumn.implicitHeight + 36
+
+                Column {
+                    id: paletteColumn
+
+                    anchors.top: parent.top
+                    anchors.topMargin: 18
+                    anchors.left: parent.left
+                    anchors.leftMargin: 18
+                    anchors.right: parent.right
+                    anchors.rightMargin: 18
+                    spacing: 16
+
+                    Item {
+                        width: parent.width
+                        height: 49
+
+                        Text {
+                            id: paletteToggleTitle
+                            text: "Dynamic Color Palette"
+                            font.family: Theme.textFontFamily
+                            font.pixelSize: 18
+                            color: Theme.textColor
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                        }
+
+                        Text {
+                            text: "Sync island and controls with system theme (Matugen / colors.json)"
+                            font.family: Theme.textFontFamily
+                            font.pixelSize: 14
+                            anchors.top: paletteToggleTitle.bottom
+                            anchors.topMargin: 5
+                            anchors.left: paletteToggleTitle.left
+                            color: Theme.subtleTextColor
+                        }
+
+                        StyledSwitch {
+                            id: paletteSwitch
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            checked: root.boolValue("colorPaletteEnabled", true)
+                            onToggled: function(val) {
+                                checked = val;
+                                ConfigStore.setValue("colorPaletteEnabled", val);
+                                ConfigStore.save();
+                            }
+                        }
+                    }
+
+                    SplitLine { width: parent.width }
+
+                    Item {
+                        width: parent.width
+                        height: 49
+
+                        Text {
+                            id: colorsPathTitle
+                            text: "Colors File Path"
+                            font.family: Theme.textFontFamily
+                            font.pixelSize: 18
+                            color: Theme.textColor
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                        }
+
+                        Text {
+                            text: "Custom colors.json path (empty for ~/.config/tide-island/colors.json)"
+                            font.family: Theme.textFontFamily
+                            font.pixelSize: 14
+                            anchors.top: colorsPathTitle.bottom
+                            anchors.topMargin: 5
+                            anchors.left: colorsPathTitle.left
+                            color: Theme.subtleTextColor
+                        }
+
+                        ConfigTextField {
+                            id: colorsPathField
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 260
+                            height: 36
+                            placeholderText: "~/.config/tide-island/colors.json"
+
+                            Component.onCompleted: {
+                                text = String(ConfigStore.value("colorsFilePath", ""))
+                            }
+
+                            onAccepted: commit()
+                            onEditingFinished: commit()
+
+                            function commit() {
+                                ConfigStore.setValue("colorsFilePath", text.trim())
+                                ConfigStore.save()
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
                 id: customPageTitle
                 text: "Custom Page"
-                anchors.top: apperance.bottom
+                anchors.top: palettePanel.bottom
                 anchors.topMargin: 34
                 anchors.left: parent.left
                 anchors.leftMargin: 32
@@ -397,6 +529,59 @@ PagePanel {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    component StyledSwitch: Item {
+        id: control
+
+        signal toggled(bool checked)
+
+        property bool checked: false
+
+        width: 48
+        height: 26
+
+        Rectangle {
+            id: track
+
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 40
+            height: 24
+            radius: 12
+            color: control.checked ? Theme.accentColor : Theme.componentBgColor
+            border.width: 1
+            border.color: control.checked ? Theme.accentColor : Theme.inputBorderColor
+
+            Behavior on color {
+                ColorAnimation { duration: 180; easing.type: Easing.InOutQuad }
+            }
+        }
+
+        Rectangle {
+            id: knob
+
+            width: 18
+            height: 18
+            radius: 9
+            x: control.checked ? 22 : 6
+            y: 3
+            color: Theme.cardBgColor
+            border.width: 0
+
+            Behavior on x {
+                NumberAnimation { duration: 180; easing.type: Easing.InOutQuad }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                control.toggled(!control.checked);
             }
         }
     }

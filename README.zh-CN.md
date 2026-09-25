@@ -124,6 +124,7 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 - 自定义页面
 - 通知中心
 - 电源菜单
+- 动态调色板与 Matugen 支持
 
 ### 系统反馈
 
@@ -244,6 +245,15 @@ tide-island-config-app
 - **交互**：配置灵动岛胶囊的鼠标点击动作（支持为音乐播放器、控制中心、剪贴板历史自定义左键、中键、右键映射）。
 - **天气**：配置自动定位或自定义城市名称、温度单位（°C 或 °F）以及刷新间隔。
 - **日历**：快速月历视图，提供周数与相对日期显示。可在控制中心点击日期、使用 `Super + K` 快捷键打开，支持鼠标滚轮与方向键切换月份、`Home` 键返回今天、`Esc` 快速关闭。
+- **调色板与 Matugen**：Tide Island 支持由 [Matugen](https://github.com/InioX/matugen) 生成或在 `~/.config/tide-island/colors.json` 中自定义的全局动态调色板。
+  - **实时自动重载**：磁盘上的调色板文件发生变化时，通过 `QFileSystemWatcher` 自动检测并即时热重载，无需重启服务。
+  - **保留透明度**：灵动岛胶囊背景透明度（`islandBackgroundOpacity`）与动态主题色完美并存。
+  - **Matugen 模板**：仓库内置模板 `templates/tide-island-colors.json`。只需在 `~/.config/matugen/config.toml` 中添加：
+    ```toml
+    [templates.tide_island]
+    input_path = '~/.config/matugen/templates/tide-island-colors.json'
+    output_path = '~/.config/tide-island/colors.json'
+    ```
 
 
 ## 常用命令
@@ -286,6 +296,8 @@ journalctl --user -u tide-island -f
 | `quickshell ipc call tide openNotificationCenter` | 打开通知中心 |
 | `quickshell ipc call tide closeNotificationCenter` | 关闭通知中心 |
 | `quickshell ipc call tide toggleApplicationLauncher` | 打开或关闭应用启动器 |
+| `quickshell ipc call tide reloadColors` | 从 colors.json 热重载调色板 |
+| `quickshell ipc call theme reload` | 从 colors.json 热重载调色板 |
 
 <br>
 

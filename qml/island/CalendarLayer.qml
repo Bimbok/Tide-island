@@ -284,9 +284,9 @@ FocusScope {
                 radius: 11
                 color: todayMouse.containsMouse
                     ? StyleTokens.moduleHover
-                    : (root.isViewingCurrentMonth ? "#1c2230" : StyleTokens.module)
+                    : (root.isViewingCurrentMonth ? StyleTokens.cardFillActive : StyleTokens.module)
                 border.width: 1
-                border.color: root.isViewingCurrentMonth ? "#2e4873" : StyleTokens.transparent
+                border.color: root.isViewingCurrentMonth ? StyleTokens.accent : StyleTokens.transparent
 
                 Behavior on color { ColorAnimation { duration: 100 } }
 
@@ -386,7 +386,7 @@ FocusScope {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
-            color: "#22252e"
+            color: StyleTokens.track
         }
 
         // ──────────────────────────────────────────
@@ -468,8 +468,8 @@ FocusScope {
                     color: isToday
                         ? StyleTokens.accent
                         : (isSelected
-                            ? "#1e2433"
-                            : (cellMouse.containsMouse ? "#1c1f28" : StyleTokens.transparent))
+                            ? StyleTokens.cardFillActive
+                            : (cellMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.transparent))
 
                     border.width: (isSelected && !isToday) ? 1 : 0
                     border.color: (isSelected && !isToday) ? StyleTokens.accent : StyleTokens.transparent
@@ -483,10 +483,10 @@ FocusScope {
                         font.pixelSize: 12
                         font.weight: (cellRect.isToday || cellRect.isSelected) ? Font.Bold : Font.Normal
                         color: {
-                            if (cellRect.isToday) return "#ffffff";
+                            if (cellRect.isToday) return StyleTokens.textOnAccent;
                             if (cellRect.isSelected) return StyleTokens.accent;
                             if (cellRect.isCurMonth) return StyleTokens.textPrimaryBright;
-                            return "#424552"; // Dimmed for other months
+                            return StyleTokens.textMuted; // Dimmed for other months
                         }
                     }
 
@@ -510,9 +510,9 @@ FocusScope {
             Layout.fillWidth: true
             Layout.preferredHeight: 30
             radius: 8
-            color: "#161820"
+            color: StyleTokens.module
             border.width: 1
-            border.color: "#21242e"
+            border.color: StyleTokens.track
 
             RowLayout {
                 anchors.fill: parent
@@ -537,9 +537,9 @@ FocusScope {
                     Layout.preferredHeight: 18
                     Layout.preferredWidth: relativeText.implicitWidth + 12
                     radius: 9
-                    color: root.relativeDateText === "Today" ? "#192842" : "#1e2129"
+                    color: root.relativeDateText === "Today" ? StyleTokens.accentSoft : StyleTokens.cardFillActive
                     border.width: 1
-                    border.color: root.relativeDateText === "Today" ? "#2b4570" : "#282c37"
+                    border.color: root.relativeDateText === "Today" ? StyleTokens.accent : StyleTokens.track
 
                     Text {
                         id: relativeText
@@ -557,7 +557,7 @@ FocusScope {
                     Layout.preferredHeight: 18
                     Layout.preferredWidth: weekText.implicitWidth + 10
                     radius: 4
-                    color: "#181a22"
+                    color: StyleTokens.moduleHover
 
                     Text {
                         id: weekText

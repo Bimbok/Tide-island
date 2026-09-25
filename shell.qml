@@ -316,6 +316,22 @@ Scope {
         function closeCalendar() {
             shellRoot.forFocusedWindow((window) => window.closeCalendarWindow ? window.closeCalendarWindow() : window.toggleCalendarWindow());
         }
+
+        function reloadTheme() {
+            StyleTokens.reload();
+        }
+
+        function reloadColors() {
+            StyleTokens.reload();
+        }
+    }
+
+    IpcHandler {
+        target: "theme"
+
+        function reload() {
+            StyleTokens.reload();
+        }
     }
 
     IpcHandler {
