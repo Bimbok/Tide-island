@@ -1542,7 +1542,7 @@ Item {
                         WeatherIcon {
                             anchors.verticalCenter: parent.verticalCenter
                             weatherType: weatherService ? weatherService.weatherType : "sunny"
-                            iconColor: weatherService ? weatherService.iconColor : "#f4c542"
+                            iconColor: weatherService ? weatherService.iconColor : StyleTokens.warning
                             glyph: weatherService ? weatherService.iconGlyph : "\ue30d"
                             iconFontFamily: controlCenter.iconFontFamily
                             iconSize: 14
@@ -1761,7 +1761,7 @@ Item {
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                             text: "›"
-                            color: wifiPanelOpen ? "#c7c9cf" : StyleTokens.textSubtle
+                            color: wifiPanelOpen ? StyleTokens.textPrimary : StyleTokens.textSubtle
                             font.pixelSize: 17
                             font.family: textFontFamily
                             font.weight: Font.DemiBold
@@ -1887,7 +1887,7 @@ Item {
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
                             text: "›"
-                            color: bluetoothPanelOpen ? "#c7c9cf" : StyleTokens.textSubtle
+                            color: bluetoothPanelOpen ? StyleTokens.textPrimary : StyleTokens.textSubtle
                             font.pixelSize: 17
                             font.family: textFontFamily
                             font.weight: Font.DemiBold
@@ -2013,7 +2013,7 @@ Item {
                                     width: index === controlCenter.batteryModeIndex ? 32 : 28
                                     height: index === controlCenter.batteryModeIndex ? 28 : 24
                                     radius: 12
-                                    color: index === controlCenter.batteryModeIndex ? StyleTokens.textPrimary : "#292a2f"
+                                    color: index === controlCenter.batteryModeIndex ? cardAccent : StyleTokens.track
 
                                     Behavior on width {
                                         NumberAnimation {
@@ -2038,7 +2038,7 @@ Item {
                                     Text {
                                         anchors.centerIn: parent
                                         text: controlCenter.batteryModeGlyphs[index]
-                                        color: index === controlCenter.batteryModeIndex ? StyleTokens.module : StyleTokens.textDim
+                                        color: index === controlCenter.batteryModeIndex ? StyleTokens.textOnAccent : StyleTokens.textDim
                                         font.pixelSize: index === controlCenter.batteryModeIndex ? 15 : 13
                                         font.family: iconFontFamily
                                     }
@@ -2053,7 +2053,7 @@ Item {
                         width: 22
                         height: 2
                         radius: 1
-                        color: "#5d6068"
+                        color: cardAccent
                         opacity: 0.75
                     }
 
@@ -2150,7 +2150,7 @@ Item {
                     width: 1
                     height: parent.height - 34
                     radius: 1
-                    color: "#1cffffff"
+                    color: StyleTokens.withAlpha(StyleTokens.track, 0.4)
                 }
 
                 Item {
@@ -2160,7 +2160,7 @@ Item {
                     anchors.bottom: parent.bottom
                     width: parent.width / 2
                     property real slashProgress: controlCenter.focusEnabled ? 1 : 0
-                    property color iconColor: controlCenter.focusEnabled ? StyleTokens.textPrimaryBright : "#c8cad1"
+                    property color iconColor: controlCenter.focusEnabled ? cardAccent : StyleTokens.textSecondary
 
                     Behavior on slashProgress {
                         NumberAnimation {
@@ -2173,7 +2173,7 @@ Item {
                         anchors.fill: parent
                         anchors.margins: 4
                         radius: 16
-                        color: focusButtonMouse.containsMouse ? "#08ffffff" : StyleTokens.clearBlack
+                        color: focusButtonMouse.containsMouse ? StyleTokens.withAlpha(StyleTokens.track, 0.3) : StyleTokens.clearBlack
 
                         Behavior on color {
                             ColorAnimation {
@@ -2250,7 +2250,7 @@ Item {
                         y: quickTogglesCard.toggleLabelTop
                         width: parent.width
                         text: "Silent"
-                        color: controlCenter.focusEnabled ? StyleTokens.textPrimaryBright : StyleTokens.textMuted
+                        color: controlCenter.focusEnabled ? cardAccent : StyleTokens.textMuted
                         horizontalAlignment: Text.AlignHCenter
                         font.pixelSize: 10
                         font.family: textFontFamily
@@ -2279,7 +2279,7 @@ Item {
                         anchors.fill: parent
                         anchors.margins: 4
                         radius: 16
-                        color: nightLightButtonMouse.containsMouse ? "#08ffffff" : StyleTokens.clearBlack
+                        color: nightLightButtonMouse.containsMouse ? StyleTokens.withAlpha(StyleTokens.track, 0.3) : StyleTokens.clearBlack
 
                         Behavior on color {
                             ColorAnimation {
@@ -2299,7 +2299,7 @@ Item {
                             anchors.centerIn: parent
                             anchors.verticalCenterOffset: 1
                             text: controlCenter.nightLightGlyph
-                            color: "#45000000"
+                            color: StyleTokens.withAlpha(StyleTokens.black, 0.27)
                             font.pixelSize: 29
                             font.family: iconFontFamily
                             scale: nightLightButtonMouse.pressed ? 0.94 : 1.0
@@ -2310,7 +2310,7 @@ Item {
                             id: nightLightIcon
                             anchors.centerIn: parent
                             text: controlCenter.nightLightGlyph
-                            color: controlCenter.nightLightEnabled ? StyleTokens.textPrimaryBright : "#c8cad1"
+                            color: controlCenter.nightLightEnabled ? cardAccent : StyleTokens.textSecondary
                             font.pixelSize: 29
                             font.family: iconFontFamily
                             scale: nightLightButtonMouse.pressed ? 0.94 : 1.0
@@ -2330,7 +2330,7 @@ Item {
                         y: quickTogglesCard.toggleLabelTop
                         width: parent.width
                         text: "Night mode"
-                        color: controlCenter.nightLightEnabled ? StyleTokens.textPrimaryBright : StyleTokens.textMuted
+                        color: controlCenter.nightLightEnabled ? cardAccent : StyleTokens.textMuted
                         horizontalAlignment: Text.AlignHCenter
                         font.pixelSize: 10
                         font.family: textFontFamily
@@ -2352,7 +2352,7 @@ Item {
                 gradient: Gradient {
                     GradientStop {
                         position: 0
-                        color: "#9a000000"
+                        color: StyleTokens.withAlpha(StyleTokens.black, 0.6)
                     }
                     GradientStop {
                         position: 1
@@ -2375,7 +2375,7 @@ Item {
                     width: 48
                     height: 5
                     radius: 3
-                    color: controlCenter.batteryDrawerOpen ? "#d4d6dc" : StyleTokens.textSubtle
+                    color: controlCenter.batteryDrawerOpen ? cardAccent : StyleTokens.track
                     opacity: 0.88
                 }
 
@@ -2446,6 +2446,7 @@ Item {
             textFontFamily: controlCenter.textFontFamily
             value: controlCenter.displayedBrightness
             knobSize: controlCenter.sliderKnobSize
+            accentColor: controlCenter.cardAccent
             moduleColor: controlCenter.moduleColor
             moduleHover: controlCenter.moduleHover
             trackColor: controlCenter.trackColor
@@ -2480,6 +2481,7 @@ Item {
             textFontFamily: controlCenter.textFontFamily
             value: controlCenter.displayedVolume
             knobSize: controlCenter.sliderKnobSize
+            accentColor: controlCenter.cardAccent
             moduleColor: controlCenter.moduleColor
             moduleHover: controlCenter.moduleHover
             trackColor: controlCenter.trackColor

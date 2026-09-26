@@ -15,6 +15,7 @@ Rectangle {
     property string textFontFamily: ""
     property real value: 0
     property real knobSize: 24
+    property color accentColor: StyleTokens.accent
     property color moduleColor: StyleTokens.module
     property color moduleHover: StyleTokens.moduleHover
     property color trackColor: StyleTokens.track
@@ -58,12 +59,13 @@ Rectangle {
             anchors.bottom: parent.bottom
             height: 22
             radius: 11
-            color: "#1d1f24"
+            color: root.trackColor
             border.width: 1
-            border.color: "#30333a"
+            border.color: StyleTokens.inputBorder
             clip: true
 
             Rectangle {
+                z: 2
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.leftMargin: 10
@@ -75,7 +77,7 @@ Rectangle {
                 Text {
                     anchors.centerIn: parent
                     text: root.iconText
-                    color: root.textSecondary
+                    color: root.value > 0.15 ? StyleTokens.textOnAccent : root.textSecondary
                     font.pixelSize: 13
                     font.family: root.iconFontFamily
                 }
@@ -87,7 +89,7 @@ Rectangle {
                     : Math.max(34, Math.min(sliderTrack.width, sliderTrack.width * root.value + 1))
                 height: parent.height
                 radius: parent.radius
-                color: "#eceef2"
+                color: root.accentColor
             }
 
             Rectangle {
@@ -97,8 +99,8 @@ Rectangle {
                 height: root.knobSize
                 radius: root.knobSize / 2
                 border.width: 1
-                border.color: "#b8ffffff"
-                color: "#f4f5f7"
+                border.color: StyleTokens.accentPressed
+                color: root.accentColor
             }
 
             MouseArea {
