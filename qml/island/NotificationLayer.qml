@@ -123,7 +123,7 @@ Item {
             width: iconSlotWidth
             anchors.verticalCenter: parent.verticalCenter
             text: iconText
-            color: "#f4f5f7"
+            color: StyleTokens.textPrimaryBright
             font.pixelSize: userConfig.iconFontSize
             font.family: iconFontFamily
             horizontalAlignment: Text.AlignHCenter
@@ -138,7 +138,7 @@ Item {
                 visible: !(root.expanded && root.hasOverflowContent)
                 anchors.verticalCenter: parent.verticalCenter
                 text: contentText
-                color: "white"
+                color: StyleTokens.textPrimaryBright
                 font.pixelSize: userConfig.bodyFontSize
                 font.family: textFontFamily
                 font.weight: Font.DemiBold
@@ -164,7 +164,7 @@ Item {
                     id: expandedContentText
                     width: expandedFlickable.width
                     text: contentText
-                    color: "white"
+                    color: StyleTokens.textPrimaryBright
                     font.pixelSize: userConfig.bodyFontSize
                     font.family: textFontFamily
                     font.weight: Font.DemiBold

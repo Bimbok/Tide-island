@@ -282,7 +282,7 @@ Item {
                                 width: 60
                                 height: 60
                                 radius: 10
-                                color: "#2c2c2e"
+                                color: StyleTokens.module
                                 antialiasing: true
 
                                 Image {
@@ -301,7 +301,7 @@ Item {
 
                                 Text {
                                     text: currentTrack
-                                    color: "white"
+                                    color: StyleTokens.textPrimaryBright
                                     font.pixelSize: userConfig.bodyFontSize
                                     font.family: textFontFamily
                                     font.weight: Font.DemiBold
@@ -312,7 +312,7 @@ Item {
 
                                 Text {
                                     text: currentArtist
-                                    color: "#8e8e93"
+                                    color: StyleTokens.textSecondary
                                     font.pixelSize: userConfig.bodyFontSize - 2
                                     font.family: textFontFamily
                                     font.weight: Font.Medium
@@ -342,7 +342,7 @@ Item {
                                             ? 6 + (parent.height - 6) * visualizerLevel(index)
                                             : 6 + (parent.height - 6) * pausedVisualizerLevel(index)
                                         radius: 2
-                                        color: isPlaying ? "#b56cff" : "#5f4b72"
+                                        color: isPlaying ? StyleTokens.accent : StyleTokens.accentSoft
                                         anchors.verticalCenter: parent.verticalCenter
 
                                         Behavior on height {
@@ -372,7 +372,7 @@ Item {
                             id: timeL
                             anchors.left: parent.left
                             text: timePlayed
-                            color: "#8e8e93"
+                            color: StyleTokens.textSecondary
                             font.pixelSize: userConfig.bodyFontSize - 4
                             font.family: textFontFamily
                             font.weight: Font.Medium
@@ -385,12 +385,12 @@ Item {
                             anchors.margins: 12
                             height: 6
                             radius: 3
-                            color: "#333333"
+                            color: StyleTokens.track
 
                             Rectangle {
                                 height: parent.height
                                 radius: 3
-                                color: "white"
+                                color: StyleTokens.accent
                                 width: parent.width * trackProgress
 
                                 Behavior on width {
@@ -406,7 +406,7 @@ Item {
                             id: timeR
                             anchors.right: parent.right
                             text: timeTotal
-                            color: "#8e8e93"
+                            color: StyleTokens.textSecondary
                             font.pixelSize: userConfig.bodyFontSize - 4
                             font.family: textFontFamily
                             font.weight: Font.Medium
@@ -432,7 +432,7 @@ Item {
 
                                 Canvas {
                                     anchors.fill: parent
-                                    property color fillColor: prevArea.pressed ? "#888" : "white"
+                                    property color fillColor: prevArea.pressed ? StyleTokens.textMuted : StyleTokens.textPrimaryBright
 
                                     onFillColorChanged: requestPaint()
                                     onPaint: {
@@ -484,14 +484,14 @@ Item {
                                     spacing: 6
                                     visible: activePlayer && activePlayer.playbackState === MprisPlaybackState.Playing
 
-                                    Rectangle { width: 6; height: 20; radius: 2; color: playArea.pressed ? "#888" : "white" }
-                                    Rectangle { width: 6; height: 20; radius: 2; color: playArea.pressed ? "#888" : "white" }
+                                    Rectangle { width: 6; height: 20; radius: 2; color: playArea.pressed ? StyleTokens.textMuted : StyleTokens.textPrimaryBright }
+                                    Rectangle { width: 6; height: 20; radius: 2; color: playArea.pressed ? StyleTokens.textMuted : StyleTokens.textPrimaryBright }
                                 }
 
                                 Canvas {
                                     anchors.fill: parent
                                     visible: !activePlayer || activePlayer.playbackState !== MprisPlaybackState.Playing
-                                    property color fillColor: playArea.pressed ? "#888" : "white"
+                                    property color fillColor: playArea.pressed ? StyleTokens.textMuted : StyleTokens.textPrimaryBright
 
                                     onFillColorChanged: requestPaint()
                                     onPaint: {
@@ -535,7 +535,7 @@ Item {
 
                                 Canvas {
                                     anchors.fill: parent
-                                    property color fillColor: nextArea.pressed ? "#888" : "white"
+                                    property color fillColor: nextArea.pressed ? StyleTokens.textMuted : StyleTokens.textPrimaryBright
 
                                     onFillColorChanged: requestPaint()
                                     onPaint: {
@@ -691,6 +691,13 @@ Item {
         onTimerSelectedMinutesChanged: normalizeInputs()
         Component.onCompleted: normalizeInputs()
 
+        Connections {
+            target: StyleTokens
+            function onColorsChanged() {
+                progressRing.requestPaint();
+            }
+        }
+
         Behavior on animatedProgress {
             NumberAnimation {
                 duration: 700
@@ -730,13 +737,13 @@ Item {
                         ctx.lineWidth = lineWidth;
 
                         ctx.beginPath();
-                        ctx.strokeStyle = "#2b2e35";
+                        ctx.strokeStyle = StyleTokens.track;
                         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
                         ctx.stroke();
 
                         if (progress > 0) {
                             ctx.beginPath();
-                            ctx.strokeStyle = "#ff9f0a";
+                            ctx.strokeStyle = StyleTokens.accent;
                             ctx.arc(centerX, centerY, radius, startAngle, endAngle, true);
                             ctx.stroke();
                         }
@@ -746,7 +753,7 @@ Item {
                 Text {
                     anchors.centerIn: progressRing
                     text: timerRoot.timeText
-                    color: "#ffffff"
+                    color: StyleTokens.textPrimaryBright
                     font.pixelSize: timerRoot.displaySeconds >= 3600 ? timerRoot.userConfig.bodyFontSize + 2 : timerRoot.userConfig.bodyFontSize + 8
                     font.family: timerRoot.textFontFamily
                     font.weight: Font.DemiBold
@@ -880,7 +887,7 @@ Item {
                 radius: 9
                 color: StyleTokens.transparent
                 border.width: 1
-                border.color: input.activeFocus ? "#ff9f0a" : "#2b2e35"
+                border.color: input.activeFocus ? StyleTokens.accent : StyleTokens.track
             }
 
             MouseArea {
@@ -910,9 +917,9 @@ Item {
 
                     width: 42
                     property bool sanitizing: false
-                    color: "#f5f5f7"
-                    selectionColor: "#ff9f0a"
-                    selectedTextColor: "#111111"
+                    color: StyleTokens.textPrimaryBright
+                    selectionColor: StyleTokens.accent
+                    selectedTextColor: StyleTokens.textOnAccent
                     font.pixelSize: UserConfig.bodyFontSize + 2
                     font.family: inputRoot.textFontFamily
                     font.weight: Font.DemiBold
@@ -942,7 +949,7 @@ Item {
 
                 Text {
                     text: inputRoot.label
-                    color: "#9b9da4"
+                    color: StyleTokens.textSecondary
                     font.pixelSize: UserConfig.bodyFontSize - 3
                     font.family: inputRoot.textFontFamily
                     font.weight: Font.Medium
@@ -986,17 +993,17 @@ Item {
                 anchors.margins: 1
                 radius: 9
                 color: buttonRoot.accent
-                    ? (buttonArea.pressed ? "#d98500" : "#ff9f0a")
+                    ? (buttonArea.pressed ? StyleTokens.accentPressed : StyleTokens.accent)
                     : StyleTokens.transparent
                 border.width: 1
-                border.color: buttonRoot.accent ? "#ff9f0a" : "#2b2e35"
+                border.color: buttonRoot.accent ? StyleTokens.accent : StyleTokens.track
             }
         }
 
         Text {
             anchors.centerIn: parent
             text: buttonRoot.label
-            color: buttonRoot.accent ? "#111111" : "#f5f5f7"
+            color: buttonRoot.accent ? StyleTokens.textOnAccent : StyleTokens.textPrimaryBright
             font.pixelSize: UserConfig.bodyFontSize - 2
             font.family: buttonRoot.textFontFamily
             font.weight: Font.DemiBold
