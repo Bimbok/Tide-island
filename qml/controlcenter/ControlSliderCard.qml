@@ -65,41 +65,11 @@ Rectangle {
             clip: true
 
             Rectangle {
-                z: 2
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.leftMargin: 10
-                width: 18
-                height: 18
-                radius: 9
-                color: StyleTokens.transparent
-
-                Text {
-                    anchors.centerIn: parent
-                    text: root.iconText
-                    color: root.value > 0.15 ? StyleTokens.textOnAccent : root.textSecondary
-                    font.pixelSize: 13
-                    font.family: root.iconFontFamily
-                }
-            }
-
-            Rectangle {
                 width: root.value <= 0.001
                     ? 0
-                    : Math.max(34, Math.min(sliderTrack.width, sliderTrack.width * root.value + 1))
+                    : Math.min(sliderTrack.width, sliderTrack.width * root.value)
                 height: parent.height
                 radius: parent.radius
-                color: root.accentColor
-            }
-
-            Rectangle {
-                x: Math.max(0, Math.min(parent.width - width, parent.width * root.value - width / 2))
-                y: -1
-                width: root.knobSize
-                height: root.knobSize
-                radius: root.knobSize / 2
-                border.width: 1
-                border.color: StyleTokens.accentPressed
                 color: root.accentColor
             }
 
