@@ -30,7 +30,7 @@ PagePanel {
         Item {
             id: content
             width: scroller.width
-            height: wallpaperPanel.y + wallpaperPanel.height + 40
+            height: palettePanel.y + palettePanel.height + 40
 
             Text {
                 id: title
@@ -46,6 +46,31 @@ PagePanel {
                 id: wallpaperPanel
                 anchors.top: title.bottom
                 anchors.topMargin: 40
+                anchors.left: parent.left
+                anchors.leftMargin: 30
+                anchors.right: parent.right
+                anchors.rightMargin: 40
+                height: implicitHeight
+            }
+
+            Text {
+                id: paletteTitle
+                text: "Color Palette"
+                anchors.top: wallpaperPanel.bottom
+                anchors.topMargin: 34
+                anchors.left: parent.left
+                anchors.leftMargin: 32
+                anchors.right: parent.right
+                anchors.rightMargin: 40
+                font.family: Theme.titleFontFamily
+                font.pixelSize: 23
+                color: Theme.textColor
+            }
+
+            ColorPalette {
+                id: palettePanel
+                anchors.top: paletteTitle.bottom
+                anchors.topMargin: 15
                 anchors.left: parent.left
                 anchors.leftMargin: 30
                 anchors.right: parent.right

@@ -73,6 +73,7 @@ qt_add_qml_module(tide-island-config-app
         CustomPage.qml
         Wallpaper.qml
         WallpaperSettings.qml
+        ColorPalette.qml
         TlpSettings.qml
         WeatherSettings.qml
         FontSettings.qml
