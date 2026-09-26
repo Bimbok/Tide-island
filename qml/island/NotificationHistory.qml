@@ -58,7 +58,7 @@ Item {
 
                     ShapePath {
                         fillColor: StyleTokens.transparent
-                        strokeColor: "#c5c5c8"
+                        strokeColor: StyleTokens.textSecondary
                         strokeWidth: 1.8
                         capStyle: ShapePath.RoundCap
                         joinStyle: ShapePath.RoundJoin
@@ -70,7 +70,7 @@ Item {
 
                     ShapePath {
                         fillColor: StyleTokens.transparent
-                        strokeColor: "#c5c5c8"
+                        strokeColor: StyleTokens.textSecondary
                         strokeWidth: 1.8
                         capStyle: ShapePath.RoundCap
                         joinStyle: ShapePath.RoundJoin
@@ -86,7 +86,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Notification History"
                 textFormat: Text.PlainText
-                color: "#f7f7f7"
+                color: StyleTokens.textPrimaryBright
                 font.pixelSize: 15
                 font.family: root.textFontFamily
                 font.weight: Font.Bold
@@ -110,7 +110,7 @@ Item {
             anchors.centerIn: parent
             text: "No notifications"
             textFormat: Text.PlainText
-            color: "#6f6f74"
+            color: StyleTokens.textMuted
             font.pixelSize: 10
             font.family: root.textFontFamily
             font.weight: Font.Medium
@@ -161,7 +161,7 @@ Item {
 
                 contentItem: Rectangle {
                     radius: 1.5
-                    color: "#5b5b60"
+                    color: StyleTokens.textMuted
                 }
 
                 background: Rectangle {
@@ -205,7 +205,7 @@ Item {
                         height: 18
                         text: delegateItem.titleText
                         textFormat: Text.PlainText
-                        color: "#f7f7f7"
+                        color: StyleTokens.textPrimaryBright
                         font.pixelSize: 15
                         font.family: root.textFontFamily
                         font.weight: Font.Bold
@@ -219,7 +219,7 @@ Item {
                         height: 16
                         text: delegateItem.bodyText
                         textFormat: Text.PlainText
-                        color: "#c8c8cc"
+                        color: StyleTokens.textSecondary
                         font.pixelSize: 13
                         font.family: root.textFontFamily
                         verticalAlignment: Text.AlignVCenter

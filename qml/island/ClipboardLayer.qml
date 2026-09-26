@@ -416,7 +416,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.imgFullPreview ? "Image Preview" : "Clipboard"
                     textFormat: Text.PlainText
-                    color: "#f7f7f7"
+                    color: StyleTokens.textPrimaryBright
                     font.pixelSize: 15
                     font.family: root.textFontFamily
                     font.weight: Font.Bold
@@ -429,16 +429,16 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                     height: 20
                     radius: 6
-                    color: Qt.rgba(10/255, 132/255, 255/255, 0.15)
+                    color: StyleTokens.accentSoft
                     border.width: 1
-                    border.color: Qt.rgba(10/255, 132/255, 255/255, 0.35)
+                    border.color: StyleTokens.withAlpha(StyleTokens.accent, 0.35)
                     width: searchTagText.implicitWidth + 14
 
                     Text {
                         id: searchTagText
                         anchors.centerIn: parent
                         text: "\"" + root.searchQuery + "\""
-                        color: "#6ea8ff"
+                        color: StyleTokens.accent
                         font.family: root.textFontFamily
                         font.pixelSize: 10
                         font.weight: Font.Medium
@@ -502,7 +502,7 @@ FocusScope {
 
                             ShapePath {
                                 fillColor: StyleTokens.transparent
-                                strokeColor: wipeMouse.containsMouse ? "#ff453a" : StyleTokens.textDim
+                                strokeColor: wipeMouse.containsMouse ? StyleTokens.error : StyleTokens.textDim
                                 strokeWidth: 1.8
                                 capStyle: ShapePath.RoundCap
                                 joinStyle: ShapePath.RoundJoin
@@ -531,7 +531,7 @@ FocusScope {
 
                                 ShapePath {
                                     fillColor: StyleTokens.transparent
-                                    strokeColor: wipeMouse.containsMouse ? "#ff453a" : StyleTokens.textDim
+                                    strokeColor: wipeMouse.containsMouse ? StyleTokens.error : StyleTokens.textDim
                                     strokeWidth: 1.8
                                     capStyle: ShapePath.RoundCap
                                     joinStyle: ShapePath.RoundJoin
@@ -567,8 +567,8 @@ FocusScope {
             width: parent.width
             height: 36
             radius: 18
-            color: searchInput.activeFocus ? "#171a22" : "#131419"
-            border.color: searchInput.activeFocus ? "#3b4864" : "#242630"
+            color: searchInput.activeFocus ? StyleTokens.input : StyleTokens.prompt
+            border.color: searchInput.activeFocus ? StyleTokens.accent : StyleTokens.inputBorder
             border.width: 1
             visible: !root.imgFullPreview
 
@@ -593,7 +593,7 @@ FocusScope {
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: searchInput.activeFocus ? "#0a84ff" : "#6f727e"
+                            strokeColor: searchInput.activeFocus ? StyleTokens.accent : StyleTokens.textMuted
                             strokeWidth: 1.4
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
@@ -610,13 +610,13 @@ FocusScope {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     verticalAlignment: TextInput.AlignVCenter
-                    color: "#ffffff"
+                    color: StyleTokens.textPrimaryBright
                     font.family: root.textFontFamily
                     font.pixelSize: 12
                     clip: true
                     selectByMouse: true
-                    selectedTextColor: "#ffffff"
-                    selectionColor: "#0a84ff"
+                    selectedTextColor: StyleTokens.textOnAccent
+                    selectionColor: StyleTokens.accent
 
                     onTextChanged: {
                         root.searchQuery = text;
@@ -624,7 +624,7 @@ FocusScope {
 
                     Text {
                         text: "Search clipboard history..."
-                        color: "#595c67"
+                        color: StyleTokens.textMuted
                         font: searchInput.font
                         visible: searchInput.text.length === 0
                         anchors.verticalCenter: parent.verticalCenter
@@ -667,7 +667,7 @@ FocusScope {
                     Layout.preferredWidth: 20
                     Layout.preferredHeight: 20
                     radius: 10
-                    color: clearQueryMouse.containsMouse ? "#2f3340" : "#1f222a"
+                    color: clearQueryMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.module
                     visible: searchInput.text.length > 0
 
                     Shape {
@@ -678,7 +678,7 @@ FocusScope {
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: clearQueryMouse.containsMouse ? "#ffffff" : "#8f929d"
+                            strokeColor: clearQueryMouse.containsMouse ? StyleTokens.textPrimaryBright : StyleTokens.textMuted
                             strokeWidth: 1.3
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
@@ -766,9 +766,9 @@ FocusScope {
                         width: parent.width
                         height: parent.height - 34
                         radius: 14
-                        color: "#121318"
+                        color: StyleTokens.module
                         border.width: 1
-                        border.color: "#252834"
+                        border.color: StyleTokens.track
                         clip: true
 
                         Image {
@@ -809,9 +809,9 @@ FocusScope {
                             height: 24
                             width: previewInfoText.implicitWidth + 18
                             radius: 8
-                            color: "#d012141a"
+                            color: StyleTokens.withAlpha(StyleTokens.panel, 0.85)
                             border.width: 1
-                            border.color: "#2b2e3a"
+                            border.color: StyleTokens.track
 
                             Text {
                                 id: previewInfoText
@@ -819,7 +819,7 @@ FocusScope {
                                 text: previewArea.currentEntry
                                     ? root.formatImageLabel(previewArea.currentEntry.label)
                                     : "Image"
-                                color: "#ffffff"
+                                color: StyleTokens.textPrimaryBright
                                 font.family: root.textFontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -830,7 +830,7 @@ FocusScope {
                         Rectangle {
                             anchors.fill: parent
                             radius: 14
-                            color: "#ff3b30"
+                            color: StyleTokens.error
                             opacity: (previewArea.currentEntry && String(previewArea.currentEntry.id) === root.deletingId) ? 0.65 : 0
                             Behavior on opacity { NumberAnimation { duration: 120 } }
                         }
@@ -839,7 +839,7 @@ FocusScope {
                         Text {
                             anchors.centerIn: parent
                             text: "Deleted"
-                            color: "#ffffff"
+                            color: StyleTokens.textPrimaryBright
                             font.family: root.textFontFamily
                             font.pixelSize: 14
                             font.weight: Font.Bold
@@ -863,9 +863,9 @@ FocusScope {
                             Rectangle {
                                 height: 22
                                 radius: 6
-                                color: "#191b22"
+                                color: StyleTokens.module
                                 border.width: 1
-                                border.color: "#282a36"
+                                border.color: StyleTokens.track
                                 width: enterHint.implicitWidth + 12
                                 anchors.verticalCenter: parent.verticalCenter
 
@@ -873,7 +873,7 @@ FocusScope {
                                     id: enterHint
                                     anchors.centerIn: parent
                                     text: "↵ Copy"
-                                    color: "#a4a7b4"
+                                    color: StyleTokens.textSecondary
                                     font.family: root.textFontFamily
                                     font.pixelSize: 10
                                 }
@@ -883,9 +883,9 @@ FocusScope {
                             Rectangle {
                                 height: 22
                                 radius: 6
-                                color: "#191b22"
+                                color: StyleTokens.module
                                 border.width: 1
-                                border.color: "#282a36"
+                                border.color: StyleTokens.track
                                 width: delHint.implicitWidth + 12
                                 anchors.verticalCenter: parent.verticalCenter
 
@@ -893,7 +893,7 @@ FocusScope {
                                     id: delHint
                                     anchors.centerIn: parent
                                     text: "Del Delete"
-                                    color: "#a4a7b4"
+                                    color: StyleTokens.textSecondary
                                     font.family: root.textFontFamily
                                     font.pixelSize: 10
                                 }
@@ -903,9 +903,9 @@ FocusScope {
                             Rectangle {
                                 height: 22
                                 radius: 6
-                                color: "#191b22"
+                                color: StyleTokens.module
                                 border.width: 1
-                                border.color: "#282a36"
+                                border.color: StyleTokens.track
                                 width: navHint.implicitWidth + 12
                                 anchors.verticalCenter: parent.verticalCenter
 
@@ -913,7 +913,7 @@ FocusScope {
                                     id: navHint
                                     anchors.centerIn: parent
                                     text: "↑/↓ Navigate"
-                                    color: "#a4a7b4"
+                                    color: StyleTokens.textSecondary
                                     font.family: root.textFontFamily
                                     font.pixelSize: 10
                                 }
@@ -923,9 +923,9 @@ FocusScope {
                             Rectangle {
                                 height: 22
                                 radius: 6
-                                color: "#191b22"
+                                color: StyleTokens.module
                                 border.width: 1
-                                border.color: "#282a36"
+                                border.color: StyleTokens.track
                                 width: backHint.implicitWidth + 12
                                 anchors.verticalCenter: parent.verticalCenter
 
@@ -933,7 +933,7 @@ FocusScope {
                                     id: backHint
                                     anchors.centerIn: parent
                                     text: "Tab/Esc Back"
-                                    color: "#a4a7b4"
+                                    color: StyleTokens.textSecondary
                                     font.family: root.textFontFamily
                                     font.pixelSize: 10
                                 }
@@ -950,14 +950,14 @@ FocusScope {
                             Layout.preferredWidth: 72
                             Layout.preferredHeight: 24
                             radius: 12
-                            color: copyBtnMouse.containsMouse ? "#1c8fff" : "#0a84ff"
+                            color: copyBtnMouse.containsMouse ? StyleTokens.accentPressed : StyleTokens.accent
                             border.width: 1
-                            border.color: "#4ca2ff"
+                            border.color: StyleTokens.accent
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "Copy"
-                                color: "#ffffff"
+                                color: StyleTokens.textOnAccent
                                 font.family: root.textFontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -997,7 +997,7 @@ FocusScope {
                     contentItem: Rectangle {
                         implicitWidth: 3
                         radius: 1.5
-                        color: "#5b5e68"
+                        color: StyleTokens.textMuted
                         opacity: 0.6
                     }
                 }
@@ -1021,25 +1021,25 @@ FocusScope {
                     opacity: isCollapsing ? 0 : 1
                     scale: isCollapsing ? 0.85 : 1
 
-                    // Luxury surface with subtle depth and delicate borders
+                    // Surface with palette adaptation and delicate borders
                     color: {
                         if (isDeleting)
-                            return Qt.rgba(255/255, 59/255, 48/255, 0.35);
+                            return StyleTokens.withAlpha(StyleTokens.error, 0.35);
                         if (isSelected)
-                            return "#1b2334";
+                            return StyleTokens.cardFillActive;
                         if (rowMouse.containsMouse)
-                            return "#1b1d24";
-                        return "#15161b";
+                            return StyleTokens.moduleHover;
+                        return StyleTokens.module;
                     }
 
                     border.color: {
                         if (isDeleting)
-                            return "#ff3b30";
+                            return StyleTokens.error;
                         if (isSelected)
-                            return "#2e4873";
+                            return StyleTokens.accent;
                         if (rowMouse.containsMouse)
-                            return "#2d303b";
-                        return "#21232a";
+                            return StyleTokens.inputBorder;
+                        return StyleTokens.track;
                     }
                     border.width: 1
 
@@ -1057,7 +1057,7 @@ FocusScope {
                         width: 3
                         height: rowDelegate.isSelected ? (parent.height - 18) : 0
                         radius: 1.5
-                        color: "#0a84ff"
+                        color: StyleTokens.accent
                         opacity: rowDelegate.isSelected ? 1 : 0
 
                         Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
@@ -1082,9 +1082,9 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: "#0d0e12"
+                                color: StyleTokens.prompt
                                 border.width: 1
-                                border.color: "#252834"
+                                border.color: StyleTokens.track
                                 clip: true
                                 visible: rowDelegate.model.imagePath !== ""
 
@@ -1103,9 +1103,9 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: "#181a21"
+                                color: StyleTokens.prompt
                                 border.width: 1
-                                border.color: "#282a35"
+                                border.color: StyleTokens.track
                                 visible: rowDelegate.clipType === "color"
 
                                 Rectangle {
@@ -1123,9 +1123,9 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: Qt.rgba(10/255, 132/255, 255/255, 0.12)
+                                color: StyleTokens.accentSoft
                                 border.width: 1
-                                border.color: Qt.rgba(10/255, 132/255, 255/255, 0.26)
+                                border.color: StyleTokens.withAlpha(StyleTokens.accent, 0.3)
                                 visible: rowDelegate.clipType === "link"
 
                                 Shape {
@@ -1136,7 +1136,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#5ea2ff"
+                                        strokeColor: StyleTokens.accent
                                         strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1152,9 +1152,9 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: Qt.rgba(255/255, 170/255, 64/255, 0.12)
+                                color: StyleTokens.withAlpha(StyleTokens.warning, 0.15)
                                 border.width: 1
-                                border.color: Qt.rgba(255/255, 170/255, 64/255, 0.26)
+                                border.color: StyleTokens.withAlpha(StyleTokens.warning, 0.3)
                                 visible: rowDelegate.clipType === "code"
 
                                 Shape {
@@ -1165,7 +1165,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#ffaa40"
+                                        strokeColor: StyleTokens.warning
                                         strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1181,9 +1181,9 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: "#1a1c23"
+                                color: StyleTokens.prompt
                                 border.width: 1
-                                border.color: "#282b35"
+                                border.color: StyleTokens.track
                                 visible: rowDelegate.clipType === "text"
 
                                 Shape {
@@ -1194,7 +1194,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#8e919d"
+                                        strokeColor: StyleTokens.textMuted
                                         strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1218,7 +1218,7 @@ FocusScope {
                                 text: rowDelegate.model.imagePath !== ""
                                     ? root.formatImageLabel(rowDelegate.model.label)
                                     : rowDelegate.model.label
-                                color: rowDelegate.isSelected ? "#ffffff" : "#eaecf2"
+                                color: rowDelegate.isSelected ? StyleTokens.textPrimaryBright : StyleTokens.textPrimary
                                 font.family: root.textFontFamily
                                 font.pixelSize: 12
                                 font.weight: rowDelegate.isSelected ? Font.Medium : Font.Normal
@@ -1230,9 +1230,7 @@ FocusScope {
                             Text {
                                 width: parent.width
                                 text: root.getClipMeta(rowDelegate.model)
-                                color: rowDelegate.isSelected
-                                    ? (rowDelegate.model.imagePath !== "" ? "#0a84ff" : "#809dc2")
-                                    : (rowDelegate.model.imagePath !== "" ? "#5ea2ff" : "#6f727f")
+                                color: rowDelegate.isSelected ? StyleTokens.accent : StyleTokens.textSecondary
                                 font.family: root.textFontFamily
                                 font.pixelSize: 10
                                 font.weight: (rowDelegate.model.imagePath !== "" && rowDelegate.isSelected) ? Font.DemiBold : Font.Normal
@@ -1268,7 +1266,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: copyActionMouse.containsMouse ? "#0a84ff" : StyleTokens.textDim
+                                        strokeColor: copyActionMouse.containsMouse ? StyleTokens.accent : StyleTokens.textDim
                                         strokeWidth: 1.4
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1309,7 +1307,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: deleteActionMouse.containsMouse ? "#ff453a" : StyleTokens.textDim
+                                        strokeColor: deleteActionMouse.containsMouse ? StyleTokens.error : StyleTokens.textDim
                                         strokeWidth: 1.4
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1363,7 +1361,7 @@ FocusScope {
 
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: StyleTokens.transparent }
-                    GradientStop { position: 1.0; color: "#0b0c0f" }
+                    GradientStop { position: 1.0; color: StyleTokens.panel }
                 }
                 opacity: 0.8
             }
@@ -1385,9 +1383,9 @@ FocusScope {
                         width: 44
                         height: 44
                         radius: 22
-                        color: "#16181f"
+                        color: StyleTokens.module
                         border.width: 1
-                        border.color: "#252833"
+                        border.color: StyleTokens.track
 
                         Shape {
                             anchors.centerIn: parent
@@ -1397,7 +1395,7 @@ FocusScope {
 
                             ShapePath {
                                 fillColor: StyleTokens.transparent
-                                strokeColor: "#676a77"
+                                strokeColor: StyleTokens.textMuted
                                 strokeWidth: 1.4
                                 capStyle: ShapePath.RoundCap
                                 joinStyle: ShapePath.RoundJoin
@@ -1416,7 +1414,7 @@ FocusScope {
                         text: !root.cliphistAvailable
                             ? "cliphist or wl-clipboard not found"
                             : (root.searchQuery !== "" ? "No matching clips" : "Clipboard is empty")
-                        color: "#e2e4ea"
+                        color: StyleTokens.textPrimaryBright
                         font.family: root.textFontFamily
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -1427,7 +1425,7 @@ FocusScope {
                         text: !root.cliphistAvailable
                             ? "Install cliphist and wl-clipboard to enable clipboard history"
                             : (root.searchQuery !== "" ? "Try a different search keyword" : "Items you copy will automatically appear here")
-                        color: "#6b6e7a"
+                        color: StyleTokens.textSecondary
                         font.family: root.textFontFamily
                         font.pixelSize: 11
                     }
