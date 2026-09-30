@@ -158,8 +158,8 @@ Item {
                                 width: tooltipLabel.implicitWidth + 16
                                 height: 22
                                 radius: 6
-                                color: StyleTokens.surface
-                                border.color: StyleTokens.border
+                                color: StyleTokens.prompt
+                                border.color: StyleTokens.inputBorder
                                 border.width: 1
 
                                 Text {
