@@ -100,9 +100,31 @@ FocusScope {
         event.accepted = true;
     }
 
+    Keys.onUpPressed: function(event) {
+        root.prevMonth();
+        event.accepted = true;
+    }
+
+    Keys.onDownPressed: function(event) {
+        root.nextMonth();
+        event.accepted = true;
+    }
+
     Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Home) {
+        if (event.key === Qt.Key_Home || event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
             root.goToToday();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_H) {
+            root.prevMonth();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_L) {
+            root.nextMonth();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_K) {
+            root.prevMonth();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_J) {
+            root.nextMonth();
             event.accepted = true;
         }
     }

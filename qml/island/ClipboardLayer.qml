@@ -55,6 +55,40 @@ FocusScope {
         event.accepted = true;
     }
 
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+            if (root.imgFullPreview) {
+                root.imgFullPreview = false;
+            } else {
+                root.closeRequested();
+            }
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+            if (listModel.count > 0) {
+                root.selectedIndex = (root.selectedIndex + 1) % listModel.count;
+                listView.positionViewAtIndex(root.selectedIndex, ListView.Contain);
+            }
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+            if (listModel.count > 0) {
+                root.selectedIndex = root.selectedIndex <= 0
+                    ? listModel.count - 1
+                    : root.selectedIndex - 1;
+                listView.positionViewAtIndex(root.selectedIndex, ListView.Contain);
+            }
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            root.copySelected();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Delete) {
+            root.deleteSelected();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Space || event.key === Qt.Key_Tab) {
+            root.toggleImagePreview();
+            event.accepted = true;
+        }
+    }
+
     ListModel {
         id: listModel
     }
@@ -705,13 +739,14 @@ FocusScope {
                     }
 
                     Keys.onPressed: (event) => {
-                        if (event.key === Qt.Key_Down) {
+                        const isCtrl = (event.modifiers & Qt.ControlModifier);
+                        if (event.key === Qt.Key_Down || (isCtrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
                             if (listModel.count > 0) {
                                 root.selectedIndex = (root.selectedIndex + 1) % listModel.count;
                                 listView.positionViewAtIndex(root.selectedIndex, ListView.Contain);
                             }
                             event.accepted = true;
-                        } else if (event.key === Qt.Key_Up) {
+                        } else if (event.key === Qt.Key_Up || (isCtrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
                             if (listModel.count > 0) {
                                 root.selectedIndex = root.selectedIndex <= 0
                                     ? listModel.count - 1
@@ -795,14 +830,14 @@ FocusScope {
                 focus: root.imgFullPreview
 
                 Keys.onPressed: (event) => {
-                    if (event.key === Qt.Key_Down || event.key === Qt.Key_Right) {
+                    if (event.key === Qt.Key_Down || event.key === Qt.Key_Right || event.key === Qt.Key_J || event.key === Qt.Key_L) {
                         const next = root.findAdjacentImageIndex(1);
                         if (next !== -1) {
                             root.previewSlideDir = 1;
                             root.selectedIndex = next;
                         }
                         event.accepted = true;
-                    } else if (event.key === Qt.Key_Up || event.key === Qt.Key_Left) {
+                    } else if (event.key === Qt.Key_Up || event.key === Qt.Key_Left || event.key === Qt.Key_K || event.key === Qt.Key_H) {
                         const prev = root.findAdjacentImageIndex(-1);
                         if (prev !== -1) {
                             root.previewSlideDir = -1;

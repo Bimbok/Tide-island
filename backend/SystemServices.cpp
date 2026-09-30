@@ -16,6 +16,8 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QtConcurrent/QtConcurrent>
+#include <QDBusConnection>
+#include <QDBusMessage>
 
 #ifdef Q_OS_UNIX
 #include <unistd.h>
@@ -309,7 +311,8 @@ QProcess *SystemServices::startCommand(const QString &program,
         if (result.errorString.isEmpty() && process->error() != QProcess::UnknownError)
             result.errorString = process->errorString();
 
-        callback(result);
+        if (callback)
+            callback(result);
         process->deleteLater();
     };
 
@@ -494,12 +497,7 @@ void SystemServices::handleRecordingPortalOutput() {
     });
 }
 
-QString SystemServices::decodeDbusMonitorString(const QString &line) const {
-    static const QRegularExpression stringPattern(QStringLiteral("^\\s*string \"(.*)\"\\s*$"));
-    const QRegularExpressionMatch match = stringPattern.match(line);
-    if (!match.hasMatch()) return QString();
-
-    const QString escaped = match.captured(1);
+QString SystemServices::decodeEscapedString(const QString &escaped) const {
     QString decoded;
     decoded.reserve(escaped.size());
 
@@ -514,10 +512,53 @@ QString SystemServices::decodeDbusMonitorString(const QString &line) const {
         if (next == QLatin1Char('n')) decoded.append(QLatin1Char('\n'));
         else if (next == QLatin1Char('r')) decoded.append(QLatin1Char('\r'));
         else if (next == QLatin1Char('t')) decoded.append(QLatin1Char('\t'));
+        else if (next == QLatin1Char('\"')) decoded.append(QLatin1Char('\"'));
+        else if (next == QLatin1Char('\\')) decoded.append(QLatin1Char('\\'));
         else decoded.append(next);
     }
 
     return decoded;
+}
+
+bool SystemServices::extractDbusString(const QString &line, QString &result) {
+    if (m_pendingNotificationInString) {
+        if (line.endsWith(QLatin1Char('\"')) && !line.endsWith(QStringLiteral("\\\""))) {
+            m_pendingNotificationStringAccumulator.append(QLatin1Char('\n'));
+            m_pendingNotificationStringAccumulator.append(line.left(line.size() - 1));
+            result = decodeEscapedString(m_pendingNotificationStringAccumulator);
+            m_pendingNotificationInString = false;
+            m_pendingNotificationStringAccumulator.clear();
+            return true;
+        } else {
+            m_pendingNotificationStringAccumulator.append(QLatin1Char('\n'));
+            m_pendingNotificationStringAccumulator.append(line);
+            return false;
+        }
+    }
+
+    static const QRegularExpression singleLinePattern(QStringLiteral("^\\s*string \"(.*)\"\\s*$"));
+    const QRegularExpressionMatch singleMatch = singleLinePattern.match(line);
+    if (singleMatch.hasMatch()) {
+        result = decodeEscapedString(singleMatch.captured(1));
+        return true;
+    }
+
+    static const QRegularExpression multiLineStartPattern(QStringLiteral("^\\s*string \"(.*)$"));
+    const QRegularExpressionMatch startMatch = multiLineStartPattern.match(line);
+    if (startMatch.hasMatch()) {
+        m_pendingNotificationInString = true;
+        m_pendingNotificationStringAccumulator = startMatch.captured(1);
+        return false;
+    }
+
+    return false;
+}
+
+QString SystemServices::decodeDbusMonitorString(const QString &line) const {
+    static const QRegularExpression stringPattern(QStringLiteral("^\\s*string \"(.*)\"\\s*$"));
+    const QRegularExpressionMatch match = stringPattern.match(line);
+    if (!match.hasMatch()) return QString();
+    return decodeEscapedString(match.captured(1));
 }
 
 void SystemServices::handleNotificationLine(const QString &line) {
@@ -526,44 +567,169 @@ void SystemServices::handleNotificationLine(const QString &line) {
     if (line.contains(QStringLiteral("member=Notify"))) {
         m_notificationCaptureActive = true;
         m_notificationCaptureStage = 0;
+        m_pendingNotificationId = ++m_nextNotificationId;
+        m_pendingNotificationReplacesId = 0;
         m_pendingNotificationAppName.clear();
+        m_pendingNotificationAppIcon.clear();
         m_pendingNotificationSummary.clear();
         m_pendingNotificationBody.clear();
+        m_pendingNotificationActions.clear();
+        m_pendingNotificationActionKey.clear();
+        m_pendingNotificationImagePath.clear();
+        m_pendingNotificationUrgency = 1;
+        m_pendingHintKey.clear();
+        m_pendingNotificationInString = false;
+        m_pendingNotificationStringAccumulator.clear();
         return;
     }
 
     if (!m_notificationCaptureActive) return;
 
+    QString parsedString;
+
     switch (m_notificationCaptureStage) {
-    case 0:
-        if (!line.startsWith(QStringLiteral("string "))) return;
-        m_pendingNotificationAppName = decodeDbusMonitorString(line);
+    case 0: // app_name
+        if (!extractDbusString(line, parsedString)) return;
+        m_pendingNotificationAppName = parsedString;
         m_notificationCaptureStage = 1;
         return;
-    case 1:
-        if (!line.startsWith(QStringLiteral("uint32 "))) return;
-        m_notificationCaptureStage = 2;
+    case 1: // replaces_id (uint32)
+        if (line.contains(QStringLiteral("uint32 "))) {
+            const QString numStr = line.section(QStringLiteral("uint32 "), 1, 1).trimmed();
+            bool ok = false;
+            const uint idVal = numStr.toUInt(&ok);
+            if (ok && idVal > 0) {
+                m_pendingNotificationReplacesId = idVal;
+                m_pendingNotificationId = idVal;
+            }
+            m_notificationCaptureStage = 2;
+        }
         return;
-    case 2:
-        if (!line.startsWith(QStringLiteral("string "))) return;
+    case 2: // app_icon
+        if (!extractDbusString(line, parsedString)) return;
+        m_pendingNotificationAppIcon = parsedString;
         m_notificationCaptureStage = 3;
         return;
-    case 3:
-        if (!line.startsWith(QStringLiteral("string "))) return;
-        m_pendingNotificationSummary = decodeDbusMonitorString(line);
+    case 3: // summary
+        if (!extractDbusString(line, parsedString)) return;
+        m_pendingNotificationSummary = parsedString;
         m_notificationCaptureStage = 4;
         return;
-    case 4:
-        if (!line.startsWith(QStringLiteral("string "))) return;
-        m_pendingNotificationBody = decodeDbusMonitorString(line);
-        emit notificationReceived(m_pendingNotificationAppName, m_pendingNotificationSummary, m_pendingNotificationBody);
-        m_notificationCaptureActive = false;
-        m_notificationCaptureStage = -1;
+    case 4: // body
+        if (!extractDbusString(line, parsedString)) return;
+        m_pendingNotificationBody = parsedString;
+        m_notificationCaptureStage = 5;
+        return;
+    case 5: // actions array
+        if (line.trimmed() == QStringLiteral("]")) {
+            m_notificationCaptureStage = 6;
+            return;
+        }
+        if (extractDbusString(line, parsedString)) {
+            if (m_pendingNotificationActionKey.isEmpty()) {
+                m_pendingNotificationActionKey = parsedString;
+            } else {
+                QVariantMap act;
+                act.insert(QStringLiteral("id"), m_pendingNotificationActionKey);
+                act.insert(QStringLiteral("text"), parsedString);
+                m_pendingNotificationActions.append(act);
+                m_pendingNotificationActionKey.clear();
+            }
+        }
+        return;
+    case 6: // hints dictionary
+        if (line.trimmed() == QStringLiteral("]")) {
+            emit notificationReceived(m_pendingNotificationId,
+                                      m_pendingNotificationAppName,
+                                      m_pendingNotificationAppIcon,
+                                      m_pendingNotificationSummary,
+                                      m_pendingNotificationBody,
+                                      m_pendingNotificationActions,
+                                      m_pendingNotificationImagePath,
+                                      m_pendingNotificationUrgency);
+            m_notificationCaptureActive = false;
+            m_notificationCaptureStage = -1;
+            return;
+        }
+        if (line.contains(QStringLiteral("string \"image-path\""))
+            || line.contains(QStringLiteral("string \"image_path\""))
+            || line.contains(QStringLiteral("string \"image-data\""))
+            || line.contains(QStringLiteral("string \"icon_data\""))) {
+            m_pendingHintKey = QStringLiteral("image-path");
+            return;
+        }
+        if (line.contains(QStringLiteral("string \"urgency\""))) {
+            m_pendingHintKey = QStringLiteral("urgency");
+            return;
+        }
+        if (line.contains(QStringLiteral("string \"desktop-entry\""))) {
+            m_pendingHintKey = QStringLiteral("desktop-entry");
+            return;
+        }
+        if (!m_pendingHintKey.isEmpty()) {
+            if (m_pendingHintKey == QStringLiteral("image-path")) {
+                if (line.contains(QStringLiteral("variant")) && line.contains(QStringLiteral("string "))) {
+                    static const QRegularExpression variantStringPattern(QStringLiteral("variant\\s+string\\s+\"(.*)\""));
+                    const QRegularExpressionMatch m = variantStringPattern.match(line);
+                    if (m.hasMatch()) {
+                        m_pendingNotificationImagePath = decodeEscapedString(m.captured(1));
+                    }
+                    m_pendingHintKey.clear();
+                }
+            } else if (m_pendingHintKey == QStringLiteral("urgency")) {
+                if (line.contains(QStringLiteral("byte "))) {
+                    const QString bStr = line.section(QStringLiteral("byte "), 1, 1).trimmed();
+                    bool ok = false;
+                    const int urg = bStr.toInt(&ok);
+                    if (ok) m_pendingNotificationUrgency = urg;
+                    m_pendingHintKey.clear();
+                }
+            } else if (m_pendingHintKey == QStringLiteral("desktop-entry")) {
+                if (line.contains(QStringLiteral("variant")) && line.contains(QStringLiteral("string "))) {
+                    static const QRegularExpression variantStringPattern(QStringLiteral("variant\\s+string\\s+\"(.*)\""));
+                    const QRegularExpressionMatch m = variantStringPattern.match(line);
+                    if (m.hasMatch() && m_pendingNotificationAppIcon.isEmpty()) {
+                        m_pendingNotificationAppIcon = decodeEscapedString(m.captured(1));
+                    }
+                    m_pendingHintKey.clear();
+                }
+            }
+        }
         return;
     default:
         m_notificationCaptureActive = false;
         m_notificationCaptureStage = -1;
         return;
+    }
+}
+
+void SystemServices::invokeNotificationAction(uint id, const QString &actionKey) {
+    QDBusMessage msg = QDBusMessage::createSignal(
+        QStringLiteral("/org/freedesktop/Notifications"),
+        QStringLiteral("org.freedesktop.Notifications"),
+        QStringLiteral("ActionInvoked")
+    );
+    msg << id << actionKey;
+    QDBusConnection::sessionBus().send(msg);
+
+    const QString dunstctl = findExecutable(QStringLiteral("dunstctl"));
+    if (!dunstctl.isEmpty()) {
+        startCommand(dunstctl, {QStringLiteral("action")}, 1000, nullptr);
+    }
+}
+
+void SystemServices::closeNotification(uint id, uint reason) {
+    QDBusMessage msg = QDBusMessage::createSignal(
+        QStringLiteral("/org/freedesktop/Notifications"),
+        QStringLiteral("org.freedesktop.Notifications"),
+        QStringLiteral("NotificationClosed")
+    );
+    msg << id << reason;
+    QDBusConnection::sessionBus().send(msg);
+
+    const QString dunstctl = findExecutable(QStringLiteral("dunstctl"));
+    if (!dunstctl.isEmpty()) {
+        startCommand(dunstctl, {QStringLiteral("close"), QString::number(id)}, 1000, nullptr);
     }
 }
 

@@ -52,9 +52,18 @@ public:
     Q_INVOKABLE void cancelPowerProfileApply();
     Q_INVOKABLE void setCavaClientActive(const QString &clientId, bool active);
     Q_INVOKABLE void ensureUserConfigAvailable();
+    Q_INVOKABLE void invokeNotificationAction(uint id, const QString &actionKey);
+    Q_INVOKABLE void closeNotification(uint id, uint reason = 2);
 
 signals:
-    void notificationReceived(const QString &appName, const QString &summary, const QString &body);
+    void notificationReceived(uint id,
+                              const QString &appName,
+                              const QString &appIcon,
+                              const QString &summary,
+                              const QString &body,
+                              const QVariantList &actions,
+                              const QString &imagePath,
+                              int urgency);
     void screenRecordingActiveChanged();
     void hyprlandSnapshotReady(const QString &requestId,
                                const QString &subject,
@@ -106,11 +115,13 @@ private:
     void handlePipeWireOutput();
     void handleRecordingPortalOutput();
     void processLines(QByteArray &buffer, const QByteArray &chunk, const std::function<void(const QString &)> &handler);
-    void handleNotificationLine(const QString &line);
+    Q_INVOKABLE void handleNotificationLine(const QString &line);
     void handlePipeWireLine(const QString &line);
     void handleRecordingPortalLine(const QString &line);
     void applyPipeWireSnapshot(const QString &text);
 
+    bool extractDbusString(const QString &line, QString &result);
+    QString decodeEscapedString(const QString &escaped) const;
     QString decodeDbusMonitorString(const QString &line) const;
     QString extractHeaderPath(const QString &line) const;
     QString extractObjectPath(const QString &line) const;
@@ -157,9 +168,20 @@ private:
 
     bool m_notificationCaptureActive = false;
     int m_notificationCaptureStage = -1;
+    uint m_nextNotificationId = 1000;
+    uint m_pendingNotificationId = 0;
+    uint m_pendingNotificationReplacesId = 0;
     QString m_pendingNotificationAppName;
+    QString m_pendingNotificationAppIcon;
     QString m_pendingNotificationSummary;
     QString m_pendingNotificationBody;
+    QVariantList m_pendingNotificationActions;
+    QString m_pendingNotificationActionKey;
+    QString m_pendingNotificationImagePath;
+    int m_pendingNotificationUrgency = 1;
+    QString m_pendingHintKey;
+    bool m_pendingNotificationInString = false;
+    QString m_pendingNotificationStringAccumulator;
 
     qint64 m_lastCpuTotal = -1;
     qint64 m_lastCpuIdle = -1;

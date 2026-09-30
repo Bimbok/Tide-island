@@ -471,6 +471,21 @@ FocusScope {
             event.accepted = true;
         } else if (root.launchFavoriteShortcut(event)) {
             event.accepted = true;
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J || event.key === Qt.Key_Tab) {
+            root.moveSelection(1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K || event.key === Qt.Key_Backtab) {
+            root.moveSelection(-1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
+            root.moveSelection(1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
+            root.moveSelection(-1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            root.launchSelected();
+            event.accepted = true;
         }
     }
 
@@ -532,21 +547,22 @@ FocusScope {
                     }
 
                     Keys.onPressed: event => {
+                        const isCtrl = (event.modifiers & Qt.ControlModifier);
                         if (event.key === Qt.Key_Escape) {
                             root.closeRequested();
                             event.accepted = true;
                         } else if (root.launchFavoriteShortcut(event)) {
                             event.accepted = true;
+                        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab || (isCtrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
+                            root.moveSelection(1);
+                            event.accepted = true;
+                        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (isCtrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
+                            root.moveSelection(-1);
+                            event.accepted = true;
                         } else if (event.key === Qt.Key_Right && text === "") {
                             root.moveSelection(1);
                             event.accepted = true;
-                        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
-                            root.moveSelection(1);
-                            event.accepted = true;
                         } else if (event.key === Qt.Key_Left && text === "") {
-                            root.moveSelection(-1);
-                            event.accepted = true;
-                        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
                             root.moveSelection(-1);
                             event.accepted = true;
                         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {

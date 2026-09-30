@@ -89,6 +89,43 @@ Item {
         onTriggered: root.focusPromptField()
     }
 
+    Keys.onEscapePressed: function(event) {
+        if (root.isWifi && root.provider && root.provider.wifiPendingPasswordSsid.length > 0) {
+            root.provider.clearWifiPrompt();
+            event.accepted = true;
+            return;
+        }
+        if (root.isBluetooth && root.provider && root.provider.bluetoothPairingActive) {
+            root.provider.cancelBluetoothPairing();
+            event.accepted = true;
+            return;
+        }
+        root.closeRequested();
+        event.accepted = true;
+    }
+
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+            if (root.isWifi && root.provider && root.provider.wifiPendingPasswordSsid.length > 0) {
+                root.provider.clearWifiPrompt();
+                event.accepted = true;
+                return;
+            }
+            if (root.isBluetooth && root.provider && root.provider.bluetoothPairingActive) {
+                root.provider.cancelBluetoothPairing();
+                event.accepted = true;
+                return;
+            }
+            root.closeRequested();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            if (root.isBluetooth && root.provider && root.provider.bluetoothPairingActive && root.provider.bluetoothPairingRequiresConfirmation) {
+                root.provider.confirmBluetoothPairing();
+                event.accepted = true;
+            }
+        }
+    }
+
     Connections {
         target: root.provider
         ignoreUnknownSignals: true
@@ -426,6 +463,14 @@ Item {
                                     if (root.provider)
                                         root.provider.submitBluetoothPairingSecret();
                                 }
+                                Keys.onEnterPressed: {
+                                    if (root.provider)
+                                        root.provider.submitBluetoothPairingSecret();
+                                }
+                                Keys.onEscapePressed: {
+                                    if (root.provider)
+                                        root.provider.cancelBluetoothPairing();
+                                }
                             }
                         }
 
@@ -569,6 +614,14 @@ Item {
                             Keys.onReturnPressed: {
                                 if (root.provider)
                                     root.provider.submitWifiPassword();
+                            }
+                            Keys.onEnterPressed: {
+                                if (root.provider)
+                                    root.provider.submitWifiPassword();
+                            }
+                            Keys.onEscapePressed: {
+                                if (root.provider)
+                                    root.provider.clearWifiPrompt();
                             }
                         }
                     }

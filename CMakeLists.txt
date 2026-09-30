@@ -92,6 +92,23 @@ target_link_libraries(file_shelf_model_tests PRIVATE
 
 add_test(NAME file_shelf_model COMMAND file_shelf_model_tests)
 
+add_executable(system_services_notification_tests
+    tests/system_services_notification_tests.cpp
+)
+
+target_include_directories(system_services_notification_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend
+)
+
+target_link_libraries(system_services_notification_tests PRIVATE
+    IslandBackend
+    Qt6::Core
+    Qt6::DBus
+    Qt6::Test
+)
+
+add_test(NAME system_services_notification COMMAND system_services_notification_tests)
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/lyricsmpris_core_tests.cpp")
     add_executable(lyricsmpris_tests
         tests/lyricsmpris_core_tests.cpp

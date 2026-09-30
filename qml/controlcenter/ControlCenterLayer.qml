@@ -129,8 +129,10 @@ Item {
     readonly property real roundToggleButtonGap: 18
     readonly property real controlCenterExtraHeight: 12 + batteryDrawerHandleHeight
         + batteryDrawerProgress * (batteryDrawerContentGap + batteryModeCardHeight)
+        + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
     readonly property real controlCenterMaximumExtraHeight: 12 + batteryDrawerHandleHeight
         + batteryDrawerContentGap + batteryModeCardHeight
+        + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
     readonly property bool bluetoothAvailable: !!bluetoothAdapter
     readonly property var bluetoothAdapter: Bluetooth.defaultAdapter
     readonly property var bluetoothDeviceValues: bluetoothAdapter ? bluetoothAdapter.devices.values : []
@@ -1000,10 +1002,69 @@ Item {
     opacity: showCondition ? 1 : 0
     visible: opacity > 0
 
+    Keys.onEscapePressed: function(event) {
+        if (controlCenter.hasConnectivityPrompt) {
+            if (controlCenter.wifiPendingPasswordSsid.length > 0)
+                controlCenter.clearWifiPrompt();
+            else if (controlCenter.bluetoothPairingActive)
+                controlCenter.cancelBluetoothPairing();
+            event.accepted = true;
+            return;
+        }
+        if (controlCenter.anyConnectivityPanelOpen) {
+            controlCenter.closeConnectivityOverlays();
+            event.accepted = true;
+            return;
+        }
+        if (controlCenter.batteryDrawerOpen) {
+            controlCenter.setBatteryDrawerOpen(false);
+            event.accepted = true;
+            return;
+        }
+        controlCenter.closeRequested();
+        event.accepted = true;
+    }
+
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+            if (controlCenter.hasConnectivityPrompt) {
+                if (controlCenter.wifiPendingPasswordSsid.length > 0)
+                    controlCenter.clearWifiPrompt();
+                else if (controlCenter.bluetoothPairingActive)
+                    controlCenter.cancelBluetoothPairing();
+                event.accepted = true;
+                return;
+            }
+            if (controlCenter.anyConnectivityPanelOpen) {
+                controlCenter.closeConnectivityOverlays();
+                event.accepted = true;
+                return;
+            }
+            if (controlCenter.batteryDrawerOpen) {
+                controlCenter.setBatteryDrawerOpen(false);
+                event.accepted = true;
+                return;
+            }
+            controlCenter.closeRequested();
+            event.accepted = true;
+        } else if (controlCenter.batteryDrawerOpen && controlCenter.tlpControlsEnabled) {
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
+                controlCenter.setBatteryModeVisualIndex(controlCenter.batteryModeIndex - 1, true);
+                controlCenter.applyBatteryMode(controlCenter.batteryModeIndex);
+                event.accepted = true;
+            } else if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
+                controlCenter.setBatteryModeVisualIndex(controlCenter.batteryModeIndex + 1, true);
+                controlCenter.applyBatteryMode(controlCenter.batteryModeIndex);
+                event.accepted = true;
+            }
+        }
+    }
+
     onBrightnessLevelChanged: syncBrightnessFromLevel(brightnessLevel)
     onVolumeLevelChanged: syncVolumeFromLevel(volumeLevel)
     onShowConditionChanged: {
         if (showCondition) {
+            controlCenter.forceActiveFocus();
             syncLevelsFromProps();
             sliderIntroPending = true;
             displayedBrightness = localBrightness;
@@ -2434,6 +2495,11 @@ Item {
                     }
                 }
             }
+        }
+
+        SystemTrayCard {
+            id: systemTrayCard
+            width: parent.width
         }
 
         ControlSliderCard {

@@ -180,6 +180,7 @@ PanelWindow {
         || islandContainer.clipboardLayerVisible
         || islandContainer.weatherLayerVisible
         || islandContainer.calendarLayerVisible
+        || islandContainer.notificationCenterLayerVisible
         ? WlrLayer.Overlay
         : WlrLayer.Top
     WlrLayershell.keyboardFocus: {
@@ -188,7 +189,8 @@ PanelWindow {
                 || islandContainer.applicationLauncherLayerVisible
                 || islandContainer.clipboardLayerVisible
                 || islandContainer.weatherLayerVisible
-                || islandContainer.calendarLayerVisible)
+                || islandContainer.calendarLayerVisible
+                || islandContainer.notificationCenterLayerVisible)
             return WlrKeyboardFocus.Exclusive;
         if (islandContainer.fileShelfLayerVisible)
             return WlrKeyboardFocus.OnDemand;
@@ -199,7 +201,7 @@ PanelWindow {
         if (islandContainer.expandedPlayerKeyboardFocusRequested)
             return WlrKeyboardFocus.Exclusive;
         if (root.monitorFocused && root.connectivityPromptActive)
-            return WlrKeyboardFocus.OnDemand;
+            return WlrKeyboardFocus.Exclusive;
         return WlrKeyboardFocus.None;
     }
     readonly property string iconFontFamily: userConfig.iconFontFamily
@@ -569,8 +571,8 @@ PanelWindow {
             prewarmWallpaperCache();
     }
 
-    function showNotification(appName, summary, body) {
-        islandContainer.showNotificationCapsule(appName, summary, body);
+    function showNotification(id, appName, appIcon, summary, body, actions, imagePath, urgency) {
+        islandContainer.showNotificationCapsule(id, appName, appIcon, summary, body, actions, imagePath, urgency);
     }
 
     function showClockWindow() {
@@ -956,9 +958,14 @@ PanelWindow {
         readonly property real currentBrightness: systemState.currentBrightness
         readonly property real currentCpuUsage: systemState.currentCpuUsage
         readonly property real currentRamUsage: systemState.currentRamUsage
+        property int notificationId: 0
         property string notificationAppName: ""
+        property string notificationAppIcon: ""
         property string notificationSummary: ""
         property string notificationBody: ""
+        property var notificationActions: []
+        property string notificationImagePath: ""
+        property int notificationUrgency: 1
         property bool notificationExpanded: false
         property bool isEmergencyAlert: false
         property real customCapsuleWidth: userConfig.islandWidth
@@ -1198,37 +1205,24 @@ PanelWindow {
 
         Keys.onPressed: (event) => {
             if (event.key === Qt.Key_Escape) {
+                if (root.connectivityPromptActive) {
+                    if (controlCenterLoader.item) {
+                        if (controlCenterLoader.item.wifiPendingPasswordSsid.length > 0)
+                            controlCenterLoader.item.clearWifiPrompt();
+                        else if (controlCenterLoader.item.bluetoothPairingActive)
+                            controlCenterLoader.item.cancelBluetoothPairing();
+                    }
+                    event.accepted = true;
+                    return;
+                }
+
                 if (root.overviewVisible) {
                     root.closeOverviewEverywhere();
                     event.accepted = true;
                     return;
                 }
 
-                if (islandContainer.clipboardLayerVisible) {
-                    islandContainer.smartRestoreState();
-                    event.accepted = true;
-                    return;
-                }
-
-                if (islandContainer.weatherLayerVisible) {
-                    islandContainer.smartRestoreState();
-                    event.accepted = true;
-                    return;
-                }
-
-                if (islandContainer.calendarLayerVisible) {
-                    islandContainer.smartRestoreState();
-                    event.accepted = true;
-                    return;
-                }
-
-                if (islandContainer.expandedLayerVisible) {
-                    islandContainer.smartRestoreState();
-                    event.accepted = true;
-                    return;
-                }
-
-                if (islandContainer.controlCenterLayerVisible) {
+                if (islandContainer.islandState !== islandContainer.restingState) {
                     islandContainer.smartRestoreState();
                     event.accepted = true;
                     return;
@@ -1709,37 +1703,74 @@ PanelWindow {
             restartAutoHideTimer();
         }
 
-        function showNotificationCapsule(appName, summary, body) {
+        function showNotificationCapsule(id, appName, appIcon, summary, body, actions, imagePath, urgency) {
             if (root.overviewVisible || islandState === "control_center"
                     || islandState === "expanded" || islandState === "file_shelf") return;
 
-            const cleanedAppName = cleanNotificationText(appName);
-            const cleanedSummary = cleanNotificationText(summary);
-            const cleanedBody = cleanNotificationText(body);
+            let resolvedId = 0;
+            let rawAppName = "";
+            let rawAppIcon = "";
+            let rawSummary = "";
+            let rawBody = "";
+            let rawActions = [];
+            let rawImagePath = "";
+            let rawUrgency = 1;
+
+            if (typeof id === "string" && actions === undefined) {
+                // Legacy 3-arg call: (appName, summary, body)
+                rawAppName = id;
+                rawSummary = appName || "";
+                rawBody = appIcon || "";
+            } else {
+                resolvedId = typeof id === "number" ? id : 0;
+                rawAppName = appName || "";
+                rawAppIcon = appIcon || "";
+                rawSummary = summary || "";
+                rawBody = body || "";
+                rawActions = Array.isArray(actions) ? actions : [];
+                rawImagePath = imagePath || "";
+                rawUrgency = typeof urgency === "number" ? urgency : 1;
+            }
+
+            const cleanedAppName = cleanNotificationText(rawAppName);
+            const cleanedSummary = cleanNotificationText(rawSummary);
+            const cleanedBody = cleanNotificationText(rawBody);
             const resolvedSummary = cleanedSummary !== ""
                 ? cleanedSummary
                 : (cleanedBody !== "" ? cleanedBody : "New notification");
 
             abortSideTransientMode();
             clearTransientCapsule();
+            notificationId = resolvedId;
             notificationAppName = cleanedAppName !== "" ? cleanedAppName : "Notification";
+            notificationAppIcon = rawAppIcon;
             notificationSummary = resolvedSummary;
             notificationBody = cleanedSummary !== "" ? cleanedBody : "";
+            notificationActions = rawActions;
+            notificationImagePath = rawImagePath;
+            notificationUrgency = rawUrgency;
             notificationExpanded = false;
             islandState = "notification";
-            restartAutoHideTimer(notificationAutoHideInterval);
-            // Store in notification history
-                if (notificationHistoryModel) {
-                    notificationHistoryModel.insert(0, {
-                        appName: cleanedAppName !== "" ? cleanedAppName : "Notification",
-                        summary: resolvedSummary,
-                        body: cleanedSummary !== "" ? cleanedBody : "",
-                        timestamp: new Date()
-                    });
-                    if (notificationHistoryModel.count > 50)
-                        notificationHistoryModel.remove(50, notificationHistoryModel.count - 50);
-                }
 
+            const timeout = (rawUrgency === 2) ? 10000 : ((rawUrgency === 0) ? 3000 : notificationAutoHideInterval);
+            restartAutoHideTimer(timeout);
+
+            // Store in notification history
+            if (notificationHistoryModel) {
+                notificationHistoryModel.insert(0, {
+                    id: resolvedId,
+                    appName: cleanedAppName !== "" ? cleanedAppName : "Notification",
+                    appIcon: rawAppIcon,
+                    summary: resolvedSummary,
+                    body: cleanedSummary !== "" ? cleanedBody : "",
+                    actions: rawActions,
+                    imagePath: rawImagePath,
+                    urgency: rawUrgency,
+                    timestamp: new Date()
+                });
+                if (notificationHistoryModel.count > 50)
+                    notificationHistoryModel.remove(50, notificationHistoryModel.count - 50);
+            }
         }
 
         function toggleNotificationExpansionIfNeeded() {
@@ -2055,10 +2086,11 @@ PanelWindow {
             z: 5
             property int morphDuration: 400
             readonly property bool notificationHistorySurface: islandContainer.islandState === "notification_center"
-            property real outlineWidth: root.overviewContentVisible || notificationHistorySurface ? 1 : 0
+            readonly property bool isCriticalNotification: islandContainer.islandState === "notification" && islandContainer.notificationUrgency === 2
+            property real outlineWidth: root.overviewContentVisible || notificationHistorySurface || isCriticalNotification ? 1 : 0
             property color outlineColor: root.overviewContentVisible
                 ? root.overviewCapsuleBorderColor
-                : (notificationHistorySurface ? StyleTokens.withAlpha(StyleTokens.track, 0.4) : StyleTokens.clearBlack)
+                : (isCriticalNotification ? StyleTokens.danger : (notificationHistorySurface ? StyleTokens.withAlpha(StyleTokens.track, 0.4) : StyleTokens.clearBlack))
             property real displayedWidth: baseTargetWidth
             readonly property real baseTargetWidth: {
                 if (root.overviewVisible) return root.overviewCapsuleWidth;
@@ -2705,9 +2737,14 @@ PanelWindow {
 
                 sourceComponent: Component {
                     NotificationLayer {
+                        notificationId: islandContainer.notificationId
                         appName: islandContainer.notificationAppName
+                        appIcon: islandContainer.notificationAppIcon
                         summary: islandContainer.notificationSummary
                         body: islandContainer.notificationBody
+                        actions: islandContainer.notificationActions
+                        imagePath: islandContainer.notificationImagePath
+                        urgency: islandContainer.notificationUrgency
                         expanded: islandContainer.notificationExpanded
                         toggleButton: userConfig.mouseButton(userConfig.dynamicIslandPrimaryButton)
                         iconText: root.notificationStatusIcon
@@ -2718,6 +2755,10 @@ PanelWindow {
                         onExpansionToggleRequested: {
                             islandContainer.suppressCapsuleClick(true);
                             islandContainer.toggleNotificationExpansionIfNeeded();
+                        }
+                        onActionTriggered: function(actionKey) {
+                            SystemServices.invokeNotificationAction(islandContainer.notificationId, actionKey);
+                            islandContainer.smartRestoreState();
                         }
                     }
                 }
@@ -2787,6 +2828,7 @@ PanelWindow {
                         onClearAllRequested: {
                             islandContainer.notificationHistoryModel.clear();
                         }
+                        onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }
             }

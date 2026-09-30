@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Shapes
+import Quickshell
 import IslandBackend
 import "../controlcenter"
 
@@ -128,6 +129,30 @@ Item {
             currentIndex: -1
             spacing: root.cardGap
 
+            Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
+                    if (count > 0) {
+                        currentIndex = (currentIndex + 1) % count;
+                        positionViewAtIndex(currentIndex, ListView.Contain);
+                    }
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
+                    if (count > 0) {
+                        currentIndex = currentIndex <= 0 ? count - 1 : currentIndex - 1;
+                        positionViewAtIndex(currentIndex, ListView.Contain);
+                    }
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Delete) {
+                    if (currentIndex >= 0 && currentIndex < count) {
+                        const item = model.get(currentIndex);
+                        if (item && item.id !== undefined) {
+                            SystemServices.closeNotification(item.id, 2);
+                        }
+                    }
+                    event.accepted = true;
+                }
+            }
+
             remove: Transition {
                 ParallelAnimation {
                     NumberAnimation {
@@ -181,49 +206,126 @@ Item {
                 readonly property string bodyText: model.body !== "" && model.body !== model.summary
                     ? model.body
                     : ""
+                readonly property string resolvedAppIcon: {
+                    if (model.appIcon) {
+                        const p = Quickshell.iconPath(model.appIcon, true);
+                        if (p !== "") return p;
+                        if (model.appIcon.startsWith("/") || model.appIcon.startsWith("file://") || model.appIcon.startsWith("image://")) return model.appIcon;
+                    }
+                    if (model.imagePath && !model.imagePath.startsWith("/") && !model.imagePath.startsWith("file://")) {
+                        const p = Quickshell.iconPath(model.imagePath, true);
+                        if (p !== "") return p;
+                    }
+                    if (model.appName) {
+                        const p = Quickshell.iconPath(model.appName.toLowerCase(), true);
+                        if (p !== "") return p;
+                    }
+                    return "";
+                }
+                readonly property bool hasImage: model.imagePath !== undefined && model.imagePath !== "" && (model.imagePath.startsWith("/") || model.imagePath.startsWith("file://"))
+                readonly property bool isCritical: model.urgency === 2
 
                 MatteSurface {
                     anchors.fill: parent
                     radius: root.cardRadius
-                    hovered: cardMouse.containsMouse
+                    hovered: cardMouse.containsMouse || listView.currentIndex === index
                     pressed: cardMouse.pressed
                 }
 
-                Item {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 16
-                    anchors.right: parent.right
-                    anchors.rightMargin: 16
-                    anchors.top: parent.top
-                    anchors.topMargin: 3
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 6
+                Rectangle {
+                    anchors.fill: parent
+                    radius: root.cardRadius
+                    color: StyleTokens.transparent
+                    border.color: delegateItem.isCritical ? StyleTokens.danger : StyleTokens.transparent
+                    border.width: 1
+                }
 
-                    Text {
-                        anchors.top: parent.top
-                        width: parent.width
-                        height: 18
-                        text: delegateItem.titleText
-                        textFormat: Text.PlainText
-                        color: StyleTokens.textPrimaryBright
-                        font.pixelSize: 15
-                        font.family: root.textFontFamily
-                        font.weight: Font.Bold
-                        verticalAlignment: Text.AlignVCenter
-                        elide: Text.ElideRight
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    anchors.topMargin: 4
+                    anchors.bottomMargin: 4
+                    spacing: 10
+
+                    // App icon
+                    Item {
+                        width: 28
+                        height: 28
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Image {
+                            anchors.fill: parent
+                            visible: delegateItem.resolvedAppIcon !== ""
+                            source: delegateItem.resolvedAppIcon
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            smooth: true
+                            mipmap: true
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: delegateItem.resolvedAppIcon === ""
+                            text: "\uf0f3"
+                            color: delegateItem.isCritical ? StyleTokens.danger : StyleTokens.textSecondary
+                            font.pixelSize: 14
+                            font.family: root.iconFontFamily
+                        }
                     }
 
-                    Text {
-                        anchors.bottom: parent.bottom
-                        width: parent.width
-                        height: 16
-                        text: delegateItem.bodyText
-                        textFormat: Text.PlainText
-                        color: StyleTokens.textSecondary
-                        font.pixelSize: 13
-                        font.family: root.textFontFamily
-                        verticalAlignment: Text.AlignVCenter
-                        elide: Text.ElideRight
+                    // Content text
+                    Item {
+                        width: parent.width - 28 - (delegateItem.hasImage ? 42 : 0) - (parent.spacing * (delegateItem.hasImage ? 2 : 1))
+                        height: parent.height
+
+                        Text {
+                            anchors.top: parent.top
+                            anchors.topMargin: delegateItem.bodyText !== "" ? 1 : 8
+                            width: parent.width
+                            height: 18
+                            text: delegateItem.titleText
+                            textFormat: Text.PlainText
+                            color: StyleTokens.textPrimaryBright
+                            font.pixelSize: 14
+                            font.family: root.textFontFamily
+                            font.weight: Font.Bold
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            visible: delegateItem.bodyText !== ""
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 2
+                            width: parent.width
+                            height: 16
+                            text: delegateItem.bodyText
+                            textFormat: Text.PlainText
+                            color: StyleTokens.textSecondary
+                            font.pixelSize: 12
+                            font.family: root.textFontFamily
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    // Thumbnail image if present
+                    Rectangle {
+                        visible: delegateItem.hasImage
+                        width: 34
+                        height: 34
+                        radius: 6
+                        color: StyleTokens.clearBlack
+                        anchors.verticalCenter: parent.verticalCenter
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: model.imagePath || ""
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                        }
                     }
                 }
 
