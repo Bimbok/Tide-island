@@ -61,7 +61,6 @@ Item {
     property bool bluetoothPanelOpen: false
     property bool powerPanelOpen: false
     property bool powerViewActive: false
-    property int powerSelectedIndex: 0
     property bool batteryDrawerOpen: false
     property bool batteryDrawerDragging: false
     property real batteryDrawerProgress: 0
@@ -568,14 +567,6 @@ Item {
         if (!lockProcess.running)
             lockProcess.running = true;
     }
-    function triggerPowerAction(index) {
-        switch (index) {
-        case 0: triggerLock(); break;
-        case 1: triggerSleep(); break;
-        case 2: triggerRestart(); break;
-        case 3: triggerShutdown(); break;
-        }
-    }
 
     function closeConnectivityPanels(emitSignals) {
         if (emitSignals === undefined)
@@ -1070,16 +1061,7 @@ Item {
             controlCenter.closeRequested();
             event.accepted = true;
         } else if (controlCenter.powerViewActive) {
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
-                controlCenter.powerSelectedIndex = (controlCenter.powerSelectedIndex - 1 + 4) % 4;
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Right || event.key === Qt.Key_L) {
-                controlCenter.powerSelectedIndex = (controlCenter.powerSelectedIndex + 1) % 4;
-                event.accepted = true;
-            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
-                controlCenter.triggerPowerAction(controlCenter.powerSelectedIndex);
-                event.accepted = true;
-            } else if (event.key === Qt.Key_1) {
+            if (event.key === Qt.Key_1) {
                 controlCenter.triggerLock();
                 event.accepted = true;
             } else if (event.key === Qt.Key_2) {
@@ -1680,101 +1662,68 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 2
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 10
+                spacing: 5
 
-                Rectangle {
-                    width: 22
-                    height: 22
-                    radius: 11
-                    color: powerBtnMouse.containsMouse || controlCenter.powerViewActive
-                        ? StyleTokens.moduleHover
-                        : StyleTokens.transparent
+                Text {
+                    text: controlCenter.chargingIconGlyph
+                    color: StyleTokens.white
+                    font.pixelSize: 13
+                    font.family: iconFontFamily
+                    visible: isCharging
                     anchors.verticalCenter: parent.verticalCenter
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "\uf011"
-                        color: controlCenter.powerViewActive
-                            ? StyleTokens.danger
-                            : (powerBtnMouse.containsMouse ? StyleTokens.textPrimaryBright : StyleTokens.textMuted)
-                        font.pixelSize: 12
-                        font.family: controlCenter.iconFontFamily
-                    }
-
-                    MouseArea {
-                        id: powerBtnMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: controlCenter.powerViewActive = !controlCenter.powerViewActive
-                    }
                 }
 
-                Row {
+                Text {
+                    text: batteryCapacity + "%"
+                    color: StyleTokens.white
+                    font.pixelSize: 13
+                    font.family: textFontFamily
+                    font.weight: Font.DemiBold
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 5
+                }
 
-                    Text {
-                        text: controlCenter.chargingIconGlyph
-                        color: StyleTokens.white
-                        font.pixelSize: 13
-                        font.family: iconFontFamily
-                        visible: isCharging
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                Item {
+                    width: 28
+                    height: 14
+                    anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
-                        text: batteryCapacity + "%"
-                        color: StyleTokens.white
-                        font.pixelSize: 13
-                        font.family: textFontFamily
-                        font.weight: Font.DemiBold
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    Item {
-                        width: 28
-                        height: 14
-                        anchors.verticalCenter: parent.verticalCenter
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.rightMargin: 2
+                        radius: 4
+                        color: StyleTokens.transparent
+                        border.color: StyleTokens.textSecondary
+                        border.width: 1
 
                         Rectangle {
-                            anchors.fill: parent
-                            anchors.rightMargin: 2
-                            radius: 4
-                            color: StyleTokens.transparent
-                            border.color: StyleTokens.textSecondary
-                            border.width: 1
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            anchors.margins: 2
+                            radius: 2
+                            width: (parent.width - 4) * (batteryCapacity / 100.0)
+                            color: {
+                                if (batteryCapacity <= 10) return StyleTokens.danger;
+                                if (batteryCapacity <= 20) return StyleTokens.warning;
+                                return StyleTokens.success;
+                            }
 
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                anchors.margins: 2
-                                radius: 2
-                                width: (parent.width - 4) * (batteryCapacity / 100.0)
-                                color: {
-                                    if (batteryCapacity <= 10) return StyleTokens.danger;
-                                    if (batteryCapacity <= 20) return StyleTokens.warning;
-                                    return StyleTokens.success;
-                                }
-
-                                Behavior on width {
-                                    NumberAnimation {
-                                        duration: 300
-                                        easing.type: Easing.OutCubic
-                                    }
+                            Behavior on width {
+                                NumberAnimation {
+                                    duration: 300
+                                    easing.type: Easing.OutCubic
                                 }
                             }
                         }
+                    }
 
-                        Rectangle {
-                            width: 2
-                            height: 6
-                            radius: 1
-                            color: StyleTokens.textSecondary
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+                    Rectangle {
+                        width: 2
+                        height: 6
+                        radius: 1
+                        color: StyleTokens.textSecondary
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
                     }
                 }
             }
@@ -2653,10 +2602,8 @@ Item {
         }
     }
     Item {
-        id: powerMenuContainer
         anchors.fill: parent
         visible: controlCenter.powerViewActive
-        opacity: visible ? 1 : 0
 
         Behavior on opacity {
             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
@@ -2664,61 +2611,30 @@ Item {
 
         Row {
             anchors.centerIn: parent
-            spacing: 16
+            spacing: 26
 
             Repeater {
                 model: [
-                    { label: "Lock", glyph: "\uf023", action: "triggerLock" },
-                    { label: "Sleep", glyph: "\uf186", action: "triggerSleep" },
-                    { label: "Restart", glyph: "\uf021", action: "triggerRestart" },
-                    { label: "Shut Down", glyph: "\uf011", action: "triggerShutdown" }
+                    { glyph: "\uf023", action: "triggerLock" },
+                    { glyph: "\uf186", action: "triggerSleep" },
+                    { glyph: "\uf021", action: "triggerRestart" },
+                    { glyph: "\uf011", action: "triggerShutdown" }
                 ]
 
-                delegate: Rectangle {
-                    id: powerCard
-                    width: 78
-                    height: 84
-                    radius: 18
-                    readonly property bool isSelected: controlCenter.powerSelectedIndex === index
-                    readonly property bool isHovered: powerMouse.containsMouse
-                    color: isSelected
-                        ? StyleTokens.accent
-                        : (isHovered ? StyleTokens.cardFillHover : StyleTokens.cardFill)
-                    border.width: isSelected ? 1.5 : (isHovered ? 1 : 0)
-                    border.color: isSelected ? StyleTokens.white : StyleTokens.withAlpha(StyleTokens.white, 0.18)
+                delegate: Item {
+                    width: 56
+                    height: 56
 
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                    scale: powerMouse.pressed ? 0.94 : (isSelected || isHovered ? 1.04 : 1.0)
-
-                    Column {
+                    Text {
                         anchors.centerIn: parent
-                        spacing: 7
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: modelData.glyph
-                            color: powerCard.isSelected ? StyleTokens.textOnAccent : StyleTokens.textPrimary
-                            font.pixelSize: 26
-                            font.family: controlCenter.iconFontFamily
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: modelData.label
-                            color: powerCard.isSelected ? StyleTokens.textOnAccent : StyleTokens.textSecondary
-                            font.pixelSize: 11
-                            font.family: controlCenter.textFontFamily
-                            font.weight: Font.DemiBold
-                        }
+                        text: modelData.glyph
+                        color: StyleTokens.textPrimary
+                        font.pixelSize: 38
+                        font.family: controlCenter.iconFontFamily
                     }
 
                     MouseArea {
-                        id: powerMouse
                         anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onEntered: controlCenter.powerSelectedIndex = index
                         onClicked: {
                             if (controlCenter[modelData.action])
                                 controlCenter[modelData.action]();
