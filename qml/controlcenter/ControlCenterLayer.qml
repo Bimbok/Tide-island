@@ -679,12 +679,12 @@ Item {
     }
 
     function applyBrightnessSnapshot(value) {
-        if (value >= 0)
+        if (value >= 0 && !brightnessCard.pressed)
             syncBrightnessFromLevel(value);
     }
 
     function applyVolumeSnapshot(value) {
-        if (value >= 0)
+        if (value >= 0 && !volumeCard.pressed)
             syncVolumeFromLevel(value);
     }
 
@@ -1253,7 +1253,7 @@ Item {
 
         function onBrightnessSetFinished(value, success, errorString) {
             controlCenter.brightnessSetterRunning = false;
-            if (success)
+            if (success && !brightnessCard.pressed)
                 controlCenter.applyBrightnessSnapshot(value);
             if (success && Math.abs(controlCenter.pendingBrightness - controlCenter.lastAppliedBrightness) >= 0.01)
                 brightnessApplyTimer.restart();
@@ -1266,7 +1266,7 @@ Item {
 
         function onVolumeSetFinished(value, success, errorString) {
             controlCenter.volumeSetterRunning = false;
-            if (success)
+            if (success && !volumeCard.pressed)
                 controlCenter.applyVolumeSnapshot(value);
             if (success && Math.abs(controlCenter.pendingVolume - controlCenter.lastAppliedVolume) >= 0.01)
                 volumeApplyTimer.restart();

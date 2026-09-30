@@ -121,6 +121,9 @@ private:
     void parseVolumeOutput(const QString &text, double *value, bool *muted, bool *ok) const;
     QString parseTlpProfile(const QString &text) const;
 
+    void applyPendingBrightness();
+    void applyPendingVolume();
+
     void startCava();
     void stopCava();
     void handleCavaOutput();
@@ -167,4 +170,16 @@ private:
     bool m_cavaMissingWarned = false;
     int m_tlpCommandGeneration = 0;
     bool m_configAppLaunchRequested = false;
+
+    bool m_brightnessRequestActive = false;
+    bool m_brightnessSettingActive = false;
+    double m_pendingBrightness = -1.0;
+    double m_lastAppliedBrightness = -1.0;
+    QTimer m_brightnessThrottleTimer;
+
+    bool m_volumeRequestActive = false;
+    bool m_volumeSettingActive = false;
+    double m_pendingVolume = -1.0;
+    double m_lastAppliedVolume = -1.0;
+    QTimer m_volumeThrottleTimer;
 };

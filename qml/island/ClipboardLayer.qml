@@ -93,10 +93,39 @@ FocusScope {
     }
 
     function refresh() {
+        decodeMissingProc.running = false;
         listProc.running = false;
         listProc.running = true;
         countProc.running = false;
         countProc.running = true;
+    }
+
+    function updateEntryImagePath(id, imgPath) {
+        if (!id || !imgPath) return;
+
+        for (let i = 0; i < allEntries.length; i++) {
+            if (String(allEntries[i].id) === String(id)) {
+                allEntries[i].imagePath = imgPath;
+                allEntries[i].isImage = true;
+                break;
+            }
+        }
+
+        for (let i = 0; i < listModel.count; i++) {
+            const item = listModel.get(i);
+            if (item && String(item.id) === String(id)) {
+                listModel.setProperty(i, "imagePath", imgPath);
+                listModel.setProperty(i, "isImage", true);
+                break;
+            }
+        }
+    }
+
+    function decodeSingle(id) {
+        if (!id) return;
+        decodeSingleProc.command = ["bash", root.helperScriptPath, "decode-img", String(id)];
+        decodeSingleProc.running = false;
+        decodeSingleProc.running = true;
     }
 
     function rebuildFilteredModel() {
@@ -162,8 +191,11 @@ FocusScope {
         if (listModel.count === 0 || selectedIndex < 0 || selectedIndex >= listModel.count)
             return;
         const entry = listModel.get(selectedIndex);
-        if (!entry || !entry.imagePath)
+        if (!entry || (!entry.imagePath && !entry.isImage))
             return;
+        if (!entry.imagePath && entry.isImage) {
+            root.decodeSingle(entry.id);
+        }
         imgFullPreview = !imgFullPreview;
     }
 
@@ -174,8 +206,12 @@ FocusScope {
         for (let i = 0; i < listModel.count; i++) {
             idx = (idx + direction + listModel.count) % listModel.count;
             const e = listModel.get(idx);
-            if (e && e.imagePath)
+            if (e && (e.imagePath || e.isImage)) {
+                if (!e.imagePath && e.isImage) {
+                    root.decodeSingle(e.id);
+                }
                 return idx;
+            }
         }
         return -1;
     }
@@ -318,6 +354,7 @@ FocusScope {
                 root.cliphistAvailable = true;
                 const lines = this.text.split("\n").filter(l => l.length > 0);
                 const parsed = [];
+                let hasMissingImages = false;
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
                     const tabIdx = line.indexOf("\t");
@@ -331,19 +368,55 @@ FocusScope {
                         const iconPart = rest.substring(nullIdx + 1);
                         const splitPart = iconPart.split("\x1f");
                         const imgPath = splitPart.length > 1 ? splitPart[1] : "";
+                        if (!imgPath)
+                            hasMissingImages = true;
                         parsed.push({ id: id, label: label, imagePath: imgPath, isImage: true });
                     } else {
                         const isImg = rest.indexOf("[[ binary data") !== -1;
+                        if (isImg)
+                            hasMissingImages = true;
                         parsed.push({ id: id, label: rest, imagePath: "", isImage: isImg });
                     }
                 }
                 root.allEntries = parsed;
                 root.rebuildFilteredModel();
+                if (hasMissingImages) {
+                    decodeMissingProc.running = false;
+                    decodeMissingProc.running = true;
+                }
             }
         }
         onExited: (code, status) => {
             if (code === 127)
                 root.cliphistAvailable = false;
+        }
+    }
+
+    Process {
+        id: decodeMissingProc
+        command: ["bash", root.helperScriptPath, "decode-missing", "200"]
+        running: false
+        stdout: SplitParser {
+            onRead: function(line) {
+                const parts = line.split("\t");
+                if (parts.length >= 2) {
+                    root.updateEntryImagePath(parts[0].trim(), parts[1].trim());
+                }
+            }
+        }
+    }
+
+    Process {
+        id: decodeSingleProc
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const line = this.text.trim();
+                const parts = line.split("\t");
+                if (parts.length >= 2) {
+                    root.updateEntryImagePath(parts[0].trim(), parts[1].trim());
+                }
+            }
         }
     }
 
@@ -381,6 +454,7 @@ FocusScope {
         running: false
         onRunningChanged: {
             if (!running) {
+                decodeMissingProc.running = false;
                 root.allEntries = [];
                 listModel.clear();
                 root.totalCount = 0;
@@ -801,6 +875,15 @@ FocusScope {
                             }
                         }
 
+                        Text {
+                            anchors.centerIn: parent
+                            visible: previewArea.currentImgPath === ""
+                            text: "Decoding image preview..."
+                            color: StyleTokens.textSecondary
+                            font.family: root.textFontFamily
+                            font.pixelSize: 13
+                        }
+
                         // Top-left image info badge
                         Rectangle {
                             anchors.top: parent.top
@@ -1015,7 +1098,7 @@ FocusScope {
                     width: listView.width - (vbar.visible ? 7 : 0)
                     height: isCollapsing
                         ? 0
-                        : (rowDelegate.model.imagePath !== "" ? 60 : 46)
+                        : ((rowDelegate.model.imagePath !== "" || rowDelegate.clipType === "image") ? 60 : 46)
                     radius: 12
                     clip: true
                     opacity: isCollapsing ? 0 : 1
@@ -1075,8 +1158,8 @@ FocusScope {
                         // ── TYPE BADGE / THUMBNAIL ──
                         Item {
                             Layout.alignment: Qt.AlignVCenter
-                            Layout.preferredWidth: rowDelegate.model.imagePath !== "" ? 48 : 28
-                            Layout.preferredHeight: rowDelegate.model.imagePath !== "" ? 44 : 28
+                            Layout.preferredWidth: (rowDelegate.model.imagePath !== "" || rowDelegate.clipType === "image") ? 48 : 28
+                            Layout.preferredHeight: (rowDelegate.model.imagePath !== "" || rowDelegate.clipType === "image") ? 44 : 28
 
                             // Image thumbnail preview
                             Rectangle {
@@ -1096,6 +1179,35 @@ FocusScope {
                                     asynchronous: true
                                     cache: false
                                     sourceSize: Qt.size(96, 88)
+                                }
+                            }
+
+                            // Image placeholder badge (while decoding)
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 8
+                                color: StyleTokens.withAlpha(StyleTokens.accent, 0.15)
+                                border.width: 1
+                                border.color: StyleTokens.withAlpha(StyleTokens.accent, 0.3)
+                                visible: rowDelegate.clipType === "image" && rowDelegate.model.imagePath === ""
+
+                                Shape {
+                                    anchors.centerIn: parent
+                                    width: 14
+                                    height: 14
+                                    preferredRendererType: Shape.CurveRenderer
+
+                                    ShapePath {
+                                        fillColor: StyleTokens.transparent
+                                        strokeColor: StyleTokens.accent
+                                        strokeWidth: 1.3
+                                        capStyle: ShapePath.RoundCap
+                                        joinStyle: ShapePath.RoundJoin
+
+                                        PathSvg {
+                                            path: "M2 3h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M1 8.5l3-3 2.5 2.5 2.5-3 3.5 3.5 M4 5.5a.75.75 0 1 1 0-1.5 .75.75 0 0 1 0 1.5z"
+                                        }
+                                    }
                                 }
                             }
 
@@ -1215,7 +1327,7 @@ FocusScope {
 
                             Text {
                                 width: parent.width
-                                text: rowDelegate.model.imagePath !== ""
+                                text: (rowDelegate.model.imagePath !== "" || rowDelegate.clipType === "image")
                                     ? root.formatImageLabel(rowDelegate.model.label)
                                     : rowDelegate.model.label
                                 color: rowDelegate.isSelected ? StyleTokens.textPrimaryBright : StyleTokens.textPrimary
@@ -1233,7 +1345,7 @@ FocusScope {
                                 color: rowDelegate.isSelected ? StyleTokens.accent : StyleTokens.textSecondary
                                 font.family: root.textFontFamily
                                 font.pixelSize: 10
-                                font.weight: (rowDelegate.model.imagePath !== "" && rowDelegate.isSelected) ? Font.DemiBold : Font.Normal
+                                font.weight: ((rowDelegate.model.imagePath !== "" || rowDelegate.clipType === "image") && rowDelegate.isSelected) ? Font.DemiBold : Font.Normal
                                 elide: Text.ElideRight
                                 maximumLineCount: 1
                             }

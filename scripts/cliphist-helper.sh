@@ -17,18 +17,54 @@ case "$ACTION" in
         cliphist list 2>/dev/null | head -n "$LIMIT" | while IFS=$'\t' read -r id rest; do
             if [[ "$rest" == *"[[ binary data"* ]]; then
                 img_path="$CACHE_DIR/$id.png"
-                if [[ ! -f "$img_path" ]]; then
-                    cliphist decode "$id" > "$img_path" 2>/dev/null || true
-                fi
                 if [[ -s "$img_path" ]]; then
                     printf "%s\t%s\000icon\x1f%s\n" "$id" "$rest" "$img_path"
                 else
-                    printf "%s\t%s\n" "$id" "$rest"
+                    printf "%s\t%s\000icon\x1f\n" "$id" "$rest"
                 fi
             else
                 printf "%s\t%s\n" "$id" "$rest"
             fi
         done
+        ;;
+    decode-missing)
+        if ! command -v cliphist >/dev/null 2>&1; then
+            exit 127
+        fi
+
+        LIMIT="${2:-200}"
+
+        cliphist list 2>/dev/null | head -n "$LIMIT" | while IFS=$'\t' read -r id rest; do
+            if [[ "$rest" == *"[[ binary data"* ]]; then
+                img_path="$CACHE_DIR/$id.png"
+                if [[ ! -s "$img_path" ]]; then
+                    tmp_path="$CACHE_DIR/$id.tmp.$$"
+                    if cliphist decode "$id" > "$tmp_path" 2>/dev/null && [[ -s "$tmp_path" ]]; then
+                        mv -f "$tmp_path" "$img_path"
+                        printf "%s\t%s\n" "$id" "$img_path"
+                    else
+                        rm -f "$tmp_path"
+                    fi
+                fi
+            fi
+        done
+        ;;
+    decode-img)
+        id="$2"
+        if [[ -n "$id" ]]; then
+            img_path="$CACHE_DIR/$id.png"
+            if [[ ! -s "$img_path" ]]; then
+                tmp_path="$CACHE_DIR/$id.tmp.$$"
+                if cliphist decode "$id" > "$tmp_path" 2>/dev/null && [[ -s "$tmp_path" ]]; then
+                    mv -f "$tmp_path" "$img_path"
+                else
+                    rm -f "$tmp_path"
+                fi
+            fi
+            if [[ -s "$img_path" ]]; then
+                printf "%s\t%s\n" "$id" "$img_path"
+            fi
+        fi
         ;;
     copy)
         id="$2"

@@ -216,6 +216,20 @@ SystemServices::SystemServices(QObject *parent)
     m_cavaRestartTimer.setInterval(1200);
     connect(&m_cavaRestartTimer, &QTimer::timeout, this, &SystemServices::startCava);
 
+    m_brightnessThrottleTimer.setSingleShot(true);
+    connect(&m_brightnessThrottleTimer, &QTimer::timeout, this, [this]() {
+        if (m_pendingBrightness >= 0.0 && (m_lastAppliedBrightness < 0.0 || std::abs(m_pendingBrightness - m_lastAppliedBrightness) >= 0.005)) {
+            applyPendingBrightness();
+        }
+    });
+
+    m_volumeThrottleTimer.setSingleShot(true);
+    connect(&m_volumeThrottleTimer, &QTimer::timeout, this, [this]() {
+        if (m_pendingVolume >= 0.0 && (m_lastAppliedVolume < 0.0 || std::abs(m_pendingVolume - m_lastAppliedVolume) >= 0.005)) {
+            applyPendingVolume();
+        }
+    });
+
     startNotificationMonitor();
     startPipeWireMonitor();
     startRecordingPortalMonitor();
@@ -229,6 +243,8 @@ SystemServices::~SystemServices() {
     m_recordingPortalRestartTimer.stop();
     m_recordingSnapshotDebounceTimer.stop();
     m_cavaRestartTimer.stop();
+    m_brightnessThrottleTimer.stop();
+    m_volumeThrottleTimer.stop();
 
     stopProcess(m_notificationMonitor);
     stopProcess(m_pipeWireMonitor);
@@ -820,8 +836,12 @@ void SystemServices::parseVolumeOutput(const QString &text, double *value, bool 
 }
 
 void SystemServices::requestBrightness() {
+    if (m_brightnessRequestActive) return;
+    m_brightnessRequestActive = true;
+
     startCommand(QStringLiteral("brightnessctl"), {QStringLiteral("-m")}, 1000,
         [this](const CommandResult &result) {
+            m_brightnessRequestActive = false;
             const QString errorText = commandErrorText(QStringLiteral("brightnessctl"), result);
             if (!errorText.isEmpty()) {
                 emit brightnessSnapshotReady(-1.0, errorText);
@@ -830,28 +850,60 @@ void SystemServices::requestBrightness() {
 
             bool ok = false;
             const double value = parseBrightnessOutput(QString::fromUtf8(result.stdoutData), &ok);
+            if (ok && !m_brightnessSettingActive) {
+                m_lastAppliedBrightness = value;
+            }
             emit brightnessSnapshotReady(value, ok ? QString() : QStringLiteral("Could not parse brightness output."));
         });
 }
 
 void SystemServices::setBrightness(double value) {
-    const double nextValue = std::clamp(value, 0.0, 1.0);
+    m_pendingBrightness = std::clamp(value, 0.0, 1.0);
+
+    if (m_brightnessSettingActive) {
+        return;
+    }
+
+    if (m_brightnessThrottleTimer.isActive()) {
+        return;
+    }
+
+    applyPendingBrightness();
+}
+
+void SystemServices::applyPendingBrightness() {
+    if (m_brightnessSettingActive || m_pendingBrightness < 0.0)
+        return;
+
+    const double targetValue = m_pendingBrightness;
+    if (m_lastAppliedBrightness >= 0.0 && std::abs(targetValue - m_lastAppliedBrightness) < 0.005) {
+        emit brightnessSetFinished(targetValue, true, QString());
+        return;
+    }
+
+    m_brightnessSettingActive = true;
     startCommand(QStringLiteral("brightnessctl"),
-                 {QStringLiteral("set"), QStringLiteral("%1%").arg(qRound(nextValue * 100.0))},
+                 {QStringLiteral("set"), QStringLiteral("%1%").arg(qRound(targetValue * 100.0))},
                  1000,
-                 [this, nextValue](const CommandResult &result) {
+                 [this, targetValue](const CommandResult &result) {
+        m_brightnessSettingActive = false;
+        m_lastAppliedBrightness = targetValue;
         const QString errorText = commandErrorText(QStringLiteral("brightnessctl"), result);
-        emit brightnessSetFinished(nextValue, errorText.isEmpty(), errorText);
-        if (errorText.isEmpty())
-            requestBrightness();
+        emit brightnessSetFinished(targetValue, errorText.isEmpty(), errorText);
+
+        m_brightnessThrottleTimer.start(40);
     });
 }
 
 void SystemServices::requestVolume() {
+    if (m_volumeRequestActive) return;
+    m_volumeRequestActive = true;
+
     startCommand(QStringLiteral("wpctl"),
                  {QStringLiteral("get-volume"), QStringLiteral("@DEFAULT_AUDIO_SINK@")},
                  1000,
                  [this](const CommandResult &result) {
+        m_volumeRequestActive = false;
         const QString errorText = commandErrorText(QStringLiteral("wpctl"), result);
         if (!errorText.isEmpty()) {
             emit volumeSnapshotReady(-1.0, false, errorText);
@@ -862,20 +914,48 @@ void SystemServices::requestVolume() {
         bool muted = false;
         bool ok = false;
         parseVolumeOutput(QString::fromUtf8(result.stdoutData), &value, &muted, &ok);
+        if (ok && !m_volumeSettingActive) {
+            m_lastAppliedVolume = value;
+        }
         emit volumeSnapshotReady(value, muted, ok ? QString() : QStringLiteral("Could not parse volume output."));
     });
 }
 
 void SystemServices::setVolume(double value) {
-    const double nextValue = std::clamp(value, 0.0, 1.0);
+    m_pendingVolume = std::clamp(value, 0.0, 1.0);
+
+    if (m_volumeSettingActive) {
+        return;
+    }
+
+    if (m_volumeThrottleTimer.isActive()) {
+        return;
+    }
+
+    applyPendingVolume();
+}
+
+void SystemServices::applyPendingVolume() {
+    if (m_volumeSettingActive || m_pendingVolume < 0.0)
+        return;
+
+    const double targetValue = m_pendingVolume;
+    if (m_lastAppliedVolume >= 0.0 && std::abs(targetValue - m_lastAppliedVolume) < 0.005) {
+        emit volumeSetFinished(targetValue, true, QString());
+        return;
+    }
+
+    m_volumeSettingActive = true;
     startCommand(QStringLiteral("wpctl"),
-                 {QStringLiteral("set-volume"), QStringLiteral("@DEFAULT_AUDIO_SINK@"), QString::number(nextValue, 'f', 2)},
+                 {QStringLiteral("set-volume"), QStringLiteral("@DEFAULT_AUDIO_SINK@"), QString::number(targetValue, 'f', 2)},
                  1000,
-                 [this, nextValue](const CommandResult &result) {
+                 [this, targetValue](const CommandResult &result) {
+        m_volumeSettingActive = false;
+        m_lastAppliedVolume = targetValue;
         const QString errorText = commandErrorText(QStringLiteral("wpctl"), result);
-        emit volumeSetFinished(nextValue, errorText.isEmpty(), errorText);
-        if (errorText.isEmpty())
-            requestVolume();
+        emit volumeSetFinished(targetValue, errorText.isEmpty(), errorText);
+
+        m_volumeThrottleTimer.start(40);
     });
 }
 
