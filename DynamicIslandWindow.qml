@@ -187,12 +187,13 @@ PanelWindow {
         if (islandContainer.controlCenterLayerVisible
                 || islandContainer.wallpaperPickerLayerVisible
                 || islandContainer.applicationLauncherLayerVisible
+                || islandContainer.fileShelfLayerVisible
                 || islandContainer.clipboardLayerVisible
                 || islandContainer.weatherLayerVisible
                 || islandContainer.calendarLayerVisible
                 || islandContainer.notificationCenterLayerVisible)
             return WlrKeyboardFocus.Exclusive;
-        if (islandContainer.fileShelfLayerVisible)
+        if (islandContainer.notificationLayerVisible)
             return WlrKeyboardFocus.OnDemand;
         // Keep keyboard focus on the overview until an overview action closes it.
         // Click-to-focus closes the overview before focusing the selected client.
@@ -633,9 +634,14 @@ PanelWindow {
     }
 
     function toggleControlCenterWindow() {
-        if (islandContainer.islandState === "control_center")
-            islandContainer.smartRestoreState();
-        else {
+        if (islandContainer.islandState === "control_center") {
+            if (controlCenterLoader.item && controlCenterLoader.item.powerViewActive) {
+                controlCenterLoader.item.powerViewActive = false;
+            } else {
+                islandContainer.smartRestoreState();
+            }
+        } else {
+            islandContainer.powerMenuRequested = false;
             islandContainer.showControlCenter();
             if (controlCenterLoader.item)
                 controlCenterLoader.item.powerViewActive = false;
@@ -650,9 +656,12 @@ PanelWindow {
             return;
         }
 
+        islandContainer.powerMenuRequested = true;
         islandContainer.showControlCenter();
-        if (controlCenterLoader.item)
+        if (controlCenterLoader.item) {
             controlCenterLoader.item.powerViewActive = true;
+            islandContainer.powerMenuRequested = false;
+        }
     }
 
     function toggleNotificationCenterWindow() {
@@ -942,9 +951,12 @@ PanelWindow {
             || clipboardLayerVisible
             || weatherLayerVisible
             || calendarLayerVisible
+            || notificationCenterLayerVisible
+            || notificationLayerVisible
             || expandedPlayerKeyboardFocusRequested
             || (root.monitorFocused && (root.overviewVisible || root.connectivityPromptActive))
 
+        property bool powerMenuRequested: false
         property string islandState: "normal"
         property string splitIcon: root.defaultSplitIcon
         property real osdProgress: -1.0
@@ -1212,6 +1224,12 @@ PanelWindow {
                         else if (controlCenterLoader.item.bluetoothPairingActive)
                             controlCenterLoader.item.cancelBluetoothPairing();
                     }
+                    event.accepted = true;
+                    return;
+                }
+
+                if (root.anyConnectivityDetailMounted) {
+                    root.closeConnectivityOverlays();
                     event.accepted = true;
                     return;
                 }
@@ -2760,6 +2778,7 @@ PanelWindow {
                             SystemServices.invokeNotificationAction(islandContainer.notificationId, actionKey);
                             islandContainer.smartRestoreState();
                         }
+                        onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }
             }
@@ -2770,6 +2789,14 @@ PanelWindow {
                 active: islandContainer.controlCenterLayerVisible || root.anyConnectivityDetailMounted
                 asynchronous: false
                 visible: active
+                onLoaded: {
+                    if (islandContainer.powerMenuRequested && item) {
+                        item.powerViewActive = true;
+                        islandContainer.powerMenuRequested = false;
+                    }
+                    if (item)
+                        item.forceActiveFocus();
+                }
 
                 sourceComponent: Component {
                     ControlCenterLayer {
@@ -2807,6 +2834,7 @@ PanelWindow {
                         weatherService: root.weatherService
                         onWeatherRequested: islandContainer.showWeather()
                         onCalendarRequested: islandContainer.showCalendar()
+                        onCloseRequested: islandContainer.smartRestoreState()
                     }
                 }
             }
@@ -2817,6 +2845,10 @@ PanelWindow {
                 active: islandContainer.notificationCenterLayerVisible
                 asynchronous: false
                 visible: active
+                onLoaded: {
+                    if (item)
+                        item.forceActiveFocus();
+                }
 
                 sourceComponent: Component {
                     NotificationCenterLayer {
@@ -2878,10 +2910,7 @@ PanelWindow {
                 active: islandContainer.fileShelfLayerVisible
                 asynchronous: false
                 visible: islandContainer.fileShelfLayerVisible
-                onLoaded: {
-                    if (islandContainer.fileShelfOpenedManually)
-                        root.focusFileShelf();
-                }
+                onLoaded: root.focusFileShelf()
 
                 sourceComponent: Component {
                     FileShelfLayer {

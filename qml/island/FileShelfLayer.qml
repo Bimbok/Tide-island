@@ -30,7 +30,7 @@ FocusScope {
     readonly property real cardHeight: 176
     readonly property real overflowCellWidth: 196
 
-    focus: showCondition && !dropPreviewOnly
+    focus: showCondition
     activeFocusOnTab: true
     anchors.fill: parent
     opacity: showCondition ? 1 : 0
@@ -48,13 +48,17 @@ FocusScope {
 
         FileShelf.refresh();
         normalizeSelection();
-        if (!dropPreviewOnly)
-            grabKeyboardFocus();
+        grabKeyboardFocus();
     }
 
     onDropPreviewOnlyChanged: {
-        if (showCondition && !dropPreviewOnly)
+        if (showCondition)
             grabKeyboardFocus();
+    }
+
+    Keys.onEscapePressed: function(event) {
+        root.closeRequested();
+        event.accepted = true;
     }
 
     Connections {

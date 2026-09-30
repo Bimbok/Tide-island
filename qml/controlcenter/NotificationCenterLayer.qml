@@ -9,10 +9,21 @@ Item {
     signal clearAllRequested()
     signal closeRequested()
 
+    focus: true
+
     Keys.onEscapePressed: function(event) {
         notificationCenter.closeRequested();
         event.accepted = true;
     }
+
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+            notificationCenter.closeRequested();
+            event.accepted = true;
+        }
+    }
+
+    Component.onCompleted: notificationCenter.forceActiveFocus()
 
     property var notificationModel: null
     property string iconFontFamily: userConfig.iconFontFamily
