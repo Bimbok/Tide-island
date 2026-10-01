@@ -1,6 +1,6 @@
 # Maintainer: whysooraj <whysooraj.official@gmail.com>
 pkgname=tide-island
-pkgver=1.0.39
+pkgver=1.0.40
 pkgrel=1
 _srcdir=Tide-island-$pkgver
 _builddir=build-$pkgver
@@ -26,6 +26,8 @@ depends=(
     'bluez'
     'bluez-utils'
     'quickshell'
+    'cliphist'
+    'wl-clipboard'
 )
 makedepends=('cmake')
 options=('!debug' '!strip')
@@ -46,8 +48,6 @@ optdepends=(
     'polkit: for applying TLP profiles via pkexec'
     'sudo: alternative for applying TLP profiles'
     'zenity: for Ask-mode TLP password prompts when no Polkit agent is running'
-    'cliphist: for clipboard history manager'
-    'wl-clipboard: for clipboard copy/paste support'
 )
 conflicts=('tide-island-git')
 install='tide-island.install'

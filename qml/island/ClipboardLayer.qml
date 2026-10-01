@@ -134,9 +134,9 @@ FocusScope {
     function copyEntry(entry) {
         if (!entry || !entry.id)
             return;
-        copyProc.command = ["bash", root.helperScriptPath, "copy", String(entry.id)];
-        copyProc.running = false;
-        copyProc.running = true;
+        // The layer is unloaded on close; a child Process could be killed
+        // before cliphist finishes restoring the selected item.
+        Quickshell.execDetached(["bash", root.helperScriptPath, "copy", String(entry.id)]);
         root.closeRequested();
     }
 
@@ -220,27 +220,10 @@ FocusScope {
     function getClipMeta(entry) {
         if (!entry)
             return "";
-        if (entry.imagePath || entry.isImage) {
-            return "Image • Press Tab to preview";
-        }
+        if (entry.imagePath || entry.isImage)
+            return "Image";
         const type = root.getClipType(entry);
-        const str = String(entry.label);
-        const charCount = str.length;
-        const lines = str.split("\n").length;
-
-        let typeLabel = "Text";
-        if (type === "color")
-            return "Color Hex • " + str;
-        if (type === "link")
-            return "Web Link • " + charCount + " chars";
-        if (type === "code") {
-            typeLabel = lines > 1 ? "Code Snippet" : "Terminal Command";
-        }
-
-        if (lines > 1) {
-            return typeLabel + " • " + lines + " lines (" + charCount + " chars)";
-        }
-        return typeLabel + " • " + charCount + " chars";
+        return type === "text" ? "Text" : type.charAt(0).toUpperCase() + type.slice(1);
     }
 
     Timer {
@@ -360,11 +343,6 @@ FocusScope {
     }
 
     Process {
-        id: copyProc
-        running: false
-    }
-
-    Process {
         id: deleteProc
         running: false
         onRunningChanged: {
@@ -399,53 +377,20 @@ FocusScope {
         spacing: 10
         clip: true
 
-        // ══════════════════════════════════════════════
-        // HEADER BAR
-        // ══════════════════════════════════════════════
+        // Header
         RowLayout {
             id: headerBar
             width: parent.width
             height: 28
 
-            // Left: Clean Title + Search query chip
-            Row {
-                Layout.alignment: Qt.AlignLeft
-                spacing: 8
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.imgFullPreview ? "Image Preview" : "Clipboard"
-                    textFormat: Text.PlainText
-                    color: "#f7f7f7"
-                    font.pixelSize: 15
-                    font.family: root.textFontFamily
-                    font.weight: Font.Bold
-                    font.letterSpacing: 0.1
-                }
-
-                // Active search tag pill
-                Rectangle {
-                    visible: !root.imgFullPreview && root.searchQuery !== ""
-                    anchors.verticalCenter: parent.verticalCenter
-                    height: 20
-                    radius: 6
-                    color: Qt.rgba(10/255, 132/255, 255/255, 0.15)
-                    border.width: 1
-                    border.color: Qt.rgba(10/255, 132/255, 255/255, 0.35)
-                    width: searchTagText.implicitWidth + 14
-
-                    Text {
-                        id: searchTagText
-                        anchors.centerIn: parent
-                        text: "\"" + root.searchQuery + "\""
-                        color: "#6ea8ff"
-                        font.family: root.textFontFamily
-                        font.pixelSize: 10
-                        font.weight: Font.Medium
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
-                    }
-                }
+            Text {
+                Layout.alignment: Qt.AlignVCenter
+                text: root.imgFullPreview ? "Image Preview" : "Clipboard"
+                textFormat: Text.PlainText
+                color: StyleTokens.textPrimary
+                font.pixelSize: 15
+                font.family: root.textFontFamily
+                font.weight: Font.DemiBold
             }
 
             Item {
@@ -559,17 +504,15 @@ FocusScope {
             }
         }
 
-        // ══════════════════════════════════════════════
-        // SEARCH INPUT BAR (Pill Style)
-        // ══════════════════════════════════════════════
+        // Search surface matches the wallpaper picker.
         Rectangle {
             id: searchContainer
             width: parent.width
-            height: 36
-            radius: 18
-            color: searchInput.activeFocus ? "#171a22" : "#131419"
-            border.color: searchInput.activeFocus ? "#3b4864" : "#242630"
-            border.width: 1
+            height: 34
+            radius: 10
+            color: Qt.rgba(1, 1, 1, searchInput.activeFocus ? 0.09 : 0.06)
+            border.color: Qt.rgba(1, 1, 1, 0.16)
+            border.width: searchInput.activeFocus ? 1 : 0
             visible: !root.imgFullPreview
 
             Behavior on color { ColorAnimation { duration: 140 } }
@@ -593,7 +536,7 @@ FocusScope {
 
                         ShapePath {
                             fillColor: StyleTokens.transparent
-                            strokeColor: searchInput.activeFocus ? "#0a84ff" : "#6f727e"
+                            strokeColor: Qt.rgba(1, 1, 1, searchInput.activeFocus ? 0.65 : 0.38)
                             strokeWidth: 1.4
                             capStyle: ShapePath.RoundCap
                             joinStyle: ShapePath.RoundJoin
@@ -616,15 +559,15 @@ FocusScope {
                     clip: true
                     selectByMouse: true
                     selectedTextColor: "#ffffff"
-                    selectionColor: "#0a84ff"
+                    selectionColor: "#58616f"
 
                     onTextChanged: {
                         root.searchQuery = text;
                     }
 
                     Text {
-                        text: "Search clipboard history..."
-                        color: "#595c67"
+                        text: "Search clipboard history…"
+                        color: Qt.rgba(1, 1, 1, 0.28)
                         font: searchInput.font
                         visible: searchInput.text.length === 0
                         anchors.verticalCenter: parent.verticalCenter
@@ -667,7 +610,7 @@ FocusScope {
                     Layout.preferredWidth: 20
                     Layout.preferredHeight: 20
                     radius: 10
-                    color: clearQueryMouse.containsMouse ? "#2f3340" : "#1f222a"
+                    color: clearQueryMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : "transparent"
                     visible: searchInput.text.length > 0
 
                     Shape {
@@ -766,9 +709,8 @@ FocusScope {
                         width: parent.width
                         height: parent.height - 34
                         radius: 14
-                        color: "#121318"
-                        border.width: 1
-                        border.color: "#252834"
+                        color: Qt.rgba(1, 1, 1, 0.05)
+                        border.width: 0
                         clip: true
 
                         Image {
@@ -809,9 +751,8 @@ FocusScope {
                             height: 24
                             width: previewInfoText.implicitWidth + 18
                             radius: 8
-                            color: "#d012141a"
-                            border.width: 1
-                            border.color: "#2b2e3a"
+                            color: Qt.rgba(0, 0, 0, 0.62)
+                            border.width: 0
 
                             Text {
                                 id: previewInfoText
@@ -850,94 +791,17 @@ FocusScope {
                         }
                     }
 
-                    // Navigation bar & shortcuts hint pills
+                    // Quiet footer for keyboard shortcuts and the primary action.
                     RowLayout {
                         width: parent.width
                         height: 26
 
-                        Row {
+                        Text {
                             Layout.alignment: Qt.AlignLeft
-                            spacing: 6
-
-                            // Shortcut pill: Enter
-                            Rectangle {
-                                height: 22
-                                radius: 6
-                                color: "#191b22"
-                                border.width: 1
-                                border.color: "#282a36"
-                                width: enterHint.implicitWidth + 12
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Text {
-                                    id: enterHint
-                                    anchors.centerIn: parent
-                                    text: "↵ Copy"
-                                    color: "#a4a7b4"
-                                    font.family: root.textFontFamily
-                                    font.pixelSize: 10
-                                }
-                            }
-
-                            // Shortcut pill: Del
-                            Rectangle {
-                                height: 22
-                                radius: 6
-                                color: "#191b22"
-                                border.width: 1
-                                border.color: "#282a36"
-                                width: delHint.implicitWidth + 12
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Text {
-                                    id: delHint
-                                    anchors.centerIn: parent
-                                    text: "Del Delete"
-                                    color: "#a4a7b4"
-                                    font.family: root.textFontFamily
-                                    font.pixelSize: 10
-                                }
-                            }
-
-                            // Shortcut pill: Navigate
-                            Rectangle {
-                                height: 22
-                                radius: 6
-                                color: "#191b22"
-                                border.width: 1
-                                border.color: "#282a36"
-                                width: navHint.implicitWidth + 12
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Text {
-                                    id: navHint
-                                    anchors.centerIn: parent
-                                    text: "↑/↓ Navigate"
-                                    color: "#a4a7b4"
-                                    font.family: root.textFontFamily
-                                    font.pixelSize: 10
-                                }
-                            }
-
-                            // Shortcut pill: Back
-                            Rectangle {
-                                height: 22
-                                radius: 6
-                                color: "#191b22"
-                                border.width: 1
-                                border.color: "#282a36"
-                                width: backHint.implicitWidth + 12
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Text {
-                                    id: backHint
-                                    anchors.centerIn: parent
-                                    text: "Tab/Esc Back"
-                                    color: "#a4a7b4"
-                                    font.family: root.textFontFamily
-                                    font.pixelSize: 10
-                                }
-                            }
+                            text: "↑↓ Browse   ·   Del Delete   ·   Esc Back"
+                            color: StyleTokens.textDim
+                            font.family: root.textFontFamily
+                            font.pixelSize: 10
                         }
 
                         Item {
@@ -950,14 +814,15 @@ FocusScope {
                             Layout.preferredWidth: 72
                             Layout.preferredHeight: 24
                             radius: 12
-                            color: copyBtnMouse.containsMouse ? "#1c8fff" : "#0a84ff"
-                            border.width: 1
-                            border.color: "#4ca2ff"
+                            color: copyBtnMouse.containsMouse
+                                ? Qt.rgba(1, 1, 1, 0.18)
+                                : Qt.rgba(1, 1, 1, 0.10)
+                            border.width: 0
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "Copy"
-                                color: "#ffffff"
+                                color: StyleTokens.textPrimary
                                 font.family: root.textFontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
@@ -1021,27 +886,24 @@ FocusScope {
                     opacity: isCollapsing ? 0 : 1
                     scale: isCollapsing ? 0.85 : 1
 
-                    // Luxury surface with subtle depth and delicate borders
                     color: {
                         if (isDeleting)
-                            return Qt.rgba(255/255, 59/255, 48/255, 0.35);
+                            return Qt.rgba(1, 0.25, 0.22, 0.16);
                         if (isSelected)
-                            return "#1b2334";
+                            return Qt.rgba(1, 1, 1, 0.11);
                         if (rowMouse.containsMouse)
-                            return "#1b1d24";
-                        return "#15161b";
+                            return Qt.rgba(1, 1, 1, 0.08);
+                        return Qt.rgba(1, 1, 1, 0.05);
                     }
 
                     border.color: {
                         if (isDeleting)
-                            return "#ff3b30";
+                            return Qt.rgba(1, 0.25, 0.22, 0.45);
                         if (isSelected)
-                            return "#2e4873";
-                        if (rowMouse.containsMouse)
-                            return "#2d303b";
-                        return "#21232a";
+                            return Qt.rgba(1, 1, 1, 0.16);
+                        return "transparent";
                     }
-                    border.width: 1
+                    border.width: isSelected || isDeleting ? 1 : 0
 
                     Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                     Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
@@ -1049,28 +911,29 @@ FocusScope {
                     Behavior on color { ColorAnimation { duration: 110 } }
                     Behavior on border.color { ColorAnimation { duration: 110 } }
 
-                    // Left Accent Indicator Pill (Active item signature marker)
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 4
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 3
-                        height: rowDelegate.isSelected ? (parent.height - 18) : 0
-                        radius: 1.5
-                        color: "#0a84ff"
-                        opacity: rowDelegate.isSelected ? 1 : 0
+                    // Keep the row target behind the action buttons so each
+                    // button receives its own click instead of copying the row.
+                    MouseArea {
+                        id: rowMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        cursorShape: Qt.PointingHandCursor
 
-                        Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                        onClicked: (mouse) => {
+                            root.selectedIndex = rowDelegate.index;
+                            if (mouse.button === Qt.RightButton)
+                                root.deleteEntry(rowDelegate.model);
+                            else
+                                root.copyEntry(rowDelegate.model);
+                        }
                     }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: rowDelegate.isSelected ? 14 : 11
+                        anchors.leftMargin: 11
                         anchors.rightMargin: 8
                         spacing: 10
-
-                        Behavior on anchors.leftMargin { NumberAnimation { duration: 120 } }
 
                         // ── TYPE BADGE / THUMBNAIL ──
                         Item {
@@ -1082,9 +945,8 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: "#0d0e12"
-                                border.width: 1
-                                border.color: "#252834"
+                                color: Qt.rgba(1, 1, 1, 0.05)
+                                border.width: 0
                                 clip: true
                                 visible: rowDelegate.model.imagePath !== ""
 
@@ -1103,9 +965,8 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: "#181a21"
-                                border.width: 1
-                                border.color: "#282a35"
+                                color: Qt.rgba(1, 1, 1, 0.05)
+                                border.width: 0
                                 visible: rowDelegate.clipType === "color"
 
                                 Rectangle {
@@ -1115,17 +976,16 @@ FocusScope {
                                     radius: 8
                                     color: rowDelegate.clipType === "color" ? String(rowDelegate.model.label).trim() : "transparent"
                                     border.width: 1
-                                    border.color: Qt.rgba(255, 255, 255, 0.25)
+                                    border.color: Qt.rgba(1, 1, 1, 0.25)
                                 }
                             }
 
-                            // Web link badge
+                            // Link and code use the same quiet surface as text.
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: Qt.rgba(10/255, 132/255, 255/255, 0.12)
-                                border.width: 1
-                                border.color: Qt.rgba(10/255, 132/255, 255/255, 0.26)
+                                color: Qt.rgba(1, 1, 1, 0.05)
+                                border.width: 0
                                 visible: rowDelegate.clipType === "link"
 
                                 Shape {
@@ -1136,7 +996,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#5ea2ff"
+                                        strokeColor: StyleTokens.textDim
                                         strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1148,13 +1008,12 @@ FocusScope {
                                 }
                             }
 
-                            // Code / Command badge
+                            // Code / command
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: Qt.rgba(255/255, 170/255, 64/255, 0.12)
-                                border.width: 1
-                                border.color: Qt.rgba(255/255, 170/255, 64/255, 0.26)
+                                color: Qt.rgba(1, 1, 1, 0.05)
+                                border.width: 0
                                 visible: rowDelegate.clipType === "code"
 
                                 Shape {
@@ -1165,7 +1024,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#ffaa40"
+                                        strokeColor: StyleTokens.textDim
                                         strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1181,9 +1040,8 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 8
-                                color: "#1a1c23"
-                                border.width: 1
-                                border.color: "#282b35"
+                                color: Qt.rgba(1, 1, 1, 0.05)
+                                border.width: 0
                                 visible: rowDelegate.clipType === "text"
 
                                 Shape {
@@ -1194,7 +1052,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: "#8e919d"
+                                        strokeColor: StyleTokens.textDim
                                         strokeWidth: 1.3
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1230,24 +1088,19 @@ FocusScope {
                             Text {
                                 width: parent.width
                                 text: root.getClipMeta(rowDelegate.model)
-                                color: rowDelegate.isSelected
-                                    ? (rowDelegate.model.imagePath !== "" ? "#0a84ff" : "#809dc2")
-                                    : (rowDelegate.model.imagePath !== "" ? "#5ea2ff" : "#6f727f")
+                                color: StyleTokens.textDim
                                 font.family: root.textFontFamily
                                 font.pixelSize: 10
-                                font.weight: (rowDelegate.model.imagePath !== "" && rowDelegate.isSelected) ? Font.DemiBold : Font.Normal
+                                font.weight: Font.Normal
                                 elide: Text.ElideRight
                                 maximumLineCount: 1
                             }
                         }
 
-                        // ── HOVER / SELECTION ACTION BUTTONS ──
+                        // Actions remain visible and sit above the row target.
                         Row {
                             Layout.alignment: Qt.AlignVCenter
                             spacing: 8
-                            opacity: (rowMouse.containsMouse || rowDelegate.isSelected) ? 1 : 0
-
-                            Behavior on opacity { NumberAnimation { duration: 110 } }
 
                             // Copy micro-button (frameless icon matching Notification Center style)
                             Item {
@@ -1268,7 +1121,7 @@ FocusScope {
 
                                     ShapePath {
                                         fillColor: StyleTokens.transparent
-                                        strokeColor: copyActionMouse.containsMouse ? "#0a84ff" : StyleTokens.textDim
+                                        strokeColor: copyActionMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textDim
                                         strokeWidth: 1.4
                                         capStyle: ShapePath.RoundCap
                                         joinStyle: ShapePath.RoundJoin
@@ -1333,22 +1186,6 @@ FocusScope {
                         }
                     }
 
-                    MouseArea {
-                        id: rowMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        cursorShape: Qt.PointingHandCursor
-
-                        onClicked: (mouse) => {
-                            root.selectedIndex = rowDelegate.index;
-                            if (mouse.button === Qt.RightButton) {
-                                root.deleteEntry(rowDelegate.model);
-                            } else {
-                                root.copyEntry(rowDelegate.model);
-                            }
-                        }
-                    }
                 }
             }
 
@@ -1379,15 +1216,10 @@ FocusScope {
                     anchors.centerIn: parent
                     spacing: 10
 
-                    // Circular icon badge
-                    Rectangle {
+                    Item {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        width: 44
-                        height: 44
-                        radius: 22
-                        color: "#16181f"
-                        border.width: 1
-                        border.color: "#252833"
+                        width: 32
+                        height: 32
 
                         Shape {
                             anchors.centerIn: parent
@@ -1397,7 +1229,7 @@ FocusScope {
 
                             ShapePath {
                                 fillColor: StyleTokens.transparent
-                                strokeColor: "#676a77"
+                                strokeColor: StyleTokens.textDim
                                 strokeWidth: 1.4
                                 capStyle: ShapePath.RoundCap
                                 joinStyle: ShapePath.RoundJoin

@@ -7,8 +7,17 @@ mkdir -p "$CACHE_DIR"
 ACTION="${1:-list}"
 
 case "$ACTION" in
+    watch)
+        command -v cliphist >/dev/null 2>&1 || exit 127
+        command -v wl-paste >/dev/null 2>&1 || exit 127
+        # A user service may already be recording history for an older install.
+        # Share one watcher when the updated shell starts later.
+        exec 9>"${XDG_RUNTIME_DIR:-$CACHE_DIR}/tide-island-clipboard.lock"
+        flock -n 9 || exit 0
+        exec wl-paste --watch cliphist store
+        ;;
     list)
-        if ! command -v cliphist >/dev/null 2>&1; then
+        if ! command -v cliphist >/dev/null 2>&1 || ! command -v wl-paste >/dev/null 2>&1 || ! command -v wl-copy >/dev/null 2>&1; then
             exit 127
         fi
 

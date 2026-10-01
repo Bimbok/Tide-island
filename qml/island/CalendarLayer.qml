@@ -1,8 +1,10 @@
 pragma ComponentBehavior: Bound
 
+import QtCore
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Shapes
+import Quickshell.Io
 import IslandBackend
 
 FocusScope {
@@ -21,6 +23,11 @@ FocusScope {
     property int selectedYear: new Date().getFullYear()
     property int selectedMonth: new Date().getMonth()
     property int selectedDay: new Date().getDate()
+    property bool noteOpen: false
+    property string activeDateKey: ""
+    property string noteDraft: ""
+    property var notes: ({})
+    property bool notesHydrated: false
 
     // Fixed today references
     readonly property var todayDate: new Date()
@@ -43,8 +50,6 @@ FocusScope {
     readonly property var weekdayNamesFull: [
         "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
     ]
-
-    readonly property bool isViewingCurrentMonth: viewYear === todayYear && viewMonth === todayMonth
 
     property var calendarCells: []
 
@@ -86,7 +91,10 @@ FocusScope {
     }
 
     Keys.onEscapePressed: function(event) {
-        root.closeRequested();
+        if (root.noteOpen)
+            root.closeNote();
+        else
+            root.closeRequested();
         event.accepted = true;
     }
 
@@ -122,11 +130,118 @@ FocusScope {
         if (root.showCondition) {
             root.forceActiveFocus();
             root.goToToday();
+        } else {
+            root.flushNote();
         }
     }
 
     Component.onCompleted: {
         root.updateCalendarModel();
+    }
+    Component.onDestruction: root.flushNote()
+
+    FileView {
+        id: notesFile
+        path: StandardPaths.writableLocation(StandardPaths.GenericConfigLocation)
+            + "/tide-island/calendar-notes.json"
+        preload: true
+        atomicWrites: true
+        printErrors: false
+
+        JsonAdapter {
+            id: noteStore
+            property var notes: ({})
+        }
+
+        onLoaded: {
+            if (!root.notesHydrated)
+                root.loadNotes();
+        }
+    }
+
+    Timer {
+        id: saveNoteTimer
+        interval: 350
+        repeat: false
+        onTriggered: root.flushNote()
+    }
+
+    function dateKey(y, m, d) {
+        const month = m + 1;
+        return y + "-" + (month < 10 ? "0" : "") + month
+            + "-" + (d < 10 ? "0" : "") + d;
+    }
+
+    function loadNotes() {
+        let stored = {};
+        try {
+            const contents = notesFile.text();
+            if (contents.trim() !== "") {
+                const parsed = JSON.parse(contents);
+                if (parsed && parsed.notes && typeof parsed.notes === "object"
+                        && !Array.isArray(parsed.notes))
+                    stored = parsed.notes;
+            }
+        } catch (error) {
+            stored = {};
+        }
+        root.notes = stored;
+        root.notesHydrated = true;
+    }
+
+    function hasNote(y, m, d) {
+        const content = root.notes[root.dateKey(y, m, d)];
+        return typeof content === "string" && content.trim() !== "";
+    }
+
+    function saveNote(key, content) {
+        if (key === "")
+            return;
+        const previous = root.notes[key] || "";
+        if (previous === content)
+            return;
+
+        const updated = Object.assign({}, root.notes);
+        if (content.trim() === "")
+            delete updated[key];
+        else
+            updated[key] = content;
+        root.notes = updated;
+        noteStore.notes = updated;
+        notesFile.writeAdapter();
+        notesFile.waitForJob();
+    }
+
+    function flushNote() {
+        if (!root.noteOpen)
+            return;
+        saveNoteTimer.stop();
+        root.saveNote(root.activeDateKey, root.noteDraft);
+    }
+
+    function openNote(y, m, d) {
+        if (!root.notesHydrated) {
+            notesFile.waitForJob();
+            root.loadNotes();
+        }
+        const key = root.dateKey(y, m, d);
+        root.activeDateKey = key;
+        root.noteDraft = root.notes[key] || "";
+        root.noteOpen = true;
+    }
+
+    function setNoteDraft(content) {
+        if (root.noteDraft === content)
+            return;
+        root.noteDraft = content;
+        if (root.noteOpen)
+            saveNoteTimer.restart();
+    }
+
+    function closeNote() {
+        root.flushNote();
+        root.noteOpen = false;
+        root.forceActiveFocus();
     }
 
     function daysInMonth(y, m) {
@@ -207,6 +322,7 @@ FocusScope {
     }
 
     function selectDate(y, m, d) {
+        root.flushNote();
         const target = new Date(y, m, d);
         const targetY = target.getFullYear();
         const targetM = target.getMonth();
@@ -222,6 +338,7 @@ FocusScope {
         if (monthChanged) {
             root.updateCalendarModel();
         }
+        root.openNote(targetY, targetM, targetD);
     }
 
     function getWeekNumber(y, m, d) {
@@ -236,15 +353,13 @@ FocusScope {
         anchors.margins: 16
         spacing: 8
 
-        // ──────────────────────────────────────────
-        // 1. TOP HEADER BAR
-        // ──────────────────────────────────────────
+        // Header
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 28
             spacing: 8
 
-            // Calendar Vector Icon
+            // Calendar icon
             Shape {
                 Layout.preferredWidth: 15
                 Layout.preferredHeight: 15
@@ -253,7 +368,7 @@ FocusScope {
 
                 ShapePath {
                     fillColor: StyleTokens.transparent
-                    strokeColor: StyleTokens.accent
+                    strokeColor: StyleTokens.textDim
                     strokeWidth: 1.4
                     capStyle: ShapePath.RoundCap
                     joinStyle: ShapePath.RoundJoin
@@ -264,29 +379,28 @@ FocusScope {
                 }
             }
 
-            // Month & Year Label
+            // Month and year
             Text {
                 text: root.monthNames[root.viewMonth] + " " + root.viewYear
-                color: StyleTokens.textPrimaryBright
+                color: StyleTokens.textPrimary
                 font.family: root.textFontFamily
                 font.pixelSize: 15
-                font.weight: Font.Bold
+                font.weight: Font.DemiBold
                 font.letterSpacing: -0.2
                 Layout.alignment: Qt.AlignVCenter
             }
 
             Item { Layout.fillWidth: true }
 
-            // "Today" Button
+            // Today stays available without competing with the selected date.
             Rectangle {
-                Layout.preferredHeight: 22
-                Layout.preferredWidth: todayLabel.implicitWidth + 16
-                radius: 11
+                Layout.preferredHeight: 24
+                Layout.preferredWidth: todayLabel.implicitWidth + 18
+                radius: 12
                 color: todayMouse.containsMouse
-                    ? StyleTokens.moduleHover
-                    : (root.isViewingCurrentMonth ? "#1c2230" : StyleTokens.module)
-                border.width: 1
-                border.color: root.isViewingCurrentMonth ? "#2e4873" : StyleTokens.transparent
+                    ? Qt.rgba(1, 1, 1, 0.13)
+                    : Qt.rgba(1, 1, 1, 0.06)
+                border.width: 0
 
                 Behavior on color { ColorAnimation { duration: 100 } }
 
@@ -294,7 +408,7 @@ FocusScope {
                     id: todayLabel
                     anchors.centerIn: parent
                     text: "Today"
-                    color: root.isViewingCurrentMonth ? StyleTokens.accent : StyleTokens.textSecondary
+                    color: todayMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary
                     font.family: root.textFontFamily
                     font.pixelSize: 11
                     font.weight: Font.DemiBold
@@ -386,12 +500,10 @@ FocusScope {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
-            color: "#22252e"
+            color: Qt.rgba(1, 1, 1, 0.09)
         }
 
-        // ──────────────────────────────────────────
-        // 2. DAY NAMES HEADER (Mo, Tu, We, Th, Fr, Sa, Su)
-        // ──────────────────────────────────────────
+        // Weekday labels
         Grid {
             id: dayNamesGrid
             Layout.fillWidth: true
@@ -415,7 +527,9 @@ FocusScope {
                     Text {
                         anchors.centerIn: parent
                         text: dayHeaderItem.modelData
-                        color: (dayHeaderItem.index >= 5) ? StyleTokens.accentSoft : StyleTokens.textMuted
+                        color: dayHeaderItem.index >= 5
+                            ? Qt.rgba(1, 1, 1, 0.34)
+                            : StyleTokens.textMuted
                         font.family: root.textFontFamily
                         font.pixelSize: 11
                         font.weight: Font.DemiBold
@@ -425,9 +539,7 @@ FocusScope {
             }
         }
 
-        // ──────────────────────────────────────────
-        // 3. 42-CELL DAYS GRID (6 rows x 7 cols)
-        // ──────────────────────────────────────────
+        // Six stable rows keep the capsule height fixed while changing months.
         Grid {
             id: daysGrid
             Layout.fillWidth: true
@@ -464,30 +576,45 @@ FocusScope {
                         && cellMonth === root.selectedMonth
                         && cellDay === root.selectedDay
 
-                    // Styling
-                    color: isToday
-                        ? StyleTokens.accent
-                        : (isSelected
-                            ? "#1e2433"
-                            : (cellMouse.containsMouse ? "#1c1f28" : StyleTokens.transparent))
-
-                    border.width: (isSelected && !isToday) ? 1 : 0
-                    border.color: (isSelected && !isToday) ? StyleTokens.accent : StyleTokens.transparent
+                    color: cellMouse.containsMouse
+                        ? Qt.rgba(1, 1, 1, 0.06)
+                        : StyleTokens.transparent
+                    border.width: 0
 
                     Behavior on color { ColorAnimation { duration: 100 } }
 
-                    Text {
+                    Rectangle {
+                        id: dateMark
                         anchors.centerIn: parent
-                        text: String(cellRect.cellDay)
-                        font.family: root.textFontFamily
-                        font.pixelSize: 12
-                        font.weight: (cellRect.isToday || cellRect.isSelected) ? Font.Bold : Font.Normal
-                        color: {
-                            if (cellRect.isToday) return "#ffffff";
-                            if (cellRect.isSelected) return StyleTokens.accent;
-                            if (cellRect.isCurMonth) return StyleTokens.textPrimaryBright;
-                            return "#424552"; // Dimmed for other months
+                        width: Math.min(30, parent.width - 4)
+                        height: Math.min(30, parent.height - 2)
+                        radius: width / 2
+                        color: cellRect.isToday
+                            ? "#f1f1f3"
+                            : (cellRect.isSelected ? Qt.rgba(1, 1, 1, 0.14) : StyleTokens.transparent)
+                        border.width: cellRect.isSelected && !cellRect.isToday ? 1 : 0
+                        border.color: Qt.rgba(1, 1, 1, 0.20)
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: String(cellRect.cellDay)
+                            font.family: root.textFontFamily
+                            font.pixelSize: 12
+                            font.weight: (cellRect.isToday || cellRect.isSelected) ? Font.DemiBold : Font.Normal
+                            color: cellRect.isToday
+                                ? "#111216"
+                                : (cellRect.isCurMonth ? StyleTokens.textPrimary : StyleTokens.textDim)
                         }
+                    }
+
+                    Rectangle {
+                        x: dateMark.x + dateMark.width - 1
+                        y: dateMark.y - 2
+                        width: 5
+                        height: 5
+                        radius: 2.5
+                        color: "#f5f5f5"
+                        visible: root.hasNote(cellRect.cellYear, cellRect.cellMonth, cellRect.cellDay)
                     }
 
                     MouseArea {
@@ -503,71 +630,42 @@ FocusScope {
             }
         }
 
-        // ──────────────────────────────────────────
-        // 4. FOOTER DETAILS STRIP
-        // ──────────────────────────────────────────
-        Rectangle {
+        // A single quiet detail line replaces the stacked badges.
+        Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
-            radius: 8
-            color: "#161820"
-            border.width: 1
-            border.color: "#21242e"
+            Layout.preferredHeight: 28
+
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 1
+                color: Qt.rgba(1, 1, 1, 0.09)
+            }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
+                anchors.leftMargin: 4
+                anchors.rightMargin: 4
+                anchors.topMargin: 3
                 spacing: 8
 
-                // Selected date readable string
                 Text {
                     text: root.selectedDateFullText
-                    color: StyleTokens.textPrimaryBright
+                    color: StyleTokens.textSecondary
                     font.family: root.textFontFamily
                     font.pixelSize: 11
                     font.weight: Font.Medium
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                Item { Layout.fillWidth: true }
-
-                // Relative day badge (e.g. "Today", "In 3 days")
-                Rectangle {
-                    Layout.preferredHeight: 18
-                    Layout.preferredWidth: relativeText.implicitWidth + 12
-                    radius: 9
-                    color: root.relativeDateText === "Today" ? "#192842" : "#1e2129"
-                    border.width: 1
-                    border.color: root.relativeDateText === "Today" ? "#2b4570" : "#282c37"
-
-                    Text {
-                        id: relativeText
-                        anchors.centerIn: parent
-                        text: root.relativeDateText
-                        color: root.relativeDateText === "Today" ? StyleTokens.accent : StyleTokens.textSecondary
-                        font.family: root.textFontFamily
-                        font.pixelSize: 10
-                        font.weight: Font.DemiBold
-                    }
-                }
-
-                // Week Number badge
-                Rectangle {
-                    Layout.preferredHeight: 18
-                    Layout.preferredWidth: weekText.implicitWidth + 10
-                    radius: 4
-                    color: "#181a22"
-
-                    Text {
-                        id: weekText
-                        anchors.centerIn: parent
-                        text: "W" + root.selectedWeekNumber
-                        color: StyleTokens.textMuted
-                        font.family: root.textFontFamily
-                        font.pixelSize: 10
-                        font.weight: Font.DemiBold
-                    }
+                Text {
+                    text: root.relativeDateText + "  ·  W" + root.selectedWeekNumber
+                    color: StyleTokens.textDim
+                    font.family: root.textFontFamily
+                    font.pixelSize: 10
+                    Layout.alignment: Qt.AlignVCenter
                 }
             }
         }
