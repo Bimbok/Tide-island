@@ -10,11 +10,17 @@ case "$ACTION" in
     watch)
         command -v cliphist >/dev/null 2>&1 || exit 127
         command -v wl-paste >/dev/null 2>&1 || exit 127
-        # A user service may already be recording history for an older install.
-        # Share one watcher when the updated shell starts later.
+        # A user service or compositor session may already be recording history.
+        # Don't spawn duplicate watchers if cliphist store is already active.
+        if pgrep -f "cliphist store" >/dev/null 2>&1; then
+            exit 0
+        fi
         exec 9>"${XDG_RUNTIME_DIR:-$CACHE_DIR}/tide-island-clipboard.lock"
         flock -n 9 || exit 0
-        exec wl-paste --watch cliphist store
+        wl-paste --type text --watch cliphist store &
+        TEXT_PID=$!
+        trap 'kill $TEXT_PID 2>/dev/null' EXIT INT TERM
+        exec wl-paste --type image --watch cliphist store
         ;;
     list)
         if ! command -v cliphist >/dev/null 2>&1 || ! command -v wl-paste >/dev/null 2>&1 || ! command -v wl-copy >/dev/null 2>&1; then
