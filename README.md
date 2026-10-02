@@ -126,6 +126,9 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - Power menu
 - Dynamic Color Palette & Matugen Integration
 
+Clipboard history requires `cliphist` and `wl-clipboard`. Tide Island starts the clipboard watcher automatically while it is running.
+Click a date in the calendar to write a note. Dates with notes show a small dot; notes are saved automatically.
+
 
 
 ### System Feedback

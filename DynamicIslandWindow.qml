@@ -137,6 +137,14 @@ PanelWindow {
             width: powerConnectivityDetailShell.visible ? Math.ceil(powerConnectivityDetailShell.width) : 0
             height: powerConnectivityDetailShell.visible ? Math.ceil(powerConnectivityDetailShell.height) : 0
         }
+
+        Region {
+            intersection: Intersection.Combine
+            x: Math.floor(calendarNoteShell.x)
+            y: Math.floor(calendarNoteShell.y)
+            width: calendarNoteShell.visible ? Math.ceil(calendarNoteShell.width) : 0
+            height: calendarNoteShell.visible ? Math.ceil(calendarNoteShell.height) : 0
+        }
     }
     readonly property real capsuleWindowHeight: Math.ceil(
         userConfig.islandTopMargin + mainCapsule.targetHeight + 12
@@ -185,6 +193,7 @@ PanelWindow {
         : WlrLayer.Top
     WlrLayershell.keyboardFocus: {
         if (islandContainer.controlCenterLayerVisible
+                || islandContainer.notificationCenterLayerVisible
                 || islandContainer.wallpaperPickerLayerVisible
                 || islandContainer.applicationLauncherLayerVisible
                 || islandContainer.fileShelfLayerVisible
@@ -945,6 +954,7 @@ PanelWindow {
         id: islandContainer
         anchors.fill: parent
         focus: controlCenterLayerVisible
+            || notificationCenterLayerVisible
             || wallpaperPickerLayerVisible
             || applicationLauncherLayerVisible
             || fileShelfLayerVisible
@@ -1241,6 +1251,12 @@ PanelWindow {
                 }
 
                 if (islandContainer.islandState !== islandContainer.restingState) {
+                    islandContainer.smartRestoreState();
+                    event.accepted = true;
+                    return;
+                }
+
+                if (islandContainer.notificationCenterLayerVisible) {
                     islandContainer.smartRestoreState();
                     event.accepted = true;
                     return;
@@ -2848,6 +2864,8 @@ PanelWindow {
                 onLoaded: {
                     if (item)
                         item.forceActiveFocus();
+                    else
+                        islandContainer.forceActiveFocus();
                 }
 
                 sourceComponent: Component {
@@ -3418,6 +3436,19 @@ PanelWindow {
             detailHeight: 88
             detailGap: root.connectivityDetailGap
             iconFontFamily: root.iconFontFamily
+            textFontFamily: root.textFontFamily
+            heroFontFamily: root.heroFontFamily
+        }
+
+        CalendarNoteShell {
+            id: calendarNoteShell
+
+            open: islandContainer.calendarLayerVisible
+                && calendarLoader.item !== null
+                && calendarLoader.item.noteOpen
+            provider: calendarLoader.item
+            mainCapsule: mainCapsule
+            availableWidth: root.width
             textFontFamily: root.textFontFamily
             heroFontFamily: root.heroFontFamily
         }

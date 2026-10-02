@@ -14,6 +14,19 @@ Scope {
     property bool islandAutoHideRuntimeEnabled: true
 
     readonly property var userConfig: UserConfig
+    readonly property string clipboardHelperScriptPath: {
+        const candidate = Qt.resolvedUrl("scripts/cliphist-helper.sh").toString();
+        return candidate.startsWith("file://")
+            ? decodeURIComponent(candidate.substring(7))
+            : "/usr/share/tide-island/scripts/cliphist-helper.sh";
+    }
+
+    // Keep clipboard history recording for the lifetime of the shell, even
+    // while the clipboard panel is closed.
+    Process {
+        command: ["bash", shellRoot.clipboardHelperScriptPath, "watch"]
+        running: true
+    }
 
     WeatherService {
         id: globalWeatherService
