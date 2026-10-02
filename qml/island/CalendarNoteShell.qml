@@ -119,9 +119,9 @@ Item {
         Rectangle {
             anchors.fill: parent
             radius: 28
-            color: "#1b1c20"
+            color: StyleTokens.panel
             border.width: 1
-            border.color: Qt.rgba(1, 1, 1, 0.10)
+            border.color: StyleTokens.inputBorder
             clip: true
 
             Text {
@@ -156,8 +156,8 @@ Item {
                 height: 26
                 radius: 13
                 color: closeMouse.containsMouse
-                    ? Qt.rgba(1, 1, 1, 0.13)
-                    : Qt.rgba(1, 1, 1, 0.06)
+                    ? StyleTokens.moduleHover
+                    : StyleTokens.module
 
                 Text {
                     anchors.centerIn: parent
@@ -188,7 +188,7 @@ Item {
                 anchors.rightMargin: 22
                 anchors.topMargin: 72
                 height: 1
-                color: Qt.rgba(1, 1, 1, 0.09)
+                color: StyleTokens.track
             }
 
             Flickable {
@@ -216,8 +216,8 @@ Item {
                     wrapMode: TextEdit.Wrap
                     textFormat: TextEdit.PlainText
                     selectByMouse: true
-                    selectedTextColor: "#1b1c20"
-                    selectionColor: "#d7e3f1"
+                    selectedTextColor: StyleTokens.textOnAccent
+                    selectionColor: StyleTokens.accent
 
                     onTextChanged: {
                         if (shell.provider)

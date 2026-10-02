@@ -420,9 +420,10 @@ FocusScope {
                 Layout.preferredWidth: todayLabel.implicitWidth + 18
                 radius: 12
                 color: todayMouse.containsMouse
-                    ? Qt.rgba(1, 1, 1, 0.13)
-                    : Qt.rgba(1, 1, 1, 0.06)
-                border.width: 0
+                    ? StyleTokens.moduleHover
+                    : (root.isViewingCurrentMonth ? StyleTokens.cardFillActive : StyleTokens.module)
+                border.width: 1
+                border.color: root.isViewingCurrentMonth ? StyleTokens.accent : StyleTokens.inputBorder
 
                 Behavior on color { ColorAnimation { duration: 100 } }
 
@@ -522,7 +523,7 @@ FocusScope {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
-            color: Qt.rgba(1, 1, 1, 0.09)
+            color: StyleTokens.track
         }
 
         // Weekday labels
@@ -550,7 +551,7 @@ FocusScope {
                         anchors.centerIn: parent
                         text: dayHeaderItem.modelData
                         color: dayHeaderItem.index >= 5
-                            ? Qt.rgba(1, 1, 1, 0.34)
+                            ? StyleTokens.textDim
                             : StyleTokens.textMuted
                         font.family: root.textFontFamily
                         font.pixelSize: 11
@@ -599,7 +600,7 @@ FocusScope {
                         && cellDay === root.selectedDay
 
                     color: cellMouse.containsMouse
-                        ? Qt.rgba(1, 1, 1, 0.06)
+                        ? StyleTokens.moduleHover
                         : StyleTokens.transparent
                     border.width: 0
 
@@ -612,10 +613,10 @@ FocusScope {
                         height: Math.min(30, parent.height - 2)
                         radius: width / 2
                         color: cellRect.isToday
-                            ? "#f1f1f3"
-                            : (cellRect.isSelected ? Qt.rgba(1, 1, 1, 0.14) : StyleTokens.transparent)
+                            ? StyleTokens.accent
+                            : (cellRect.isSelected ? StyleTokens.accentSoft : StyleTokens.transparent)
                         border.width: cellRect.isSelected && !cellRect.isToday ? 1 : 0
-                        border.color: Qt.rgba(1, 1, 1, 0.20)
+                        border.color: cellRect.isSelected ? StyleTokens.accent : StyleTokens.transparent
 
                         Text {
                             anchors.centerIn: parent
@@ -624,8 +625,8 @@ FocusScope {
                             font.pixelSize: 12
                             font.weight: (cellRect.isToday || cellRect.isSelected) ? Font.DemiBold : Font.Normal
                             color: cellRect.isToday
-                                ? "#111216"
-                                : (cellRect.isCurMonth ? StyleTokens.textPrimary : StyleTokens.textDim)
+                                ? StyleTokens.textOnAccent
+                                : (cellRect.isSelected ? StyleTokens.accent : (cellRect.isCurMonth ? StyleTokens.textPrimary : StyleTokens.textDim))
                         }
                     }
 
@@ -635,7 +636,7 @@ FocusScope {
                         width: 5
                         height: 5
                         radius: 2.5
-                        color: "#f5f5f5"
+                        color: StyleTokens.accent
                         visible: root.hasNote(cellRect.cellYear, cellRect.cellMonth, cellRect.cellDay)
                     }
 
@@ -661,7 +662,7 @@ FocusScope {
                 anchors.top: parent.top
                 width: parent.width
                 height: 1
-                color: Qt.rgba(1, 1, 1, 0.09)
+                color: StyleTokens.track
             }
 
             RowLayout {
