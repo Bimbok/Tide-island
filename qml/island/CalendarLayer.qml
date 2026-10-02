@@ -29,11 +29,11 @@ FocusScope {
     property var notes: ({})
     property bool notesHydrated: false
 
-    // Fixed today references
-    readonly property var todayDate: new Date()
-    readonly property int todayYear: todayDate.getFullYear()
-    readonly property int todayMonth: todayDate.getMonth()
-    readonly property int todayDay: todayDate.getDate()
+    // Dynamic today references
+    property int todayYear: new Date().getFullYear()
+    property int todayMonth: new Date().getMonth()
+    property int todayDay: new Date().getDate()
+    readonly property bool isViewingCurrentMonth: root.viewYear === root.todayYear && root.viewMonth === root.todayMonth
 
     readonly property var monthNames: [
         "January", "February", "March", "April", "May", "June",
@@ -335,6 +335,9 @@ FocusScope {
 
     function goToToday() {
         const now = new Date();
+        todayYear = now.getFullYear();
+        todayMonth = now.getMonth();
+        todayDay = now.getDate();
         viewYear = now.getFullYear();
         viewMonth = now.getMonth();
         selectedYear = now.getFullYear();
@@ -426,12 +429,15 @@ FocusScope {
                 border.color: root.isViewingCurrentMonth ? StyleTokens.accent : StyleTokens.inputBorder
 
                 Behavior on color { ColorAnimation { duration: 100 } }
+                Behavior on border.color { ColorAnimation { duration: 100 } }
 
                 Text {
                     id: todayLabel
                     anchors.centerIn: parent
                     text: "Today"
-                    color: todayMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary
+                    color: root.isViewingCurrentMonth
+                        ? StyleTokens.accent
+                        : (todayMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary)
                     font.family: root.textFontFamily
                     font.pixelSize: 11
                     font.weight: Font.DemiBold

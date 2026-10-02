@@ -102,7 +102,9 @@ FocusScope {
             refresh();
             grabKeyboardFocus();
         } else {
+            listProc.running = false;
             decodeMissingProc.running = false;
+            countProc.running = false;
         }
     }
 
@@ -210,7 +212,7 @@ FocusScope {
     }
 
     function deleteEntry(entry) {
-        if (!entry || !entry.id)
+        if (!entry || !entry.id || root.deletingId !== "" || root.collapsingId !== "")
             return;
         root.deletingId = String(entry.id);
         deleteProc.command = ["bash", root.helperScriptPath, "delete", String(entry.id), "true"];
