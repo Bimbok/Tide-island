@@ -71,6 +71,7 @@ class UserConfigBackend final : public QObject {
 
     Q_PROPERTY(bool colorPaletteEnabled READ colorPaletteEnabled NOTIFY colorPaletteEnabledChanged FINAL)
     Q_PROPERTY(QString colorsFilePath READ colorsFilePath NOTIFY colorsFilePathChanged FINAL)
+    Q_PROPERTY(bool dynamicBatteryColorEnabled READ dynamicBatteryColorEnabled NOTIFY dynamicBatteryColorEnabledChanged FINAL)
 
 public:
     explicit UserConfigBackend(QObject *parent = nullptr);
@@ -129,6 +130,7 @@ public:
     int weatherRefreshInterval() const;
     bool colorPaletteEnabled() const;
     QString colorsFilePath() const;
+    bool dynamicBatteryColorEnabled() const;
     void setDefaultWallpaperPath(const QString &path);
     void setDefaultTlpSudoPassword(const QString &password);
 
@@ -190,6 +192,7 @@ signals:
     void weatherRefreshIntervalChanged();
     void colorPaletteEnabledChanged();
     void colorsFilePathChanged();
+    void dynamicBatteryColorEnabledChanged();
 
 private:
     void scheduleReload();
@@ -251,6 +254,7 @@ private:
     int m_weatherRefreshInterval = 1800000;
     bool m_colorPaletteEnabled = true;
     QString m_colorsFilePath;
+    bool m_dynamicBatteryColorEnabled = true;
 
     QFileSystemWatcher m_watcher;
     QTimer m_reloadTimer;

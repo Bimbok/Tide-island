@@ -216,7 +216,21 @@ Item {
                         readonly property real level: Math.max(0, Math.min(100, Number(modelData.level || 0)))
                         readonly property bool charging: modelData.isCharging || false
                         readonly property bool roundedEnd: level >= 85
+                        readonly property bool dynamicColors: (root.activeConfig && root.activeConfig.dynamicBatteryColorEnabled !== undefined)
+                            ? root.activeConfig.dynamicBatteryColorEnabled
+                            : true
                         readonly property color bodyColor: {
+                            if (dynamicColors) {
+                                if (charging)
+                                    return "#34c759";
+                                if (level >= 60)
+                                    return "#34c759";
+                                if (level >= 30)
+                                    return "#ffcc00";
+                                if (level >= 15)
+                                    return "#ff9500";
+                                return "#ff3b30";
+                            }
                             if (charging)
                                 return "white";
                             if (level <= 20)
@@ -292,10 +306,10 @@ Item {
                                 visible: !batteryShape.charging
                                 anchors.centerIn: parent
                                 text: batteryShape.level + ""
-                                color: batteryShape.level <= 20 ? "white" : "black"
+                                color: (batteryShape.dynamicColors ? batteryShape.level < 15 : batteryShape.level <= 20) ? "white" : "black"
                                 font.pixelSize: root.batteryFontSize
                                 font.family: root.textFontFamily
-                                font.weight: batteryShape.level <= 20 ? Font.Bold : Font.DemiBold
+                                font.weight: (batteryShape.dynamicColors ? batteryShape.level < 15 : batteryShape.level <= 20) ? Font.Bold : Font.DemiBold
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
                                 z: 2

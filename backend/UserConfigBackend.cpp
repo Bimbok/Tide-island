@@ -397,6 +397,11 @@ QString UserConfigBackend::colorsFilePath() const
     return m_colorsFilePath;
 }
 
+bool UserConfigBackend::dynamicBatteryColorEnabled() const
+{
+    return m_dynamicBatteryColorEnabled;
+}
+
 void UserConfigBackend::setDefaultWallpaperPath(const QString &path)
 {
     if (m_defaultWallpaperPath == path)
@@ -547,6 +552,7 @@ void UserConfigBackend::loadConfig()
     updateField(this, m_weatherRefreshInterval, jsonBoundedInt(configObject, QLatin1String("weatherRefreshInterval"), 1800000, 60000, 86400000), &UserConfigBackend::weatherRefreshIntervalChanged);
     updateField(this, m_colorPaletteEnabled, jsonBool(configObject, QLatin1String("colorPaletteEnabled"), true), &UserConfigBackend::colorPaletteEnabledChanged);
     updateField(this, m_colorsFilePath, jsonString(configObject, QLatin1String("colorsFilePath"), QString()), &UserConfigBackend::colorsFilePathChanged);
+    updateField(this, m_dynamicBatteryColorEnabled, jsonBool(configObject, QLatin1String("dynamicBatteryColorEnabled"), true), &UserConfigBackend::dynamicBatteryColorEnabledChanged);
 
     updateWatchedPaths();
 }

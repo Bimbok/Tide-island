@@ -46,6 +46,13 @@ Rectangle {
     border.color: Theme.splitLineColor
     implicitHeight: selectorColumn.implicitHeight + 36
 
+    property bool dynamicBatteryColor: boolValue("dynamicBatteryColorEnabled", true)
+
+    function boolValue(key, fallback) {
+        const val = ConfigStore.value(key, fallback);
+        return val === undefined || val === null ? fallback : Boolean(val);
+    }
+
     ListModel {
         id: selectedModel
     }
@@ -131,6 +138,7 @@ Rectangle {
     }
 
     function loadFromConfig() {
+        root.dynamicBatteryColor = root.boolValue("dynamicBatteryColorEnabled", true);
         const source = listValues(ConfigStore.value(configKey, defaultItems));
         const seen = {};
         let removedLyrics = false;
@@ -404,6 +412,46 @@ Rectangle {
                 }
             }
         }
+
+        SplitLine { width: parent.width }
+
+        Item {
+            width: parent.width
+            height: 49
+
+            Text {
+                id: dynamicBatteryTitle
+                text: "Dynamic Battery Colors"
+                font.family: Theme.textFontFamily
+                font.pixelSize: 18
+                color: Theme.textColor
+                anchors.top: parent.top
+                anchors.left: parent.left
+            }
+
+            Text {
+                text: "Color battery by percentage (green, yellow, orange, red)"
+                font.family: Theme.textFontFamily
+                font.pixelSize: 14
+                anchors.top: dynamicBatteryTitle.bottom
+                anchors.topMargin: 5
+                anchors.left: dynamicBatteryTitle.left
+                color: Theme.subtleTextColor
+            }
+
+            StyledSwitch {
+                id: dynamicBatterySwitch
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                checked: root.dynamicBatteryColor
+                onToggled: function(val) {
+                    checked = val;
+                    root.dynamicBatteryColor = val;
+                    ConfigStore.setValue("dynamicBatteryColorEnabled", val);
+                    ConfigStore.save();
+                }
+            }
+        }
     }
 
     PreviewChip {
@@ -461,6 +509,7 @@ Rectangle {
             BatteryPreview {
                 visible: chip.chipKind === "battery"
                 anchors.verticalCenter: parent.verticalCenter
+                fromSelection: chip.fromSelection
             }
 
             CavaPreview {
@@ -549,6 +598,7 @@ Rectangle {
     }
 
     component BatteryPreview: Item {
+        property bool fromSelection: false
         width: 28
         height: 14
 
@@ -557,7 +607,7 @@ Rectangle {
             anchors.rightMargin: 4
             radius: 4
             color: "transparent"
-            border.color: "#8e8e93"
+            border.color: fromSelection ? "white" : "#8e8e93"
             border.width: 1
 
             Rectangle {
@@ -567,7 +617,11 @@ Rectangle {
                 anchors.margins: 2
                 width: (parent.width - 4) * 0.76
                 radius: 2
-                color: "#34c759"
+                color: root.dynamicBatteryColor ? "#34c759" : (fromSelection ? "white" : Theme.textColor)
+
+                Behavior on color {
+                    ColorAnimation { duration: Theme.animationDuration }
+                }
             }
         }
 
@@ -575,7 +629,7 @@ Rectangle {
             width: 3
             height: 7
             radius: 1
-            color: "#8e8e93"
+            color: fromSelection ? "white" : "#8e8e93"
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -633,6 +687,64 @@ Rectangle {
                 anchors.bottomMargin: 5
                 radius: 1
                 color: "#b8ffffff"
+            }
+        }
+    }
+
+    component SplitLine: Rectangle {
+        height: 1
+        color: Theme.splitLineColor
+    }
+
+    component StyledSwitch: Item {
+        id: control
+
+        signal toggled(bool checked)
+
+        property bool checked: false
+
+        width: 48
+        height: 26
+
+        Rectangle {
+            id: track
+
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 40
+            height: 24
+            radius: 12
+            color: control.checked ? Theme.accentColor : Theme.componentBgColor
+            border.width: 1
+            border.color: control.checked ? Theme.accentColor : Theme.inputBorderColor
+
+            Behavior on color {
+                ColorAnimation { duration: 180; easing.type: Easing.InOutQuad }
+            }
+        }
+
+        Rectangle {
+            id: knob
+
+            width: 18
+            height: 18
+            radius: 9
+            x: control.checked ? 22 : 6
+            y: 3
+            color: Theme.cardBgColor
+            border.width: 0
+
+            Behavior on x {
+                NumberAnimation { duration: 180; easing.type: Easing.InOutQuad }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                control.toggled(!control.checked);
             }
         }
     }
