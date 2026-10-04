@@ -120,7 +120,7 @@ Item {
     readonly property string bluetoothGlyph: ""
     readonly property string chargingIconGlyph: "\uf0e7"
     readonly property string brightnessIconGlyph: "\u{F00DF}"
-    readonly property string volumeIconGlyph: "\u{F057E}"
+    readonly property string volumeIconGlyph: "\ueb75"
     readonly property string nightLightGlyph: "\uf186"
     readonly property var batteryModeGlyphs: ["", "", ""]
     readonly property real batteryDrawerHandleHeight: 20

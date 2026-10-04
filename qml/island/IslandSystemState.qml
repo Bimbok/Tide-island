@@ -30,8 +30,8 @@ Item {
     readonly property bool hasCustomLeftItems: customLeftItems.length > 0
     readonly property string systemServicesClientId: "island-system-state-" + Math.random().toString(36).slice(2)
     readonly property string defaultStatusIcon: "\ud83c\udfa7"
-    readonly property string volumeStatusIcon: "\u{F057E}"
-    readonly property string muteStatusIcon: "\u{F075F}"
+    readonly property string volumeStatusIcon: "\ueb75"
+    readonly property string muteStatusIcon: "\ueb24"
     readonly property string brightnessLowStatusIcon: "\u{F00DE}"
     readonly property string brightnessMediumStatusIcon: "\u{F00DF}"
     readonly property string brightnessHighStatusIcon: "\u{F00E0}"

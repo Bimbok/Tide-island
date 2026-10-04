@@ -18,7 +18,7 @@ Rectangle {
         { itemId: "time", displayName: "Time", previewText: "12:34", previewIcon: "", previewKind: "text", previewWidth: 76 },
         { itemId: "date", displayName: "Date", previewText: "Fri, Jul 03", previewIcon: "", previewKind: "text", previewWidth: 112 },
         { itemId: "battery", displayName: "Battery", previewText: "76%", previewIcon: "", previewKind: "battery", previewWidth: 92 },
-        { itemId: "volume", displayName: "Volume", previewText: "42%", previewIcon: "\u{F057E}", previewKind: "iconText", previewWidth: 82 },
+        { itemId: "volume", displayName: "Volume", previewText: "42%", previewIcon: "\ueb75", previewKind: "iconText", previewWidth: 82 },
         { itemId: "brightness", displayName: "Brightness", previewText: "68%", previewIcon: "\u{F00E0}", previewKind: "iconText", previewWidth: 82 },
         { itemId: "workspace", displayName: "Workspace", previewText: "Workspace 2", previewIcon: "", previewKind: "text", previewWidth: 118 },
         { itemId: "cpu", displayName: "CPU", previewText: "CPU 38%", previewIcon: "\u{F035B}", previewKind: "iconText", previewWidth: 96 },

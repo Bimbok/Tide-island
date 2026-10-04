@@ -299,25 +299,25 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
 
-                                Text {
+                                MarqueeText {
                                     text: currentTrack
                                     color: StyleTokens.textPrimaryBright
-                                    font.pixelSize: userConfig.bodyFontSize
-                                    font.family: textFontFamily
-                                    font.weight: Font.DemiBold
-                                    font.letterSpacing: -0.15
-                                    width: 180
-                                    elide: Text.ElideRight
+                                    pixelSize: userConfig.bodyFontSize
+                                    fontFamily: textFontFamily
+                                    fontWeight: Font.DemiBold
+                                    letterSpacing: -0.15
+                                    maxWidth: 180
+                                    active: showCondition && isPlaying
                                 }
 
-                                Text {
+                                MarqueeText {
                                     text: currentArtist
                                     color: StyleTokens.textSecondary
-                                    font.pixelSize: userConfig.bodyFontSize - 2
-                                    font.family: textFontFamily
-                                    font.weight: Font.Medium
-                                    width: 200
-                                    elide: Text.ElideRight
+                                    pixelSize: userConfig.bodyFontSize - 2
+                                    fontFamily: textFontFamily
+                                    fontWeight: Font.Medium
+                                    maxWidth: 200
+                                    active: showCondition && isPlaying
                                 }
                             }
                         }

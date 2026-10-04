@@ -31,7 +31,9 @@ Item {
     property int iconBoxSize: 18
     property int albumCoverSize: 28
     property int albumCoverRadius: 7
-    property int maximumMediaTextWidth: 180
+    property int maximumMediaTextWidth: (activeConfig && activeConfig.maximumMediaTextWidth !== undefined)
+        ? activeConfig.maximumMediaTextWidth
+        : 180
     property int batteryIconWidth: 37
     property int batteryIconHeight: 17
     property int batteryFontSize: 13
@@ -330,19 +332,28 @@ Item {
 
                 Text {
                     id: valueText
-                    visible: !parent.isCava && !parent.isBattery && !parent.isAlbumArt
-                    anchors.left: leadingVisual.right
-                    anchors.leftMargin: parent.hasLeadingVisual && !parent.isBattery ? root.iconSpacing : 0
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.boundedTextWidth
+                    visible: false
                     text: modelData.text || ""
-                    color: "white"
                     font.pixelSize: root.textPixelSize
                     font.family: root.textFontFamily
                     font.weight: Font.Bold
                     font.letterSpacing: -0.15
-                    elide: Text.ElideRight
-                    wrapMode: Text.NoWrap
+                }
+
+                MarqueeText {
+                    id: valueDisplay
+                    visible: !parent.isCava && !parent.isBattery && !parent.isAlbumArt
+                    anchors.left: leadingVisual.right
+                    anchors.leftMargin: parent.hasLeadingVisual && !parent.isBattery ? root.iconSpacing : 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: modelData.text || ""
+                    color: "white"
+                    pixelSize: root.textPixelSize
+                    fontFamily: root.textFontFamily
+                    fontWeight: Font.Bold
+                    letterSpacing: -0.15
+                    maxWidth: parent.isMediaText ? root.maximumMediaTextWidth : -1
+                    active: root.showCondition && (root.opacity > 0.05)
                 }
             }
         }
