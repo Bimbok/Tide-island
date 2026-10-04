@@ -135,6 +135,18 @@ void StyleTokensBackend::initDefaults()
     m_buttonFillHover = Qt::white;
     m_buttonFillPressed = hex("#e9e9ec");
 
+    m_batteryCharging = hex("#34c759");
+    m_batteryHigh = hex("#34c759");
+    m_batteryMedium = hex("#ffcc00");
+    m_batteryLow = hex("#ff9500");
+    m_batteryCritical = hex("#ff3b30");
+
+    m_textOnBatteryCharging = Qt::black;
+    m_textOnBatteryHigh = Qt::black;
+    m_textOnBatteryMedium = Qt::black;
+    m_textOnBatteryLow = Qt::black;
+    m_textOnBatteryCritical = Qt::white;
+
     m_overviewCard = hex("#ee17181b");
     m_overviewBorder = hex("#33ffffff");
     m_overviewInnerBorder = hex("#12ffffff");
@@ -440,6 +452,52 @@ void StyleTokensBackend::loadPalette()
         {QStringLiteral("workspaceActiveBorder"), QStringLiteral("primary"), QStringLiteral("accent")},
         m_workspaceActiveBorder);
 
+    // 8. Battery Colors & Matugen Theme Mapping
+    m_batteryCharging = getColor(paletteObj,
+        {QStringLiteral("batteryCharging"), QStringLiteral("battery_charging"), QStringLiteral("success"), QStringLiteral("primary")},
+        m_batteryCharging);
+
+    m_batteryHigh = getColor(paletteObj,
+        {QStringLiteral("batteryHigh"), QStringLiteral("battery_high"), QStringLiteral("success"), QStringLiteral("primary")},
+        m_batteryHigh);
+
+    m_batteryMedium = getColor(paletteObj,
+        {QStringLiteral("batteryMedium"), QStringLiteral("battery_medium"), QStringLiteral("secondary"), QStringLiteral("tertiary")},
+        m_batteryMedium);
+
+    m_batteryLow = getColor(paletteObj,
+        {QStringLiteral("batteryLow"), QStringLiteral("battery_low"), QStringLiteral("warning"), QStringLiteral("tertiary")},
+        m_batteryLow);
+
+    m_batteryCritical = getColor(paletteObj,
+        {QStringLiteral("batteryCritical"), QStringLiteral("battery_critical"), QStringLiteral("danger"), QStringLiteral("error")},
+        m_batteryCritical);
+
+    auto contrastFor = [](const QColor &bg) -> QColor {
+        const qreal lum = 0.299 * bg.redF() + 0.587 * bg.greenF() + 0.114 * bg.blueF();
+        return lum > 0.6 ? hex("#140c09") : Qt::white;
+    };
+
+    m_textOnBatteryCharging = getColor(paletteObj,
+        {QStringLiteral("textOnBatteryCharging"), QStringLiteral("on_primary")},
+        contrastFor(m_batteryCharging));
+
+    m_textOnBatteryHigh = getColor(paletteObj,
+        {QStringLiteral("textOnBatteryHigh"), QStringLiteral("on_primary")},
+        contrastFor(m_batteryHigh));
+
+    m_textOnBatteryMedium = getColor(paletteObj,
+        {QStringLiteral("textOnBatteryMedium"), QStringLiteral("on_secondary"), QStringLiteral("on_tertiary")},
+        contrastFor(m_batteryMedium));
+
+    m_textOnBatteryLow = getColor(paletteObj,
+        {QStringLiteral("textOnBatteryLow"), QStringLiteral("on_tertiary")},
+        contrastFor(m_batteryLow));
+
+    m_textOnBatteryCritical = getColor(paletteObj,
+        {QStringLiteral("textOnBatteryCritical"), QStringLiteral("on_error")},
+        contrastFor(m_batteryCritical));
+
     m_paletteLoaded = true;
     emit colorsChanged();
 }
@@ -522,3 +580,41 @@ int StyleTokensBackend::durationFast() const { return 120; }
 int StyleTokensBackend::durationControl() const { return 130; }
 int StyleTokensBackend::durationQuick() const { return 140; }
 int StyleTokensBackend::durationStandard() const { return 280; }
+
+QColor StyleTokensBackend::batteryCharging() const { return m_batteryCharging; }
+QColor StyleTokensBackend::batteryHigh() const { return m_batteryHigh; }
+QColor StyleTokensBackend::batteryMedium() const { return m_batteryMedium; }
+QColor StyleTokensBackend::batteryLow() const { return m_batteryLow; }
+QColor StyleTokensBackend::batteryCritical() const { return m_batteryCritical; }
+
+QColor StyleTokensBackend::textOnBatteryCharging() const { return m_textOnBatteryCharging; }
+QColor StyleTokensBackend::textOnBatteryHigh() const { return m_textOnBatteryHigh; }
+QColor StyleTokensBackend::textOnBatteryMedium() const { return m_textOnBatteryMedium; }
+QColor StyleTokensBackend::textOnBatteryLow() const { return m_textOnBatteryLow; }
+QColor StyleTokensBackend::textOnBatteryCritical() const { return m_textOnBatteryCritical; }
+
+QColor StyleTokensBackend::batteryColor(double level, bool charging) const
+{
+    if (charging)
+        return m_batteryCharging;
+    if (level >= 60.0)
+        return m_batteryHigh;
+    if (level >= 30.0)
+        return m_batteryMedium;
+    if (level >= 15.0)
+        return m_batteryLow;
+    return m_batteryCritical;
+}
+
+QColor StyleTokensBackend::batteryTextColor(double level, bool charging) const
+{
+    if (charging)
+        return m_textOnBatteryCharging;
+    if (level >= 60.0)
+        return m_textOnBatteryHigh;
+    if (level >= 30.0)
+        return m_textOnBatteryMedium;
+    if (level >= 15.0)
+        return m_textOnBatteryLow;
+    return m_textOnBatteryCritical;
+}

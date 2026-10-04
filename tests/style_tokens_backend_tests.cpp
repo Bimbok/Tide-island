@@ -30,6 +30,18 @@ private slots:
         // Default accent is #0a84ff
         QCOMPARE(backend.accent(), QColor("#0a84ff"));
 
+        // Default battery colors
+        QCOMPARE(backend.batteryCharging(), QColor("#34c759"));
+        QCOMPARE(backend.batteryHigh(), QColor("#34c759"));
+        QCOMPARE(backend.batteryMedium(), QColor("#ffcc00"));
+        QCOMPARE(backend.batteryLow(), QColor("#ff9500"));
+        QCOMPARE(backend.batteryCritical(), QColor("#ff3b30"));
+        QCOMPARE(backend.batteryColor(80, false), QColor("#34c759"));
+        QCOMPARE(backend.batteryColor(50, false), QColor("#ffcc00"));
+        QCOMPARE(backend.batteryColor(20, false), QColor("#ff9500"));
+        QCOMPARE(backend.batteryColor(10, false), QColor("#ff3b30"));
+        QCOMPARE(backend.batteryColor(10, true), QColor("#34c759"));
+
         // Default radii and durations
         QCOMPARE(backend.radiusPanel(), 28);
         QCOMPARE(backend.radiusModule(), 24);
@@ -112,6 +124,12 @@ private slots:
 
         // Verify on_surface mapped to textPrimary
         QCOMPARE(backend.textPrimary(), QColor("#f1dfd9"));
+
+        // Verify primary and on_primary mapped to batteryHigh and textOnBatteryHigh
+        QCOMPARE(backend.batteryHigh(), QColor("#ffb598"));
+        QCOMPARE(backend.textOnBatteryHigh(), QColor("#552008"));
+        QCOMPARE(backend.batteryCharging(), QColor("#ffb598"));
+        QCOMPARE(backend.textOnBatteryCharging(), QColor("#552008"));
     }
 
     void testPaletteDisable()
@@ -135,6 +153,9 @@ private slots:
         QCOMPARE(backend.paletteLoaded(), false);
         // Accent should revert to default #0a84ff
         QCOMPARE(backend.accent(), QColor("#0a84ff"));
+        // Battery colors should revert to default
+        QCOMPARE(backend.batteryHigh(), QColor("#34c759"));
+        QCOMPARE(backend.textOnBatteryHigh(), QColor(Qt::black));
     }
 };
 

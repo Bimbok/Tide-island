@@ -58,6 +58,18 @@ class StyleTokensBackend final : public QObject {
     Q_PROPERTY(QColor buttonFillHover READ buttonFillHover NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor buttonFillPressed READ buttonFillPressed NOTIFY colorsChanged FINAL)
 
+    Q_PROPERTY(QColor batteryCharging READ batteryCharging NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor batteryHigh READ batteryHigh NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor batteryMedium READ batteryMedium NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor batteryLow READ batteryLow NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor batteryCritical READ batteryCritical NOTIFY colorsChanged FINAL)
+
+    Q_PROPERTY(QColor textOnBatteryCharging READ textOnBatteryCharging NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor textOnBatteryHigh READ textOnBatteryHigh NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor textOnBatteryMedium READ textOnBatteryMedium NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor textOnBatteryLow READ textOnBatteryLow NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor textOnBatteryCritical READ textOnBatteryCritical NOTIFY colorsChanged FINAL)
+
     Q_PROPERTY(QColor overviewCard READ overviewCard NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor overviewBorder READ overviewBorder NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor overviewInnerBorder READ overviewInnerBorder NOTIFY colorsChanged FINAL)
@@ -122,6 +134,16 @@ public:
     QColor buttonFill() const;
     QColor buttonFillHover() const;
     QColor buttonFillPressed() const;
+    QColor batteryCharging() const;
+    QColor batteryHigh() const;
+    QColor batteryMedium() const;
+    QColor batteryLow() const;
+    QColor batteryCritical() const;
+    QColor textOnBatteryCharging() const;
+    QColor textOnBatteryHigh() const;
+    QColor textOnBatteryMedium() const;
+    QColor textOnBatteryLow() const;
+    QColor textOnBatteryCritical() const;
     QColor overviewCard() const;
     QColor overviewBorder() const;
     QColor overviewInnerBorder() const;
@@ -143,6 +165,8 @@ public:
     int durationStandard() const;
 
     Q_INVOKABLE QColor withAlpha(const QColor &color, qreal alpha) const;
+    Q_INVOKABLE QColor batteryColor(double level, bool charging) const;
+    Q_INVOKABLE QColor batteryTextColor(double level, bool charging) const;
     Q_INVOKABLE void reload();
 
 signals:
@@ -206,4 +230,15 @@ private:
     QColor m_workspaceOverlay;
     QColor m_workspaceOverlayHover;
     QColor m_workspaceActiveBorder;
+
+    QColor m_batteryCharging;
+    QColor m_batteryHigh;
+    QColor m_batteryMedium;
+    QColor m_batteryLow;
+    QColor m_batteryCritical;
+    QColor m_textOnBatteryCharging;
+    QColor m_textOnBatteryHigh;
+    QColor m_textOnBatteryMedium;
+    QColor m_textOnBatteryLow;
+    QColor m_textOnBatteryCritical;
 };

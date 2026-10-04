@@ -220,22 +220,18 @@ Item {
                             ? root.activeConfig.dynamicBatteryColorEnabled
                             : true
                         readonly property color bodyColor: {
-                            if (dynamicColors) {
-                                if (charging)
-                                    return "#34c759";
-                                if (level >= 60)
-                                    return "#34c759";
-                                if (level >= 30)
-                                    return "#ffcc00";
-                                if (level >= 15)
-                                    return "#ff9500";
-                                return "#ff3b30";
-                            }
+                            if (dynamicColors)
+                                return StyleTokens.batteryColor(level, charging);
                             if (charging)
                                 return "white";
                             if (level <= 20)
-                                return "#ff3b30";
+                                return StyleTokens.batteryCritical;
                             return "white";
+                        }
+                        readonly property color textColor: {
+                            if (dynamicColors)
+                                return StyleTokens.batteryTextColor(level, charging);
+                            return level <= 20 ? StyleTokens.textOnBatteryCritical : "black";
                         }
                         readonly property color emptyColor: Qt.rgba(1, 1, 1, 0.56)
 
@@ -284,7 +280,7 @@ Item {
 
                                 Text {
                                     text: batteryShape.level + ""
-                                    color: "black"
+                                    color: batteryShape.textColor
                                     font.pixelSize: root.batteryFontSizeCharging
                                     font.family: root.textFontFamily
                                     font.weight: Font.DemiBold
@@ -294,7 +290,7 @@ Item {
 
                                 Text {
                                     text: root.chargingIconGlyph
-                                    color: "#242424"
+                                    color: batteryShape.textColor
                                     font.pixelSize: root.batteryBoltSize
                                     font.family: root.iconFontFamily
                                     verticalAlignment: Text.AlignVCenter
@@ -306,7 +302,7 @@ Item {
                                 visible: !batteryShape.charging
                                 anchors.centerIn: parent
                                 text: batteryShape.level + ""
-                                color: (batteryShape.dynamicColors ? batteryShape.level < 15 : batteryShape.level <= 20) ? "white" : "black"
+                                color: batteryShape.textColor
                                 font.pixelSize: root.batteryFontSize
                                 font.family: root.textFontFamily
                                 font.weight: (batteryShape.dynamicColors ? batteryShape.level < 15 : batteryShape.level <= 20) ? Font.Bold : Font.DemiBold
