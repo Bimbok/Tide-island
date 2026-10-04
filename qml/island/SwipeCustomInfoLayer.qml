@@ -89,6 +89,86 @@ Item {
         text: timeText
     }
 
+    ListModel {
+        id: itemsModel
+    }
+
+    function syncItemsModel() {
+        const source = root.items || [];
+        let structureChanged = (itemsModel.count !== source.length);
+        if (!structureChanged) {
+            for (let i = 0; i < source.length; i++) {
+                const s = source[i] || {};
+                const m = itemsModel.get(i);
+                if (!m || m.itemId !== (s.id || "") || m.kind !== (s.kind || "")) {
+                    structureChanged = true;
+                    break;
+                }
+            }
+        }
+
+        if (structureChanged) {
+            itemsModel.clear();
+            for (let i = 0; i < source.length; i++) {
+                const item = source[i] || {};
+                itemsModel.append({
+                    itemId: String(item.id || ""),
+                    kind: String(item.kind || ""),
+                    icon: String(item.icon || ""),
+                    text: String(item.text || ""),
+                    artUrl: String(item.artUrl || ""),
+                    weatherType: String(item.weatherType || ""),
+                    iconColor: String(item.iconColor || ""),
+                    iconGlyph: String(item.iconGlyph || ""),
+                    level: Number(item.level !== undefined ? item.level : 0),
+                    isCharging: Boolean(item.isCharging)
+                });
+            }
+            return;
+        }
+
+        for (let i = 0; i < source.length; i++) {
+            const item = source[i] || {};
+            const m = itemsModel.get(i);
+            if (!m) continue;
+
+            const nextIcon = String(item.icon || "");
+            if (m.icon !== nextIcon)
+                itemsModel.setProperty(i, "icon", nextIcon);
+
+            const nextText = String(item.text || "");
+            if (m.text !== nextText)
+                itemsModel.setProperty(i, "text", nextText);
+
+            const nextArtUrl = String(item.artUrl || "");
+            if (m.artUrl !== nextArtUrl)
+                itemsModel.setProperty(i, "artUrl", nextArtUrl);
+
+            const nextWeatherType = String(item.weatherType || "");
+            if (m.weatherType !== nextWeatherType)
+                itemsModel.setProperty(i, "weatherType", nextWeatherType);
+
+            const nextIconColor = String(item.iconColor || "");
+            if (m.iconColor !== nextIconColor)
+                itemsModel.setProperty(i, "iconColor", nextIconColor);
+
+            const nextIconGlyph = String(item.iconGlyph || "");
+            if (m.iconGlyph !== nextIconGlyph)
+                itemsModel.setProperty(i, "iconGlyph", nextIconGlyph);
+
+            const nextLevel = Number(item.level !== undefined ? item.level : 0);
+            if (m.level !== nextLevel)
+                itemsModel.setProperty(i, "level", nextLevel);
+
+            const nextIsCharging = Boolean(item.isCharging);
+            if (m.isCharging !== nextIsCharging)
+                itemsModel.setProperty(i, "isCharging", nextIsCharging);
+        }
+    }
+
+    onItemsChanged: syncItemsModel()
+    Component.onCompleted: syncItemsModel()
+
     Row {
         id: contentRow
         x: itemsX
@@ -98,15 +178,28 @@ Item {
         spacing: groupSpacing
 
         Repeater {
-            model: root.items
+            model: itemsModel
 
             delegate: Item {
-                readonly property bool hasIcon: modelData.icon !== ""
-                readonly property bool isCava: modelData.kind === "cava"
-                readonly property bool isBattery: modelData.kind === "battery"
-                readonly property bool isAlbumArt: modelData.kind === "albumArt"
-                readonly property bool isMediaText: modelData.kind === "trackName"
-                readonly property bool isWeather: modelData.kind === "weather"
+                id: itemDelegate
+
+                readonly property string itemId: model.itemId || ""
+                readonly property string itemKind: model.kind || ""
+                readonly property string itemIcon: model.icon || ""
+                readonly property string itemText: model.text || ""
+                readonly property string itemArtUrl: model.artUrl || ""
+                readonly property string itemWeatherType: model.weatherType || ""
+                readonly property string itemIconColor: model.iconColor || ""
+                readonly property string itemIconGlyph: model.iconGlyph || ""
+                readonly property real itemLevel: model.level !== undefined ? model.level : 0
+                readonly property bool itemIsCharging: model.isCharging || false
+
+                readonly property bool hasIcon: itemIcon !== ""
+                readonly property bool isCava: itemKind === "cava"
+                readonly property bool isBattery: itemKind === "battery"
+                readonly property bool isAlbumArt: itemKind === "albumArt"
+                readonly property bool isMediaText: itemKind === "trackName"
+                readonly property bool isWeather: itemKind === "weather"
                 readonly property bool hasLeadingVisual: hasIcon || isBattery || isWeather
                 readonly property real boundedTextWidth: isMediaText
                     ? Math.min(valueText.implicitWidth, root.maximumMediaTextWidth)
@@ -151,15 +244,15 @@ Item {
 
                         Image {
                             anchors.fill: parent
-                            source: modelData.artUrl || ""
+                            source: itemDelegate.itemArtUrl
                             fillMode: Image.PreserveAspectCrop
-                            visible: source.toString() !== ""
+                            visible: itemDelegate.itemArtUrl !== ""
                             sourceSize: Qt.size(root.albumCoverSize * 2, root.albumCoverSize * 2)
                             smooth: true
                         }
 
                         Rectangle {
-                            visible: String(modelData.artUrl || "") === ""
+                            visible: itemDelegate.itemArtUrl === ""
                             width: 9
                             height: 2
                             anchors.left: parent.left
@@ -192,7 +285,7 @@ Item {
                         anchors.centerIn: parent
                         anchors.verticalCenterOffset: root.iconVerticalOffset
                         visible: parent.parent.hasIcon && !parent.parent.isBattery && !parent.parent.isWeather
-                        text: modelData.icon || ""
+                        text: itemDelegate.itemIcon
                         color: "white"
                         font.pixelSize: root.iconPixelSize
                         font.family: root.iconFontFamily
@@ -201,9 +294,9 @@ Item {
                     WeatherIcon {
                         anchors.centerIn: parent
                         visible: parent.parent.isWeather
-                        weatherType: modelData.weatherType || "sunny"
-                        iconColor: modelData.iconColor || "#f4c542"
-                        glyph: modelData.iconGlyph || "\ue30d"
+                        weatherType: itemDelegate.itemWeatherType || "sunny"
+                        iconColor: itemDelegate.itemIconColor || "#f4c542"
+                        glyph: itemDelegate.itemIconGlyph || "\ue30d"
                         iconFontFamily: root.iconFontFamily
                         iconSize: 14
                     }
@@ -215,8 +308,8 @@ Item {
                         height: root.batteryIconHeight
                         anchors.verticalCenter: parent.verticalCenter
 
-                        readonly property real level: Math.max(0, Math.min(100, Number(modelData.level || 0)))
-                        readonly property bool charging: modelData.isCharging || false
+                        readonly property real level: Math.max(0, Math.min(100, itemDelegate.itemLevel))
+                        readonly property bool charging: itemDelegate.itemIsCharging
                         readonly property bool roundedEnd: level >= 85
                         readonly property bool dynamicColors: (root.activeConfig && root.activeConfig.dynamicBatteryColorEnabled !== undefined)
                             ? root.activeConfig.dynamicBatteryColorEnabled
@@ -333,7 +426,7 @@ Item {
                 Text {
                     id: valueText
                     visible: false
-                    text: modelData.text || ""
+                    text: itemDelegate.itemText
                     font.pixelSize: root.textPixelSize
                     font.family: root.textFontFamily
                     font.weight: Font.Bold
@@ -346,14 +439,14 @@ Item {
                     anchors.left: leadingVisual.right
                     anchors.leftMargin: parent.hasLeadingVisual && !parent.isBattery ? root.iconSpacing : 0
                     anchors.verticalCenter: parent.verticalCenter
-                    text: modelData.text || ""
+                    text: itemDelegate.itemText
                     color: "white"
                     pixelSize: root.textPixelSize
                     fontFamily: root.textFontFamily
                     fontWeight: Font.Bold
                     letterSpacing: -0.15
                     maxWidth: parent.isMediaText ? root.maximumMediaTextWidth : -1
-                    active: root.showCondition && (root.opacity > 0.05)
+                    active: root.showCondition && (root.clampedProgress > 0.5)
                 }
             }
         }

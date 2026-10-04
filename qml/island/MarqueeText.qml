@@ -12,7 +12,7 @@ Item {
     property int fontWeight: Font.Bold
     property real letterSpacing: 0
     property real maxWidth: -1
-    property real gap: 36
+    property real gap: 40
     property real scrollSpeed: 32
     property int pauseDuration: 1800
     property bool active: true
@@ -22,7 +22,7 @@ Item {
     readonly property real naturalHeight: measureText.implicitHeight
     readonly property bool needsMarquee: maxWidth > 0 && naturalWidth > maxWidth
     readonly property real displayWidth: needsMarquee ? maxWidth : naturalWidth
-    readonly property real loopDistance: naturalWidth + gap
+    readonly property real loopDistance: Math.round(naturalWidth + gap)
     readonly property int scrollDuration: Math.max(1000, Math.round((loopDistance / scrollSpeed) * 1000))
     readonly property bool shouldAnimate: needsMarquee && active
 
