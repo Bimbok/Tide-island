@@ -18,6 +18,9 @@ Item {
     signal timerDurationRequested(int hours, int minutes)
 
     readonly property var userConfig: UserConfig
+    readonly property bool marqueeTrackTitleEnabled: (userConfig && userConfig.marqueeTrackTitleEnabled !== undefined)
+        ? userConfig.marqueeTrackTitleEnabled
+        : true
 
     property bool showCondition: false
     property string currentArtUrl: ""
@@ -307,6 +310,7 @@ Item {
                                     fontWeight: Font.DemiBold
                                     letterSpacing: -0.15
                                     maxWidth: 180
+                                    marqueeEnabled: root.marqueeTrackTitleEnabled
                                     active: showCondition && isPlaying
                                 }
 
@@ -317,6 +321,7 @@ Item {
                                     fontFamily: textFontFamily
                                     fontWeight: Font.Medium
                                     maxWidth: 200
+                                    marqueeEnabled: root.marqueeTrackTitleEnabled
                                     active: showCondition && isPlaying
                                 }
                             }

@@ -16,12 +16,13 @@ Item {
     property real scrollSpeed: 32
     property int pauseDuration: 1800
     property bool active: true
+    property bool marqueeEnabled: true
     property int horizontalAlignment: Text.AlignLeft
 
     readonly property real naturalWidth: measureText.implicitWidth
     readonly property real naturalHeight: measureText.implicitHeight
-    readonly property bool needsMarquee: maxWidth > 0 && naturalWidth > maxWidth
-    readonly property real displayWidth: needsMarquee ? maxWidth : naturalWidth
+    readonly property bool needsMarquee: marqueeEnabled && maxWidth > 0 && naturalWidth > maxWidth
+    readonly property real displayWidth: (maxWidth > 0) ? Math.min(naturalWidth, maxWidth) : naturalWidth
     readonly property real loopDistance: Math.round(naturalWidth + gap)
     readonly property int scrollDuration: Math.max(1000, Math.round((loopDistance / scrollSpeed) * 1000))
     readonly property bool shouldAnimate: needsMarquee && active
@@ -124,6 +125,14 @@ Item {
     }
 
     onTextChanged: resetMarquee()
+    onMarqueeEnabledChanged: {
+        if (!marqueeEnabled) {
+            marqueeAnim.stop();
+            marqueeStrip.x = 0;
+        } else if (shouldAnimate) {
+            resetMarquee();
+        }
+    }
     onShouldAnimateChanged: {
         if (shouldAnimate)
             resetMarquee();

@@ -34,6 +34,9 @@ Item {
     property int maximumMediaTextWidth: (activeConfig && activeConfig.maximumMediaTextWidth !== undefined)
         ? activeConfig.maximumMediaTextWidth
         : 180
+    readonly property bool marqueeTrackTitleEnabled: (activeConfig && activeConfig.marqueeTrackTitleEnabled !== undefined)
+        ? activeConfig.marqueeTrackTitleEnabled
+        : true
     property int batteryIconWidth: 37
     property int batteryIconHeight: 17
     property int batteryFontSize: 13
@@ -446,6 +449,7 @@ Item {
                     fontWeight: Font.Bold
                     letterSpacing: -0.15
                     maxWidth: parent.isMediaText ? root.maximumMediaTextWidth : -1
+                    marqueeEnabled: parent.isMediaText ? root.marqueeTrackTitleEnabled : false
                     active: root.showCondition && (root.clampedProgress > 0.5)
                 }
             }

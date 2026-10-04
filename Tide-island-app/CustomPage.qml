@@ -47,6 +47,7 @@ Rectangle {
     implicitHeight: selectorColumn.implicitHeight + 36
 
     property bool dynamicBatteryColor: boolValue("dynamicBatteryColorEnabled", true)
+    property bool marqueeTrackTitle: boolValue("marqueeTrackTitleEnabled", true)
 
     function boolValue(key, fallback) {
         const val = ConfigStore.value(key, fallback);
@@ -139,6 +140,7 @@ Rectangle {
 
     function loadFromConfig() {
         root.dynamicBatteryColor = root.boolValue("dynamicBatteryColorEnabled", true);
+        root.marqueeTrackTitle = root.boolValue("marqueeTrackTitleEnabled", true);
         const source = listValues(ConfigStore.value(configKey, defaultItems));
         const seen = {};
         let removedLyrics = false;
@@ -448,6 +450,46 @@ Rectangle {
                     checked = val;
                     root.dynamicBatteryColor = val;
                     ConfigStore.setValue("dynamicBatteryColorEnabled", val);
+                    ConfigStore.save();
+                }
+            }
+        }
+
+        SplitLine { width: parent.width }
+
+        Item {
+            width: parent.width
+            height: 49
+
+            Text {
+                id: marqueeTitle
+                text: "Scroll Long Track Titles"
+                font.family: Theme.textFontFamily
+                font.pixelSize: 18
+                color: Theme.textColor
+                anchors.top: parent.top
+                anchors.left: parent.left
+            }
+
+            Text {
+                text: "Marquee scroll overflowing song titles instead of truncating (Title...)"
+                font.family: Theme.textFontFamily
+                font.pixelSize: 14
+                anchors.top: marqueeTitle.bottom
+                anchors.topMargin: 5
+                anchors.left: marqueeTitle.left
+                color: Theme.subtleTextColor
+            }
+
+            StyledSwitch {
+                id: marqueeSwitch
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                checked: root.marqueeTrackTitle
+                onToggled: function(val) {
+                    checked = val;
+                    root.marqueeTrackTitle = val;
+                    ConfigStore.setValue("marqueeTrackTitleEnabled", val);
                     ConfigStore.save();
                 }
             }

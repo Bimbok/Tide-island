@@ -72,6 +72,7 @@ class UserConfigBackend final : public QObject {
     Q_PROPERTY(bool colorPaletteEnabled READ colorPaletteEnabled NOTIFY colorPaletteEnabledChanged FINAL)
     Q_PROPERTY(QString colorsFilePath READ colorsFilePath NOTIFY colorsFilePathChanged FINAL)
     Q_PROPERTY(bool dynamicBatteryColorEnabled READ dynamicBatteryColorEnabled NOTIFY dynamicBatteryColorEnabledChanged FINAL)
+    Q_PROPERTY(bool marqueeTrackTitleEnabled READ marqueeTrackTitleEnabled NOTIFY marqueeTrackTitleEnabledChanged FINAL)
 
 public:
     explicit UserConfigBackend(QObject *parent = nullptr);
@@ -131,6 +132,7 @@ public:
     bool colorPaletteEnabled() const;
     QString colorsFilePath() const;
     bool dynamicBatteryColorEnabled() const;
+    bool marqueeTrackTitleEnabled() const;
     void setDefaultWallpaperPath(const QString &path);
     void setDefaultTlpSudoPassword(const QString &password);
 
@@ -193,6 +195,7 @@ signals:
     void colorPaletteEnabledChanged();
     void colorsFilePathChanged();
     void dynamicBatteryColorEnabledChanged();
+    void marqueeTrackTitleEnabledChanged();
 
 private:
     void scheduleReload();
@@ -255,6 +258,7 @@ private:
     bool m_colorPaletteEnabled = true;
     QString m_colorsFilePath;
     bool m_dynamicBatteryColorEnabled = true;
+    bool m_marqueeTrackTitleEnabled = true;
 
     QFileSystemWatcher m_watcher;
     QTimer m_reloadTimer;
