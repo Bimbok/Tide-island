@@ -120,16 +120,19 @@ Rectangle {
             spacing: 12
 
             property bool copiedSnippet: false
+            property bool copiedTemplate: false
+            property bool templateInstalled: backend.isMatugenTemplateInstalled()
+            property string selectedTab: "toml"
 
             Timer {
                 id: matugenCopyResetTimer
-                interval: 1500
+                interval: 1800
                 repeat: false
-                onTriggered: matugenGuide.copiedSnippet = false
+                onTriggered: {
+                    matugenGuide.copiedSnippet = false;
+                    matugenGuide.copiedTemplate = false;
+                }
             }
-
-            readonly property string matugenSnippet:
-"[templates.tide_island]\ninput_path = \"~/.config/matugen/templates/tide-island-colors.json\"\noutput_path = \"~/.config/tide-island/colors.json\""
 
             Item {
                 width: parent.width
@@ -144,36 +147,87 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
-                Rectangle {
+                Row {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 96
-                    height: 32
-                    radius: 8
-                    color: matugenGuide.copiedSnippet
-                        ? Theme.buttonColor
-                        : (copyMouse.containsMouse ? Theme.mutedButtonHoverColor : Theme.mutedButtonColor)
-                    border.width: 1
-                    border.color: Theme.splitLineColor
+                    spacing: 8
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: matugenGuide.copiedSnippet ? "Copied!" : "Copy TOML"
-                        color: matugenGuide.copiedSnippet ? Theme.buttonTextColor : Theme.mutedButtonTextColor
-                        font.family: Theme.textFontFamily
-                        font.pixelSize: 13
-                        font.weight: Font.DemiBold
+                    Rectangle {
+                        width: installBtnText.implicitWidth + 24
+                        height: 32
+                        radius: 8
+                        color: matugenGuide.templateInstalled
+                            ? Theme.cardBgColor
+                            : (installMouse.containsMouse ? Theme.buttonHoverColor : Theme.buttonColor)
+                        border.width: 1
+                        border.color: matugenGuide.templateInstalled ? Theme.splitLineColor : Theme.buttonColor
+
+                        Text {
+                            id: installBtnText
+                            anchors.centerIn: parent
+                            text: matugenGuide.templateInstalled ? "✓ Template Installed" : "Install Template"
+                            color: matugenGuide.templateInstalled ? Theme.textColor : Theme.buttonTextColor
+                            font.family: Theme.textFontFamily
+                            font.pixelSize: 13
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: installMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (backend.installMatugenTemplate()) {
+                                    matugenGuide.templateInstalled = true;
+                                }
+                            }
+                        }
                     }
 
-                    MouseArea {
-                        id: copyMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (backend.copyToClipboard(matugenGuide.matugenSnippet)) {
-                                matugenGuide.copiedSnippet = true;
-                                matugenCopyResetTimer.restart();
+                    Rectangle {
+                        width: copyBtnText.implicitWidth + 24
+                        height: 32
+                        radius: 8
+                        color: (matugenGuide.copiedSnippet || matugenGuide.copiedTemplate)
+                            ? Theme.buttonColor
+                            : (copyMouse.containsMouse ? Theme.mutedButtonHoverColor : Theme.mutedButtonColor)
+                        border.width: 1
+                        border.color: Theme.splitLineColor
+
+                        Text {
+                            id: copyBtnText
+                            anchors.centerIn: parent
+                            text: {
+                                if (matugenGuide.copiedSnippet || matugenGuide.copiedTemplate)
+                                    return "Copied!";
+                                return matugenGuide.selectedTab === "toml" ? "Copy TOML" : "Copy Template JSON";
+                            }
+                            color: (matugenGuide.copiedSnippet || matugenGuide.copiedTemplate)
+                                ? Theme.buttonTextColor
+                                : Theme.mutedButtonTextColor
+                            font.family: Theme.textFontFamily
+                            font.pixelSize: 13
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: copyMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (matugenGuide.selectedTab === "toml") {
+                                    if (backend.copyToClipboard(backend.matugenTomlSnippet())) {
+                                        matugenGuide.copiedSnippet = true;
+                                        matugenCopyResetTimer.restart();
+                                    }
+                                } else {
+                                    if (backend.copyToClipboard(backend.matugenTemplateContent())) {
+                                        matugenGuide.copiedTemplate = true;
+                                        matugenCopyResetTimer.restart();
+                                    }
+                                }
                             }
                         }
                     }
@@ -182,37 +236,100 @@ Rectangle {
 
             Text {
                 width: parent.width
-                text: "To sync colors automatically with your wallpaper via Matugen, ensure the template is placed in ~/.config/matugen/templates/ and add this block to ~/.config/matugen/config.toml:"
+                text: "Sync island colors automatically with your wallpaper via Matugen. Click 'Install Template' to place the template in ~/.config/matugen/templates/, then ensure the block below is in ~/.config/matugen/config.toml:"
                 font.family: Theme.textFontFamily
                 font.pixelSize: 14
                 color: Theme.subtleTextColor
                 wrapMode: Text.WordWrap
             }
 
+            Row {
+                spacing: 8
+
+                Rectangle {
+                    width: 130
+                    height: 28
+                    radius: 6
+                    color: matugenGuide.selectedTab === "toml" ? Theme.cardBgColor : Theme.componentBgColor
+                    border.width: 1
+                    border.color: matugenGuide.selectedTab === "toml" ? Theme.accentColor : Theme.inputBorderColor
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "1. config.toml"
+                        font.family: Theme.textFontFamily
+                        font.pixelSize: 13
+                        font.weight: matugenGuide.selectedTab === "toml" ? Font.DemiBold : Font.Normal
+                        color: matugenGuide.selectedTab === "toml" ? Theme.textColor : Theme.secondaryTextColor
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: matugenGuide.selectedTab = "toml"
+                    }
+                }
+
+                Rectangle {
+                    width: 160
+                    height: 28
+                    radius: 6
+                    color: matugenGuide.selectedTab === "template" ? Theme.cardBgColor : Theme.componentBgColor
+                    border.width: 1
+                    border.color: matugenGuide.selectedTab === "template" ? Theme.accentColor : Theme.inputBorderColor
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "2. Template JSON"
+                        font.family: Theme.textFontFamily
+                        font.pixelSize: 13
+                        font.weight: matugenGuide.selectedTab === "template" ? Font.DemiBold : Font.Normal
+                        color: matugenGuide.selectedTab === "template" ? Theme.textColor : Theme.secondaryTextColor
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: matugenGuide.selectedTab = "template"
+                    }
+                }
+            }
+
             Rectangle {
                 width: parent.width
-                height: codeText.implicitHeight + 20
+                height: Math.min(230, Math.max(70, codeFlick.contentHeight + 20))
                 radius: 8
                 color: Theme.inputBgColor
                 border.width: 1
                 border.color: Theme.inputBorderColor
+                clip: true
 
-                Text {
-                    id: codeText
+                Flickable {
+                    id: codeFlick
                     anchors.fill: parent
                     anchors.margins: 10
-                    text: matugenGuide.matugenSnippet
-                    color: Theme.textColor
-                    wrapMode: Text.WrapAnywhere
-                    font.family: "monospace"
-                    font.pixelSize: 13
-                    lineHeight: 1.2
+                    contentWidth: codeText.implicitWidth
+                    contentHeight: codeText.implicitHeight
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    Text {
+                        id: codeText
+                        text: matugenGuide.selectedTab === "toml"
+                            ? backend.matugenTomlSnippet()
+                            : backend.matugenTemplateContent()
+                        color: Theme.textColor
+                        font.family: "monospace"
+                        font.pixelSize: 12
+                        lineHeight: 1.2
+                    }
                 }
             }
 
             Text {
                 width: parent.width
-                text: "• Template file: ~/.config/matugen/templates/tide-island-colors.json\n• Generated colors: ~/.config/tide-island/colors.json\n• Background transparency is independently preserved using the 'Background Transparency' slider in General."
+                text: "• Template path: ~/.config/matugen/templates/tide-island-colors.json\n• Generated colors: ~/.config/tide-island/colors.json\n• Battery colors (charging, high, medium, low, critical) are automatically harmonized with your theme.\n• Background transparency is independently preserved using the 'Background Transparency' slider in General."
                 font.family: Theme.textFontFamily
                 font.pixelSize: 13
                 color: Theme.subtleTextColor
