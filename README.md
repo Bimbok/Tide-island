@@ -131,6 +131,7 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
 
 ### Extended Enhancements
 
+- **Integrated System Tray (SNI)**: Embedded StatusNotifierItem tray in the Control Center displaying active background applications and status indicators with interactive click actions, tooltips, and smooth collapse when empty.
 - **Dynamic Color Palette & Matugen Integration**: Live hot-reloads of `colors.json` on disk via `QFileSystemWatcher` without service restarts. Ready-to-use Matugen template with preserved capsule translucency (`islandBackgroundOpacity`).
 - **Dynamic Battery Color Progression**: Battery pill smoothly shifts colors based on charge level (critical, warning, nominal, charging) with full Matugen color matching and an on/off toggle in settings.
 - **Marquee Track Title Scrolling**: Clean, smooth auto-scrolling for long song titles with an initial 1.8s reading pause and seamless looping, plus an instant toggle in the Config App to fall back to static ellipsis (`Title...`) for 0% CPU.
