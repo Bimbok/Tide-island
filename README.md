@@ -77,12 +77,20 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
       <img src="docs/preview/music_player.png" width="100%" alt="Music Player" />
     </td>
     <td width="50%">
-      <img src="docs/preview/control_center.png" width="100%" alt="Control Center" />
+      <img src="docs/preview/timer.png" width="100%" alt="Timer" />
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="docs/preview/timer.png" width="100%" alt="Timer" />
+      <img src="docs/preview/control_center.png" width="100%" alt="Control Center" />
+    </td>
+    <td width="50%">
+      <img src="docs/preview/workspace_overview.png" width="100%" alt="Workspace Overview" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/preview/app_launcher.png" width="100%" alt="Application Launcher" />
     </td>
     <td width="50%">
       <img src="docs/preview/wallpaper_switcher.png" width="100%" alt="Wallpaper Switcher" />
@@ -98,14 +106,9 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
   </tr>
   <tr>
     <td width="50%">
-      <img src="docs/preview/workspace_overview.png" width="100%" alt="Workspace Overview" />
-    </td>
-    <td width="50%">
       <img src="docs/preview/clipboard.png" width="100%" alt="Clipboard History" />
     </td>
-  </tr>
-  <tr>
-    <td colspan="2">
+    <td width="50%">
       <img src="docs/preview/clipboard_preview.png" width="100%" alt="Clipboard Image Preview & File Shelf" />
     </td>
   </tr>
