@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Bimbok/Tide-island/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
-  <a href="https://github.com/Bimbok/Tide-island/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
+  <a href="https://github.com/Bimbok/Tide-island-extended/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Bimbok/Tide-island-extended?style=flat-square&color=8aadf4"></a>
+  <a href="https://github.com/Bimbok/Tide-island-extended/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Bimbok/Tide-island-extended?style=flat-square&color=8aadf4"></a>
   <a href="https://github.com/enhaoswen/Tide-island"><img alt="Upstream: enhaoswen/Tide-island" src="https://img.shields.io/badge/upstream-enhaoswen%2FTide--island-8aadf4?style=flat-square"></a>
   <img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-111111?style=flat-square&color=8aadf4">
   <img alt="niri" src="https://img.shields.io/badge/niri-111111?style=flat-square&color=8aadf4">
@@ -198,8 +198,8 @@ Click a date in the calendar to write a note. Dates with notes show a small dot;
 Clone the repository and run the automated installer:
 
 ```bash
-git clone https://github.com/Bimbok/Tide-island.git
-cd Tide-island
+git clone https://github.com/Bimbok/Tide-island-extended.git
+cd Tide-island-extended
 ./install.sh
 ```
 
@@ -239,7 +239,7 @@ Useful installer options:
 To update Tide Island Extended to the latest version:
 
 ```bash
-cd Tide-island
+cd Tide-island-extended
 git pull
 ./install.sh
 ```
