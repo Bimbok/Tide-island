@@ -5,14 +5,6 @@
 </p>
 
 <p align="center">
-  <sub>
-    <a href="./README.md">English</a>
-     · 
-    <a href="./README.zh-CN.md">简体中文</a>
-  </sub>
-</p>
-
-<p align="center">
   <a href="https://github.com/Bimbok/Tide-island/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
   <a href="https://github.com/Bimbok/Tide-island/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
   <a href="https://github.com/enhaoswen/Tide-island"><img alt="Upstream: enhaoswen/Tide-island" src="https://img.shields.io/badge/upstream-enhaoswen%2FTide--island-8aadf4?style=flat-square"></a>
@@ -342,25 +334,6 @@ Heartfelt thanks and appreciation to:
 - **[@end-4](https://github.com/end-4)** for the workspace overview design inspiration
 - **[@gozhuimeng](https://github.com/gozhuimeng)** for improving the lyrics backend
 - **[@LatifKovani](https://github.com/LatifKovani)** for a significant improvement
-
-## Star History
-
-<a href="https://star-history.com/#Bimbok/Tide-island&Date">
-  <picture>
-    <source
-      media="(prefers-color-scheme: dark)"
-      srcset="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date&theme=dark"
-    />
-    <source
-      media="(prefers-color-scheme: light)"
-      srcset="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date"
-    />
-    <img
-      alt="Star History Chart"
-      src="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date"
-    />
-  </picture>
-</a>
 
 ---
 

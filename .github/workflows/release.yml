@@ -105,10 +105,8 @@ jobs:
           set -Eeuo pipefail
           version="${GITHUB_REF_NAME#v}"
           cmake_version="$(sed -nE 's/^project\(TideIsland VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)"
-          pkgbuild_version="$(sed -nE 's/^pkgver=([0-9.]+)$/\1/p' PKGBUILD)"
           test -n "$version"
           test "$version" = "$cmake_version"
-          test "$version" = "$pkgbuild_version"
 
       - name: Create reproducible source asset
         shell: bash

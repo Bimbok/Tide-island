@@ -69,7 +69,7 @@ write_os_release unknown void ""
 run_case ubuntu "apt-get install" " dbus "
 run_case fedora "sudo dnf install" " dbus-daemon " " cli11-devel "
 run_case opensuse "sudo zypper --non-interactive install" " dbus-1 "
-run_failure_case arch "6.8.0" "Arch-based systems should install" --force
+run_case arch "sudo pacman -S --needed" " wireplumber " " cli11 "
 run_failure_case unknown "6.8.0" "unsupported distribution 'void'" --force
 run_failure_case ubuntu "6.4.2" "Qt 6.4.2 is too old" --skip-deps --force
 
