@@ -43,13 +43,15 @@ When nothing much is going on, it sits compactly in your bar or corner, staying 
 It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid and responsive while keeping resource usage minimal.
 
 > [!NOTE]
-> ### About This Project & Upstream Credits
+> ### About This Project
 >
-> **Tide Island Extended** is an actively maintained and enhanced fork of [Tide Island](https://github.com/enhaoswen/Tide-island), originally designed and created by **[@enhaoswen](https://github.com/enhaoswen)**.
+> **Tide Island Extended** is an independently maintained and enhanced fork of [Tide Island](https://github.com/enhaoswen/Tide-island), originally created by [**@enhaoswen**](https://github.com/enhaoswen).
 >
-> Full architectural credit goes to **enhaoswen** for creating the extraordinary core foundation, animation system, and island design.
+> The original Tide Island project provided the core architecture, animation system, Dynamic Island concept, and foundation on which this project is built.
 >
-> While upstream development has transitioned toward a future rewrite (`Tide-Island-New`), this project keeps the stable C++/Qt 6 & Quickshell codebase thriving — actively maintaining it with community enhancements, dynamic theming integrations, performance tunings, and UI refinements. We also actively follow upstream development and incorporate upstream fixes and features as appropriate.
+> **Tide Island Extended has its own development direction and codebase.** It is not intended to remain in direct sync with upstream. Selected ideas, features, fixes, or improvements from the original project may be incorporated when they are considered meaningful and suitable for this project, adapted and integrated into the codebase as needed.
+>
+> Beyond these upstream-inspired improvements, Tide Island Extended also introduces its own features, integrations, performance improvements, UI refinements, and other enhancements.
 
 
 <br>
