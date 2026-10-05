@@ -1,7 +1,7 @@
-<h1 align="center">Tide Island</h1>
+<h1 align="center">Tide Island Extended</h1>
 
 <p align="center">
-  <b>一个为 Hyprland 和 niri 打造的流畅、轻量且灵活的交互式灵动岛。</b>
+  <b>一个为 Hyprland 和 niri 打造的流畅、轻量且具备扩展性的交互式灵动岛。</b>
 </p>
 
 <p align="center">
@@ -13,10 +13,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/enhaoswen/Tide-island/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/enhaoswen/Tide-island?style=flat-square&color=8aadf4"></a>
-  <a href="https://github.com/enhaoswen/Tide-island/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/enhaoswen/Tide-island?style=flat-square&color=8aadf4"></a>
-  <a href="https://aur.archlinux.org/packages/tide-island"><img alt="AUR package" src="https://img.shields.io/aur/version/tide-island?style=flat-square&label=AUR&color=8aadf4"></a>
-  <a href="https://deepwiki.com/enhaoswen/Tide-island"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
+  <a href="https://github.com/Bimbok/Tide-island/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
+  <a href="https://github.com/Bimbok/Tide-island/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
+  <a href="https://github.com/enhaoswen/Tide-island"><img alt="上游仓库: enhaoswen/Tide-island" src="https://img.shields.io/badge/upstream-enhaoswen%2FTide--island-8aadf4?style=flat-square"></a>
   <img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-111111?style=flat-square&color=8aadf4">
   <img alt="niri" src="https://img.shields.io/badge/niri-111111?style=flat-square&color=8aadf4">
   <img alt="C++ + Qt" src="https://img.shields.io/badge/C%2B%2B%20%2B%20Qt-111111?style=flat-square&color=8aadf4">
@@ -38,22 +37,22 @@
 
 ---
 
-## 关于 Tide Island
+## 关于 Tide Island Extended
 
-Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类似灵动岛的设计。
+Tide Island Extended 是一款面向 Hyprland 和 niri 的桌面组件，采用类似灵动岛的交互设计。
 
-平时没有什么动静时，它就安静地待在角落，不会碍事。需要查看信息时，它会展开成一个面板，让你查看歌词、切换工作区、调整系统设置、查看通知，或放置一些自定义内容。
+平时没有什么动静时，它就安静地待在屏幕边缘，不会妨碍工作。需要查看信息时，它会平滑展开成一个交互面板，让你轻松查看歌词、切换工作区、调整系统设置、查看通知与天气，或放置自定义监控内容。
 
-它基于 Quickshell、QML 和 C++/Qt 6 构建。开发时的大部分精力都花在了让动画尽可能流畅、交互足够跟手，同时控制好资源占用上。谈不上有什么特别，但希望它用起来足够舒服。
+它基于 Quickshell、QML 和 C++/Qt 6 构建。动画经过深度调校，追求极致流畅与贴手交互，同时保持极其克制的系统资源占用。
 
-> [!WARNING]
-> **Tide Island 已迁移至新的仓库。**
+> [!NOTE]
+> ### 🌊 关于本项目与上游致谢
 >
-> 当前版本仍可正常使用，但已不再积极维护。
+> **Tide Island Extended** 是基于 **[@enhaoswen](https://github.com/enhaoswen)** 原创项目 [Tide Island](https://github.com/enhaoswen/Tide-island) 的活跃维护与增强分支。
 >
-> 新版本正在开发中，目前**尚未完成**。
+> 项目核心架构与初始设计完全归功于 **enhaoswen**，衷心感谢他为 Wayland 生态打造了如此出色、顺滑的灵动岛基石。
 >
-> 最新开发进展请前往 **[Tide Island — 新仓库](https://github.com/enhaoswen/Tide-Island-New)**。
+> 虽然上游已转向新架构重构（`Tide-Island-New`），本项目选择继续深耕稳定成熟的 C++/Qt 6 与 Quickshell 技术底座，持续融入社区需求、动态主题生态集成、性能优化与视觉细节打磨。我们也会持续跟进上游动态，适时合并与借鉴上游的优秀改动。
 
 
 <br>
@@ -109,6 +108,16 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 
 ## 功能
 
+### ✨ Extended 增强特性
+
+- 🎨 **动态调色板与 Matugen 实时热重载**：通过 `QFileSystemWatcher` 自动监听 `colors.json` 磁盘变更并实时热重载，无需重启服务。内置 Matugen 模板，完美兼顾灵动岛胶囊透明度（`islandBackgroundOpacity`）。
+- 🔋 **动态电池颜色渐变**：电量胶囊颜色随剩余电量自动变色（严重不足、低电量、正常、充电中），完全适配 Matugen 主题色，可在配置应用中自由开启/关闭。
+- 🎵 **长歌名跑马灯平滑滚动**：超出长度的曲目标题自动跑马灯循环滚动，带 1.8 秒初始阅读停顿与平滑过渡，并在配置中心提供开关，关闭时退回静态省略号（`歌名...`）实现 0% CPU 占用。
+- 🖌️ **图标线条粗细统一**：统一音量、亮度、电池和天气等图标的描边粗细与视觉风格。
+- ⚡ **状态响应优化**：优化自定义信息层的数据同步，采用就地属性更新，避免不必要的委托重建与卡顿。
+
+### 核心功能
+
 - 时钟
 - 音乐播放器
 - 控制中心
@@ -124,7 +133,6 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 - 自定义页面
 - 通知中心
 - 电源菜单
-- 动态调色板与 Matugen 支持
 
 剪贴板历史需要安装 `cliphist` 和 `wl-clipboard`。Tide Island 运行时会自动监听并记录新复制的内容。
 点击日历中的日期即可编辑便签。写过便签的日期会显示小白点，内容会自动保存。
@@ -162,51 +170,56 @@ Tide Island 是一款面向 Hyprland 和 niri 的小型桌面组件，采用类�
 
 ## 安装
 
-### Arch Linux
+### 源码安装（适用于所有发行版）
 
-从 AUR 安装：
-
-```bash
-yay -S tide-island
-```
-
-### 其他 Linux 发行版
-
-从[最新的 GitHub Release](https://github.com/enhaoswen/Tide-island/releases/latest)下载源码包和校验文件：
+克隆仓库并运行自动安装脚本：
 
 ```bash
-curl -fLO https://github.com/enhaoswen/Tide-island/releases/latest/download/tide-island-source.tar.xz
-curl -fLO https://github.com/enhaoswen/Tide-island/releases/latest/download/SHA256SUMS
-sha256sum --check SHA256SUMS
-tar -xf tide-island-source.tar.xz
-cd Tide-island-*
+git clone https://github.com/Bimbok/Tide-island.git
+cd Tide-island
 ./install.sh
 ```
 
-安装器会将 Tide Island 安装到 `/usr`，并可在以下发行版上自动安装依赖：
+安装脚本会自动将 Tide Island 构建并安装到 `/usr`，生成快捷方式与服务单元，并在以下发行版上自动安装所需的构建与运行时依赖：
 
-- 使用 `apt` 的 Debian、Ubuntu 及其衍生发行版
-- 使用 `dnf` 的 Fedora、RHEL 及其衍生发行版
-- 使用 `zypper` 的 openSUSE
+- **Arch Linux, EndeavourOS, Manjaro, CachyOS**（使用 `pacman`）
+- **Debian, Ubuntu, Linux Mint, Pop!_OS**（使用 `apt`）
+- **Fedora, RHEL, Nobara**（使用 `dnf`）
+- **openSUSE**（使用 `zypper`）
 
-对于其他发行版，请手动安装依赖，然后运行：
+> [!TIP]
+> 如果此前已安装了旧版的 AUR `tide-island` 软件包，请在运行安装脚本前先将其卸载：
+> ```bash
+> sudo pacman -R tide-island
+> ./install.sh
+> ```
+
+对于其他 Linux 发行版，请手动安装依赖后运行：
 
 ```bash
 ./install.sh --skip-deps
 ```
 
-如果 `/usr/bin/quickshell` 存在，安装器会直接使用它；否则，安装器会构建当前发行版锁定、经过验证且与其兼容的 Quickshell 版本。需要 Qt 6.6 或更高版本。
-
-此源码安装器适用于 `/usr` 可写的常规 Linux 系统。NixOS、Fedora Silverblue 等声明式或不可变系统应改用原生软件包，或在可写的开发容器中安装。
+如果系统已有 `/usr/bin/quickshell`，安装器会直接使用；否则会自动构建验证过的兼容 Quickshell 版本。要求 Qt 6.6 或更高版本。
 
 常用安装选项：
 
 | 选项 | 说明 |
 | --- | --- |
 | `./install.sh --no-service` | 安装 Tide Island，但不启用或启动 systemd 用户服务。 |
-| `./install.sh --skip-quickshell` | 跳过从源码构建 Quickshell，使用现有的 `/usr/bin/quickshell`；如果该文件不存在，安装会报错并停止。 |
-| `./install.sh --force-build-quickshell` | 即使系统中已安装 Quickshell，也重新构建并安装项目指定的 Quickshell 版本。 |
-| `./install.sh --uninstall` | 移除由源码安装器安装的 Tide Island 文件；已安装的依赖和 Quickshell 会保留。 |
+| `./install.sh --skip-quickshell` | 跳过从源码构建 Quickshell，直接使用系统现有的 `/usr/bin/quickshell`。 |
+| `./install.sh --force-build-quickshell` | 即使系统中已安装 Quickshell，也强制重新构建并安装项目指定的 Quickshell 版本。 |
+| `./install.sh --uninstall` | 移除由源码安装器安装的 Tide Island 文件。 |
+
+### 更新
+
+更新至 Tide Island Extended 最新版本：
+
+```bash
+cd Tide-island
+git pull
+./install.sh
+```
 
 <br>
 
@@ -314,33 +327,28 @@ journalctl --user -u tide-island -f
 
 ## 致谢
 
-感谢：
+衷心感谢与致敬：
 
-- [@end-4](https://github.com/end-4) 提供工作区总览的设计灵感
-- [@gozhuimeng](https://github.com/gozhuimeng) 改进歌词后端
-- [@LatifKovani](https://github.com/LatifKovani) 带来重要改进
-
-## 社区
-
-- Discord: https://discord.gg/Rcj3uPtKwD
-- Email: enhaoswen@gmail.com
-
+- **[@enhaoswen](https://github.com/enhaoswen)**：Tide Island 的原作者与核心架构师，打造了令人惊艳的动画引擎、核心架构与灵动岛愿景。
+- **[@end-4](https://github.com/end-4)** 提供工作区总览的设计灵感
+- **[@gozhuimeng](https://github.com/gozhuimeng)** 改进歌词后端
+- **[@LatifKovani](https://github.com/LatifKovani)** 带来重要改进
 
 ## 收藏
 
-<a href="https://star-history.com/#enhaoswen/Tide-island&Date">
+<a href="https://star-history.com/#Bimbok/Tide-island&Date">
   <picture>
     <source
       media="(prefers-color-scheme: dark)"
-      srcset="https://api.star-history.com/svg?repos=enhaoswen/Tide-island&type=Date&theme=dark"
+      srcset="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date&theme=dark"
     />
     <source
       media="(prefers-color-scheme: light)"
-      srcset="https://api.star-history.com/svg?repos=enhaoswen/Tide-island&type=Date"
+      srcset="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date"
     />
     <img
       alt="Star History Chart"
-      src="https://api.star-history.com/svg?repos=enhaoswen/Tide-island&type=Date"
+      src="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date"
     />
   </picture>
 </a>

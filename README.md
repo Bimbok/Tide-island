@@ -1,7 +1,7 @@
-<h1 align="center">Tide Island</h1>
+<h1 align="center">Tide Island Extended</h1>
 
 <p align="center">
-  <b>A smooth, lightweight, and flexible interactive Dynamic Island for Hyprland and niri.</b>
+  <b>A smooth, lightweight, and extensible interactive Dynamic Island for Hyprland and niri.</b>
 </p>
 
 <p align="center">
@@ -13,10 +13,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/enhaoswen/Tide-island/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/enhaoswen/Tide-island?style=flat-square&color=8aadf4"></a>
-  <a href="https://github.com/enhaoswen/Tide-island/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/enhaoswen/Tide-island?style=flat-square&color=8aadf4"></a>
-  <a href="https://aur.archlinux.org/packages/tide-island"><img alt="AUR package" src="https://img.shields.io/aur/version/tide-island?style=flat-square&label=AUR&color=8aadf4"></a>
-  <a href="https://deepwiki.com/enhaoswen/Tide-island"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
+  <a href="https://github.com/Bimbok/Tide-island/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
+  <a href="https://github.com/Bimbok/Tide-island/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/Bimbok/Tide-island?style=flat-square&color=8aadf4"></a>
+  <a href="https://github.com/enhaoswen/Tide-island"><img alt="Upstream: enhaoswen/Tide-island" src="https://img.shields.io/badge/upstream-enhaoswen%2FTide--island-8aadf4?style=flat-square"></a>
   <img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-111111?style=flat-square&color=8aadf4">
   <img alt="niri" src="https://img.shields.io/badge/niri-111111?style=flat-square&color=8aadf4">
   <img alt="C++ + Qt" src="https://img.shields.io/badge/C%2B%2B%20%2B%20Qt-111111?style=flat-square&color=8aadf4">
@@ -39,22 +38,22 @@
 
 ---
 
-## About Tide Island
+## About Tide Island Extended
 
-Tide Island is a small desktop widget for Hyprland and niri, styled like the Dynamic Island.
+Tide Island Extended is a desktop widget for Hyprland and niri, styled like the Dynamic Island.
 
-When nothing much is going on, it just sits in the corner, staying out of the way. When you need to check some information, it expands into a panel where you can view lyrics, switch workspaces, adjust system settings, check notifications, or put in some custom content.
+When nothing much is going on, it sits compactly in your bar or corner, staying out of the way. When you need to check information, it expands into an interactive panel where you can view lyrics, switch workspaces, adjust system settings, check notifications, view weather, or inspect custom system statistics.
 
-It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into making the animations as smooth as possible, interactions responsive, and resource usage kept in check. I can't claim it's anything special, but I hope it's comfortable to use.
+It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid and responsive while keeping resource usage minimal.
 
-> [!WARNING]
-> **Tide Island has moved to a new repository.**
+> [!NOTE]
+> ### 🌊 About This Project & Upstream Credits
 >
-> This version is still working well and remains available, but it is no longer actively maintained.
+> **Tide Island Extended** is an actively maintained and enhanced fork of [Tide Island](https://github.com/enhaoswen/Tide-island), originally designed and created by **[@enhaoswen](https://github.com/enhaoswen)**.
 >
-> A new version is currently under development, but it is **not finished yet**.
+> Full architectural credit goes to **enhaoswen** for creating the extraordinary core foundation, animation system, and island design.
 >
-> For the latest development, visit **[Tide Island — New Repository](https://github.com/enhaoswen/Tide-Island-New)**.
+> While upstream development has transitioned toward a future rewrite (`Tide-Island-New`), this project keeps the stable C++/Qt 6 & Quickshell codebase thriving — actively maintaining it with community enhancements, dynamic theming integrations, performance tunings, and UI refinements. We also actively follow upstream development and incorporate upstream fixes and features as appropriate.
 
 
 <br>
@@ -109,6 +108,16 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 
 ## Features
 
+### ✨ Extended Enhancements
+
+- 🎨 **Dynamic Color Palette & Matugen Integration**: Live hot-reloads of `colors.json` on disk via `QFileSystemWatcher` without service restarts. Ready-to-use Matugen template with preserved capsule translucency (`islandBackgroundOpacity`).
+- 🔋 **Dynamic Battery Color Progression**: Battery pill smoothly shifts colors based on charge level (critical, warning, nominal, charging) with full Matugen color matching and an on/off toggle in settings.
+- 🎵 **Marquee Track Title Scrolling**: Clean, smooth auto-scrolling for long song titles with an initial 1.8s reading pause and seamless looping, plus an instant toggle in the Config App to fall back to static ellipsis (`Title...`) for 0% CPU.
+- 🖌️ **Unified Icon Weight Harmony**: Clean, consistent icon line weights across volume, brightness, battery, and weather.
+- ⚡ **Optimized State Management**: In-place reactive property updates for custom info layers, eliminating unnecessary delegate re-instantiations and flickers.
+
+### Core Features
+
 - Clock
 - Music player
 - Control Center
@@ -124,7 +133,6 @@ It's built with Quickshell, QML, and C++/Qt 6. Most of the effort went into maki
 - Custom page
 - Notification Centre
 - Power menu
-- Dynamic Color Palette & Matugen Integration
 
 Clipboard history requires `cliphist` and `wl-clipboard`. Tide Island starts the clipboard watcher automatically while it is running.
 Click a date in the calendar to write a note. Dates with notes show a small dot; notes are saved automatically.
@@ -166,57 +174,56 @@ Click a date in the calendar to write a note. Dates with notes show a small dot;
 
 ## Installation
 
-### Arch Linux
+### From Source (All Distributions)
 
-Install from the AUR:
-
-```bash
-yay -S tide-island
-```
-
-### Other Linux distributions
-
-Download the source package and checksum from the
-[latest GitHub Release](https://github.com/enhaoswen/Tide-island/releases/latest):
+Clone the repository and run the automated installer:
 
 ```bash
-curl -fLO https://github.com/enhaoswen/Tide-island/releases/latest/download/tide-island-source.tar.xz
-curl -fLO https://github.com/enhaoswen/Tide-island/releases/latest/download/SHA256SUMS
-sha256sum --check SHA256SUMS
-tar -xf tide-island-source.tar.xz
-cd Tide-island-*
+git clone https://github.com/Bimbok/Tide-island.git
+cd Tide-island
 ./install.sh
 ```
 
-The installer writes Tide Island to `/usr` and can automatically install
-dependencies on:
+The installer builds Tide Island, writes it to `/usr`, registers desktop and service files, and automatically handles dependencies on:
 
-- Debian, Ubuntu, and derivatives using `apt`
-- Fedora, RHEL, and derivatives using `dnf`
-- openSUSE using `zypper`
+- **Arch Linux, EndeavourOS, Manjaro, CachyOS** (using `pacman`)
+- **Debian, Ubuntu, Linux Mint, Pop!_OS** (using `apt`)
+- **Fedora, RHEL, Nobara** (using `dnf`)
+- **openSUSE** (using `zypper`)
 
-For other distributions, install the dependencies manually and run:
+> [!TIP]
+> If you previously installed the older AUR `tide-island` package, remove it before running the installer:
+> ```bash
+> sudo pacman -R tide-island
+> ./install.sh
+> ```
+
+For other distributions, install dependencies manually and run:
 
 ```bash
 ./install.sh --skip-deps
 ```
 
-Quickshell is used from `/usr/bin/quickshell` when available. Otherwise the
-installer builds the pinned, verified Quickshell version compatible with this
-release. Qt 6.6 or newer is required.
-
-This source installer targets conventional Linux systems with a writable
-`/usr`. Declarative or immutable systems such as NixOS and Fedora Silverblue
-should use a native package or a mutable development container instead.
+Quickshell is used from `/usr/bin/quickshell` when available. Otherwise the installer builds the pinned, verified Quickshell version compatible with this release. Qt 6.6 or newer is required.
 
 Useful installer options:
 
 | Option | Description |
 | --- | --- |
 | `./install.sh --no-service` | Install Tide Island without enabling or starting the systemd user service. |
-| `./install.sh --skip-quickshell` | Skip building Quickshell from source and use the existing `/usr/bin/quickshell`; installation stops with an error if that file does not exist. |
-| `./install.sh --force-build-quickshell` | Rebuild and install the project's pinned Quickshell version even when Quickshell is already installed. |
-| `./install.sh --uninstall` | Remove the Tide Island files installed by the source installer; installed dependencies and Quickshell are kept. |
+| `./install.sh --skip-quickshell` | Skip building Quickshell from source and use existing `/usr/bin/quickshell`. |
+| `./install.sh --force-build-quickshell` | Rebuild and install the project's pinned Quickshell version even if Quickshell is already installed. |
+| `./install.sh --uninstall` | Remove the Tide Island files installed by the source installer. |
+
+### Updating
+
+To update Tide Island Extended to the latest version:
+
+```bash
+cd Tide-island
+git pull
+./install.sh
+```
 
 <br>
 
@@ -329,32 +336,28 @@ Issues, bug reports, design suggestions, and pull requests are all welcome.
 
 ## Acknowledgments
 
-Thanks to:
+Heartfelt thanks and appreciation to:
 
-- [@end-4](https://github.com/end-4) for the workspace overview design inspiration
-- [@gozhuimeng](https://github.com/gozhuimeng) for improving the lyrics backend
-- [@LatifKovani](https://github.com/LatifKovani) for a significant improvement
-
-## Community
-
-- Discord:https://discord.gg/Rcj3uPtKwD
-- Email: enhaoswen@gmail.com
+- **[@enhaoswen](https://github.com/enhaoswen)**: The original creator and core architect of Tide Island, who built the remarkable foundation, animation engine, and vision for this Wayland dynamic island.
+- **[@end-4](https://github.com/end-4)** for the workspace overview design inspiration
+- **[@gozhuimeng](https://github.com/gozhuimeng)** for improving the lyrics backend
+- **[@LatifKovani](https://github.com/LatifKovani)** for a significant improvement
 
 ## Star History
 
-<a href="https://star-history.com/#enhaoswen/Tide-island&Date">
+<a href="https://star-history.com/#Bimbok/Tide-island&Date">
   <picture>
     <source
       media="(prefers-color-scheme: dark)"
-      srcset="https://api.star-history.com/svg?repos=enhaoswen/Tide-island&type=Date&theme=dark"
+      srcset="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date&theme=dark"
     />
     <source
       media="(prefers-color-scheme: light)"
-      srcset="https://api.star-history.com/svg?repos=enhaoswen/Tide-island&type=Date"
+      srcset="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date"
     />
     <img
       alt="Star History Chart"
-      src="https://api.star-history.com/svg?repos=enhaoswen/Tide-island&type=Date"
+      src="https://api.star-history.com/svg?repos=Bimbok/Tide-island&type=Date"
     />
   </picture>
 </a>

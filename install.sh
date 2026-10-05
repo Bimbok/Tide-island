@@ -80,7 +80,7 @@ Options:
   -y, --yes               Do not ask for confirmation.
   -h, --help              Show this help.
 
-Supported dependency installers: apt, dnf, and zypper.
+Supported dependency installers: pacman, apt, dnf, and zypper.
 For other Linux distributions, install dependencies yourself and use --skip-deps.
 EOF
 }
@@ -207,7 +207,7 @@ package_install_conflict() {
   ((FORCE || DRY_RUN)) && return 0
 
   if command -v pacman >/dev/null 2>&1 && pacman -Q tide-island >/dev/null 2>&1; then
-    die "the pacman/AUR tide-island package is installed; update it with your AUR helper instead (or use --force)"
+    die "the pacman/AUR tide-island package is installed; remove it first (e.g. sudo pacman -R tide-island) or use --force"
   fi
   if command -v dpkg-query >/dev/null 2>&1 \
       && dpkg-query -W -f='${Status}' tide-island 2>/dev/null | grep -q 'install ok installed'; then
@@ -216,6 +216,38 @@ package_install_conflict() {
   if command -v rpm >/dev/null 2>&1 && rpm -q tide-island >/dev/null 2>&1; then
     die "an RPM-managed tide-island package is installed; remove it first (or use --force)"
   fi
+}
+
+pacman_install_dependencies() {
+  local packages=(
+    git base-devel cmake ninja pkgconf
+    qt6-base qt6-declarative qt6-5compat qt6-wayland
+    qt6-shadertools qt6-svg
+    libdrm wayland wayland-protocols mesa
+    vulkan-headers jemalloc cli11 spirv-tools
+    wireplumber brightnessctl upower bluez bluez-utils
+    polkit zenity networkmanager wl-clipboard cliphist power-profiles-daemon
+  )
+
+  log "Installing Arch Linux build and runtime dependencies"
+  if ((DRY_RUN)); then
+    run sudo pacman -S --needed --noconfirm "${packages[@]}"
+    return
+  fi
+
+  local available=()
+  local missing=()
+  local package
+  for package in "${packages[@]}"; do
+    if pacman -Si "$package" >/dev/null 2>&1; then
+      available+=("$package")
+    else
+      missing+=("$package")
+    fi
+  done
+  ((${#available[@]} > 0)) && sudo pacman -S --needed --noconfirm "${available[@]}"
+  ((${#missing[@]} == 0)) \
+    || warn "packages unavailable in enabled pacman repositories: ${missing[*]}"
 }
 
 apt_install_dependencies() {
@@ -342,7 +374,7 @@ install_dependencies() {
       zypper_install_dependencies
       ;;
     arch)
-      die "Arch-based systems should install Tide Island with the AUR package; use --skip-deps --force only for development"
+      pacman_install_dependencies
       ;;
     *)
       die "unsupported distribution '$ID'; install dependencies manually and rerun with --skip-deps"
