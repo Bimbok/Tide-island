@@ -47,7 +47,7 @@ When nothing much is going on, it sits compactly in your bar or corner, staying 
 It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid and responsive while keeping resource usage minimal.
 
 > [!NOTE]
-> ### 🌊 About This Project & Upstream Credits
+> ### About This Project & Upstream Credits
 >
 > **Tide Island Extended** is an actively maintained and enhanced fork of [Tide Island](https://github.com/enhaoswen/Tide-island), originally designed and created by **[@enhaoswen](https://github.com/enhaoswen)**.
 >
@@ -108,13 +108,13 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
 
 ## Features
 
-### ✨ Extended Enhancements
+### Extended Enhancements
 
-- 🎨 **Dynamic Color Palette & Matugen Integration**: Live hot-reloads of `colors.json` on disk via `QFileSystemWatcher` without service restarts. Ready-to-use Matugen template with preserved capsule translucency (`islandBackgroundOpacity`).
-- 🔋 **Dynamic Battery Color Progression**: Battery pill smoothly shifts colors based on charge level (critical, warning, nominal, charging) with full Matugen color matching and an on/off toggle in settings.
-- 🎵 **Marquee Track Title Scrolling**: Clean, smooth auto-scrolling for long song titles with an initial 1.8s reading pause and seamless looping, plus an instant toggle in the Config App to fall back to static ellipsis (`Title...`) for 0% CPU.
-- 🖌️ **Unified Icon Weight Harmony**: Clean, consistent icon line weights across volume, brightness, battery, and weather.
-- ⚡ **Optimized State Management**: In-place reactive property updates for custom info layers, eliminating unnecessary delegate re-instantiations and flickers.
+- **Dynamic Color Palette & Matugen Integration**: Live hot-reloads of `colors.json` on disk via `QFileSystemWatcher` without service restarts. Ready-to-use Matugen template with preserved capsule translucency (`islandBackgroundOpacity`).
+- **Dynamic Battery Color Progression**: Battery pill smoothly shifts colors based on charge level (critical, warning, nominal, charging) with full Matugen color matching and an on/off toggle in settings.
+- **Marquee Track Title Scrolling**: Clean, smooth auto-scrolling for long song titles with an initial 1.8s reading pause and seamless looping, plus an instant toggle in the Config App to fall back to static ellipsis (`Title...`) for 0% CPU.
+- **Unified Icon Weight Harmony**: Clean, consistent icon line weights across volume, brightness, battery, and weather.
+- **Optimized State Management**: In-place reactive property updates for custom info layers, eliminating unnecessary delegate re-instantiations and flickers.
 
 ### Core Features
 
