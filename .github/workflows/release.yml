@@ -137,5 +137,5 @@ jobs:
               tide-island-source.tar.xz SHA256SUMS \
               --verify-tag \
               --generate-notes \
-              --title "Tide Island ${GITHUB_REF_NAME#v}"
+              --title "Tide Island Extended ${GITHUB_REF_NAME#v}"
           fi
