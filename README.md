@@ -52,50 +52,70 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
 
 ## Preview
 
-### Tide Island
+### Dynamic Island Capsules
+
+<p align="center">
+  <img src="docs/preview/island_custom_bar.png" width="100%" alt="Dynamic Island Custom Status Bar" />
+</p>
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/preview/island_music_pill.png" width="100%" alt="Compact Music Pill" />
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/preview/notification.png" width="100%" alt="System Notification Preview" />
+    </td>
+  </tr>
+</table>
+
+### Interactive Panels
+
 <table>
   <tr>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/mp.png" width="100%" alt="Music player" />
+      <img src="docs/preview/music_player.png" width="100%" alt="Music Player" />
     </td>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/msg.png" width="100%" alt="Message preview" />
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/timer.png" width="100%" alt="Timer" />
-    </td>
-    <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/wallpaper%20switcher.png" width="100%" alt="Wallpaper switcher" />
+      <img src="docs/preview/control_center.png" width="100%" alt="Control Center" />
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/cc_2.png" width="100%" alt="Control center" />
+      <img src="docs/preview/timer.png" width="100%" alt="Timer" />
     </td>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/Workspace overview_2.png" width="100%" alt="Workspace overview" />
+      <img src="docs/preview/wallpaper_switcher.png" width="100%" alt="Wallpaper Switcher" />
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/weather.png" width="100%" alt="Weather & Forecast" />
+      <img src="docs/preview/weather.png" width="100%" alt="Weather & Forecast" />
     </td>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/calendar.png" width="100%" alt="Calendar" />
+      <img src="docs/preview/calendar.png" width="100%" alt="Calendar & Notes" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/preview/workspace_overview.png" width="100%" alt="Workspace Overview" />
+    </td>
+    <td width="50%">
+      <img src="docs/preview/clipboard.png" width="100%" alt="Clipboard History" />
     </td>
   </tr>
   <tr>
     <td colspan="2">
-      <img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/clipboard.png" width="100%" alt="Clipboard history" />
+      <img src="docs/preview/clipboard_preview.png" width="100%" alt="Clipboard Image Preview & File Shelf" />
     </td>
   </tr>
 </table>
 
 ### Config App
 
-<img src="https://raw.githubusercontent.com/enhaoswen/Tide-island/display/Preview/config_app.png" width = "90%">
+<p align="center">
+  <img src="docs/preview/config_app.png" width="95%" alt="Tide Island Extended Settings" />
+</p>
 <br>
 
 ## Features
