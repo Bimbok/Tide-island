@@ -1,7 +1,7 @@
 <h1 align="center">Tide Island Extended</h1>
 
 <p align="center">
-  <b>A smooth, lightweight, and extensible interactive Dynamic Island for Hyprland and niri.</b>
+  <b>An independently maintained and enhanced fork of Tide Island for Hyprland and niri.</b>
 </p>
 
 <p align="center">
@@ -11,6 +11,10 @@
   <img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-111111?style=flat-square&color=8aadf4">
   <img alt="niri" src="https://img.shields.io/badge/niri-111111?style=flat-square&color=8aadf4">
   <img alt="C++ + Qt" src="https://img.shields.io/badge/C%2B%2B%20%2B%20Qt-111111?style=flat-square&color=8aadf4">
+</p>
+
+<p align="center">
+  <b>Upstream:</b> <a href="https://github.com/enhaoswen/Tide-island">enhaoswen/Tide-island</a>
 </p>
 
 
