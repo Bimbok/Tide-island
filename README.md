@@ -368,6 +368,6 @@ Heartfelt thanks and appreciation to:
 
 <p align="center">
   <sub>
-    Made for Wayland users who like quiet and practical desktops.
+    A practical, beautiful, and highly customizable desktop experience for Wayland.
   </sub>
 </p>
