@@ -115,7 +115,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 onEntered: title.color = Theme.selectedColor
                 onExited: title.color = Theme.textColor
-                onClicked: Qt.openUrlExternally("https://github.com/enhaoswen/Tide-island")
+                onClicked: Qt.openUrlExternally("https://github.com/Bimbok/Tide-island")
             }
         }
 
