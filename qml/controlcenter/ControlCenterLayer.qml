@@ -129,12 +129,11 @@ Item {
     readonly property real roundToggleButtonSize: 58
     readonly property real roundToggleButtonGap: 18
     readonly property real controlCenterExtraHeight: 12 + batteryDrawerHandleHeight
-        + batteryDrawerProgress * (batteryDrawerContentGap + batteryModeCardHeight)
-        + (screenRecorderCard ? screenRecorderCard.height + mainContent.spacing : 0)
+        + batteryDrawerProgress * (batteryDrawerContentGap + batteryModeCardHeight + (screenRecorderCard ? screenRecorderCard.height + batteryDrawerContentGap : 0))
         + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
     readonly property real controlCenterMaximumExtraHeight: 12 + batteryDrawerHandleHeight
         + batteryDrawerContentGap + batteryModeCardHeight
-        + (screenRecorderCard ? screenRecorderCard.height + mainContent.spacing : 0)
+        + (screenRecorderCard ? screenRecorderCard.height + batteryDrawerContentGap : 0)
         + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
     readonly property bool bluetoothAvailable: !!bluetoothAdapter
     readonly property var bluetoothAdapter: Bluetooth.defaultAdapter
@@ -1104,6 +1103,8 @@ Item {
             requestWifiStateRefresh();
             if (wifiPanelOpen && wifiSupported && wifiEnabled)
                 requestWifiListRefresh(true);
+            if (ScreenRecorder && (ScreenRecorder.isRecording || ScreenRecorder.isReplayActive))
+                setBatteryDrawerOpen(true);
         } else {
             sliderIntroTimer.stop();
             sliderIntroPending = false;
@@ -1111,6 +1112,7 @@ Item {
             displayedVolume = localVolume;
             powerViewActive = false;
             batteryDrawerOpen = false;
+            batteryDrawerProgress = 0;
             closeConnectivityPanels();
         }
     }
@@ -1123,6 +1125,8 @@ Item {
         SystemServices.requestVolume();
         refreshBatteryModeState();
         focusStateProcess.running = true;
+        if (ScreenRecorder && (ScreenRecorder.isRecording || ScreenRecorder.isReplayActive))
+            setBatteryDrawerOpen(true);
     }
 
     Behavior on opacity {
@@ -1333,6 +1337,18 @@ Item {
 
         function onNotificationRequested(title, message) {
             controlCenter.requestNotification("Screen Recorder", title, message);
+        }
+
+        function onIsRecordingChanged() {
+            if (ScreenRecorder.isRecording) {
+                controlCenter.setBatteryDrawerOpen(true);
+            }
+        }
+
+        function onIsReplayActiveChanged() {
+            if (ScreenRecorder.isReplayActive) {
+                controlCenter.setBatteryDrawerOpen(true);
+            }
         }
     }
 
@@ -2009,6 +2025,7 @@ Item {
             readonly property real modeSlotWidth: 44
             readonly property real openDistance: controlCenter.batteryModeCardHeight
                 + controlCenter.batteryDrawerContentGap
+                + (screenRecorderCard ? screenRecorderCard.height + controlCenter.batteryDrawerContentGap : 0)
 
             width: parent.width
             height: controlCenter.batteryDrawerHandleHeight
@@ -2442,6 +2459,15 @@ Item {
                 }
             }
 
+            ScreenRecorderCard {
+                id: screenRecorderCard
+                anchors.left: parent.left
+                anchors.right: parent.right
+                y: -height + controlCenter.batteryDrawerProgress * (controlCenter.batteryModeCardHeight + controlCenter.batteryDrawerContentGap + height)
+                opacity: Math.min(1, controlCenter.batteryDrawerProgress * 1.35)
+                clip: true
+            }
+
             Rectangle {
                 id: batteryDrawerTunnelShade
                 anchors.left: parent.left
@@ -2535,11 +2561,6 @@ Item {
                     }
                 }
             }
-        }
-
-        ScreenRecorderCard {
-            id: screenRecorderCard
-            width: parent.width
         }
 
         SystemTrayCard {
