@@ -1339,6 +1339,9 @@ PanelWindow {
                 if (islandState === "control_center")
                     smartRestoreState();
                 return;
+            case "toggleRecording":
+                ScreenRecorder.toggleRecording();
+                return;
             case "toggleOverview":
                 root.toggleOverviewEverywhere();
                 return;

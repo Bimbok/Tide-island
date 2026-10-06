@@ -1,5 +1,6 @@
 #include "SystemServices.h"
 #include "UserConfigBackend.h"
+#include "ScreenRecorderController.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -192,10 +193,13 @@ QString trimCommandOutput(const QByteArray &stdoutData, const QByteArray &stderr
     return output;
 }
 
+static SystemServices *s_systemServicesInstance = nullptr;
+
 } // namespace
 
 SystemServices::SystemServices(QObject *parent)
     : QObject(parent) {
+    s_systemServicesInstance = this;
     m_cavaLevels = QVariantList{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     m_notificationRestartTimer.setSingleShot(true);
@@ -239,6 +243,9 @@ SystemServices::SystemServices(QObject *parent)
 }
 
 SystemServices::~SystemServices() {
+    if (s_systemServicesInstance == this)
+        s_systemServicesInstance = nullptr;
+
     m_shuttingDown = true;
     m_notificationRestartTimer.stop();
     m_pipeWireRestartTimer.stop();
@@ -254,6 +261,10 @@ SystemServices::~SystemServices() {
     stopProcess(m_recordingSnapshot);
     stopProcess(m_tlpSetter);
     stopCava();
+}
+
+SystemServices *SystemServices::instance() {
+    return s_systemServicesInstance;
 }
 
 bool SystemServices::screenRecordingActive() const {
@@ -869,7 +880,9 @@ void SystemServices::setPortalPipeWireActive(bool active) {
 }
 
 void SystemServices::updateScreenRecordingActive() {
-    const bool active = !m_activeScreenCastSessions.isEmpty() || m_portalPipeWireActive;
+    const bool recorderActive = ScreenRecorderController::instance()
+        && ScreenRecorderController::instance()->isRecording();
+    const bool active = !m_activeScreenCastSessions.isEmpty() || m_portalPipeWireActive || recorderActive;
     if (m_screenRecordingActive == active) return;
     m_screenRecordingActive = active;
     emit screenRecordingActiveChanged();

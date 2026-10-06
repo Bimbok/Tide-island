@@ -23,8 +23,11 @@ public:
     explicit SystemServices(QObject *parent = nullptr);
     ~SystemServices() override;
 
+    static SystemServices *instance();
+
     bool screenRecordingActive() const;
     QVariantList cavaLevels() const;
+    void updateScreenRecordingActive();
 
     Q_INVOKABLE void requestScreenRecordingSnapshot();
     Q_INVOKABLE void requestHyprlandSnapshot(const QString &requestId, const QString &subject);
@@ -109,7 +112,6 @@ private:
     void startRecordingPortalMonitor();
     void stopProcess(QProcess *&process);
     void setPortalPipeWireActive(bool active);
-    void updateScreenRecordingActive();
 
     void handleNotificationOutput();
     void handlePipeWireOutput();

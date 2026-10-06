@@ -109,6 +109,24 @@ target_link_libraries(system_services_notification_tests PRIVATE
 
 add_test(NAME system_services_notification COMMAND system_services_notification_tests)
 
+add_executable(screen_recorder_tests
+    tests/screen_recorder_tests.cpp
+    backend/ScreenRecorderController.h
+    backend/ScreenRecorderController.cpp
+)
+
+target_include_directories(screen_recorder_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend
+)
+
+target_link_libraries(screen_recorder_tests PRIVATE
+    IslandBackend
+    Qt6::Core
+    Qt6::Test
+)
+
+add_test(NAME screen_recorder COMMAND screen_recorder_tests)
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/lyricsmpris_core_tests.cpp")
     add_executable(lyricsmpris_tests
         tests/lyricsmpris_core_tests.cpp
@@ -253,6 +271,8 @@ qt_add_qml_module(IslandBackend
         backend/WifiController.cpp
         backend/WifiNetworkModel.h
         backend/WifiNetworkModel.cpp
+        backend/ScreenRecorderController.h
+        backend/ScreenRecorderController.cpp
 )
 
 # The QML plugin is installed below lib/qt6/qml/IslandBackend while its backing

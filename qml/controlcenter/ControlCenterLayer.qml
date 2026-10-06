@@ -130,9 +130,11 @@ Item {
     readonly property real roundToggleButtonGap: 18
     readonly property real controlCenterExtraHeight: 12 + batteryDrawerHandleHeight
         + batteryDrawerProgress * (batteryDrawerContentGap + batteryModeCardHeight)
+        + (screenRecorderCard ? screenRecorderCard.height + mainContent.spacing : 0)
         + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
     readonly property real controlCenterMaximumExtraHeight: 12 + batteryDrawerHandleHeight
         + batteryDrawerContentGap + batteryModeCardHeight
+        + (screenRecorderCard ? screenRecorderCard.height + mainContent.spacing : 0)
         + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
     readonly property bool bluetoothAvailable: !!bluetoothAdapter
     readonly property var bluetoothAdapter: Bluetooth.defaultAdapter
@@ -1322,6 +1324,15 @@ Item {
             if (exitCode === 127)
                 controlCenter.requestNotification("Power", "Lock unavailable",
                     "Install hyprlock, swaylock, or i3lock to enable screen locking.");
+        }
+    }
+
+    Connections {
+        target: ScreenRecorder
+        ignoreUnknownSignals: true
+
+        function onNotificationRequested(title, message) {
+            controlCenter.requestNotification("Screen Recorder", title, message);
         }
     }
 
@@ -2524,6 +2535,11 @@ Item {
                     }
                 }
             }
+        }
+
+        ScreenRecorderCard {
+            id: screenRecorderCard
+            width: parent.width
         }
 
         SystemTrayCard {

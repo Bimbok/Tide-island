@@ -282,6 +282,22 @@ Scope {
             shellRoot.forFocusedWindow((window) => window.toggleFileShelfWindow());
         }
 
+        function toggleRecording() {
+            ScreenRecorder.toggleRecording();
+        }
+
+        function toggleRecorderMic() {
+            ScreenRecorder.toggleMic();
+        }
+
+        function toggleReplay() {
+            ScreenRecorder.toggleReplay();
+        }
+
+        function saveReplay() {
+            ScreenRecorder.saveReplay(0);
+        }
+
         function toggleClipboard() {
             shellRoot.forFocusedWindow((window) => window.toggleClipboardWindow());
         }
@@ -409,6 +425,46 @@ Scope {
 
         function close() {
             shellRoot.forFocusedWindow((window) => window.closeCalendarWindow ? window.closeCalendarWindow() : window.toggleCalendarWindow());
+        }
+    }
+
+    IpcHandler {
+        target: "recorder"
+
+        function toggle() {
+            ScreenRecorder.toggleRecording();
+        }
+
+        function start() {
+            ScreenRecorder.startRecording();
+        }
+
+        function stop() {
+            ScreenRecorder.stopRecording();
+        }
+
+        function pause() {
+            ScreenRecorder.pauseRecording();
+        }
+
+        function toggleMic() {
+            ScreenRecorder.toggleMic();
+        }
+
+        function toggleReplay() {
+            ScreenRecorder.toggleReplay();
+        }
+
+        function saveReplay(seconds) {
+            ScreenRecorder.saveReplay(seconds ? parseInt(seconds) : 0);
+        }
+
+        function openRecordings() {
+            ScreenRecorder.openRecordingsFolder();
+        }
+
+        function openReplays() {
+            ScreenRecorder.openReplaysFolder();
         }
     }
 

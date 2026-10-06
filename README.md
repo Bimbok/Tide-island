@@ -132,6 +132,7 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
 ### Extended Enhancements
 
 - **Integrated System Tray (SNI)**: Embedded StatusNotifierItem tray in the Control Center displaying active background applications and status indicators with interactive click actions, tooltips, and smooth collapse when empty.
+- **Native GPU Screen Recorder & Instant Replay**: Dedicated Control Center card and Dynamic Island HUD powered by `gpu-screen-recorder`. Features 60 FPS recording, live pulsing clock capsule indicator, mic toggle, pause/resume, instantaneous shadowplay replay buffer (10s/30s/60s clip capture), and full bidirectional PID synchronization with external CLI scripts (`gsr`).
 - **Dynamic Color Palette & Matugen Integration**: Live hot-reloads of `colors.json` on disk via `QFileSystemWatcher` without service restarts. Ready-to-use Matugen template with preserved capsule translucency (`islandBackgroundOpacity`).
 - **Dynamic Battery Color Progression**: Battery pill smoothly shifts colors based on charge level (critical, warning, nominal, charging) with full Matugen color matching and an on/off toggle in settings.
 - **Marquee Track Title Scrolling**: Clean, smooth auto-scrolling for long song titles with an initial 1.8s reading pause and seamless looping, plus an instant toggle in the Config App to fall back to static ellipsis (`Title...`) for 0% CPU.
@@ -159,6 +160,7 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
 - Custom page
 - Notification Center
 - Power menu
+- Screen Recorder & Instant Replay
 
 Clipboard history requires `cliphist` and `wl-clipboard`. Tide Island starts the clipboard watcher automatically while it is running.
 Click a date in the calendar to write a note. Dates with notes show a small dot; notes are saved automatically.
@@ -352,6 +354,12 @@ You can control Tide Island remotely using `quickshell ipc call`:
 | `quickshell ipc call island toggle` | Toggle dynamic island capsules |
 | `quickshell ipc call island show` | Show dynamic island capsules |
 | `quickshell ipc call island hide` | Hide dynamic island capsules |
+| `quickshell ipc call recorder toggle` | Start or stop screen recording |
+| `quickshell ipc call recorder toggleMic` | Toggle microphone audio capture |
+| `quickshell ipc call recorder pause` | Pause or resume active recording |
+| `quickshell ipc call recorder toggleReplay` | Start or stop instant replay buffer |
+| `quickshell ipc call recorder saveReplay [sec]` | Save replay clip (e.g. 10, 30, 60 seconds) |
+| `quickshell ipc call recorder openRecordings` | Open recordings folder in file manager |
 | `quickshell ipc call tide reloadColors` | Reload color palette from colors.json |
 | `quickshell ipc call theme reload` | Reload color palette from colors.json |
 
