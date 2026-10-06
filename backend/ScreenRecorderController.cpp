@@ -199,9 +199,19 @@ bool ScreenRecorderController::isProcessRunning(qint64 pid) const {
     QFile file(commPath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         const QString comm = QString::fromUtf8(file.readAll()).trimmed();
-        return comm.contains(QStringLiteral("gpu-screen-reco")) || comm.contains(QStringLiteral("gpu-screen"));
+        if (comm.contains(QStringLiteral("gpu-screen-reco")) || comm.contains(QStringLiteral("gpu-screen")))
+            return true;
     }
-    return true;
+
+    const QString cmdlinePath = QStringLiteral("/proc/%1/cmdline").arg(pid);
+    QFile cmdFile(cmdlinePath);
+    if (cmdFile.open(QIODevice::ReadOnly)) {
+        const QString cmd = QString::fromUtf8(cmdFile.readAll());
+        if (cmd.contains(QStringLiteral("gpu-screen-recorder")))
+            return true;
+    }
+
+    return false;
 }
 
 QString ScreenRecorderController::detectDefaultScreen() const {

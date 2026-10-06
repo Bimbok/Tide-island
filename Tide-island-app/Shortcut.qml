@@ -130,6 +130,27 @@ PagePanel {
                 "key": "F",
                 "target": "island",
                 "method": "toggle"
+            },
+            {
+                "action": "Toggle screen recording",
+                "mods": "SUPER",
+                "key": "R",
+                "target": "recorder",
+                "method": "toggle"
+            },
+            {
+                "action": "Toggle recording mic",
+                "mods": "SUPER+SHIFT",
+                "key": "M",
+                "target": "recorder",
+                "method": "toggleMic"
+            },
+            {
+                "action": "Save replay clip",
+                "mods": "SUPER+SHIFT",
+                "key": "F10",
+                "target": "recorder",
+                "method": "saveReplay"
             }
         ]
     }

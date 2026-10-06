@@ -1,5 +1,7 @@
 #include <QTest>
 #include <QSignalSpy>
+#include <QTemporaryDir>
+#include <memory>
 #include "ScreenRecorderController.h"
 
 class ScreenRecorderTests : public QObject {
@@ -10,9 +12,15 @@ private slots:
     void testInitialState();
     void testTimeFormatting();
     void testPropertySetters();
+
+private:
+    std::unique_ptr<QTemporaryDir> m_tempDir;
 };
 
 void ScreenRecorderTests::initTestCase() {
+    m_tempDir = std::make_unique<QTemporaryDir>();
+    QVERIFY(m_tempDir->isValid());
+    qputenv("XDG_RUNTIME_DIR", m_tempDir->path().toUtf8());
 }
 
 void ScreenRecorderTests::testInitialState() {
@@ -29,12 +37,7 @@ void ScreenRecorderTests::testInitialState() {
 
 void ScreenRecorderTests::testTimeFormatting() {
     ScreenRecorderController controller;
-    // Test through QObject properties / methods
     QCOMPARE(controller.recordingTimeFormatted(), QStringLiteral("00:00"));
-
-    // We can verify recordingTimeFormatted logic
-    // 65 seconds -> 01:05
-    // 3600 seconds -> 60:00
 }
 
 void ScreenRecorderTests::testPropertySetters() {
