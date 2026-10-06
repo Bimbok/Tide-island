@@ -42,6 +42,11 @@ private slots:
         QCOMPARE(backend.batteryColor(10, false), QColor("#ff3b30"));
         QCOMPARE(backend.batteryColor(10, true), QColor("#34c759"));
 
+        // Default card fill colors
+        QCOMPARE(backend.cardFill(), QColor("#26272b"));
+        QCOMPARE(backend.cardFillActive(), QColor("#26272b"));
+        QCOMPARE(backend.cardFillHover(), QColor("#222327"));
+
         // Default radii and durations
         QCOMPARE(backend.radiusPanel(), 28);
         QCOMPARE(backend.radiusModule(), 24);
@@ -130,6 +135,9 @@ private slots:
         QCOMPARE(backend.textOnBatteryHigh(), QColor("#552008"));
         QCOMPARE(backend.batteryCharging(), QColor("#ffb598"));
         QCOMPARE(backend.textOnBatteryCharging(), QColor("#552008"));
+        // Verify surface_container mapped to cardFill and cardFillActive
+        QCOMPARE(backend.cardFill(), QColor("#271e1a"));
+        QCOMPARE(backend.cardFillActive(), QColor("#271e1a"));
     }
 
     void testPaletteDisable()

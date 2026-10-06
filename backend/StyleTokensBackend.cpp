@@ -100,6 +100,7 @@ void StyleTokensBackend::initDefaults()
     m_module = hex("#1c1c1e");
     m_moduleHover = hex("#232326");
     m_track = hex("#2c2c2e");
+    m_cardFill = hex("#26272b");
     m_cardFillActive = hex("#26272b");
     m_cardFillHover = hex("#222327");
     m_connectivityCard = hex("#343437");
@@ -320,6 +321,10 @@ void StyleTokensBackend::loadPalette()
         {QStringLiteral("track"), QStringLiteral("surface_variant"), QStringLiteral("surface_container_high")},
         m_track);
 
+    m_cardFill = getColor(paletteObj,
+        {QStringLiteral("cardFill"), QStringLiteral("surface_container"), QStringLiteral("surface_variant")},
+        m_cardFill);
+
     m_cardFillActive = getColor(paletteObj,
         {QStringLiteral("cardFillActive"), QStringLiteral("surface_container"), QStringLiteral("surface_variant")},
         m_cardFillActive);
@@ -526,6 +531,7 @@ QColor StyleTokensBackend::panel() const { return m_panel; }
 QColor StyleTokensBackend::module() const { return m_module; }
 QColor StyleTokensBackend::moduleHover() const { return m_moduleHover; }
 QColor StyleTokensBackend::track() const { return m_track; }
+QColor StyleTokensBackend::cardFill() const { return m_cardFill; }
 QColor StyleTokensBackend::cardFillActive() const { return m_cardFillActive; }
 QColor StyleTokensBackend::cardFillHover() const { return m_cardFillHover; }
 QColor StyleTokensBackend::connectivityCard() const { return m_connectivityCard; }

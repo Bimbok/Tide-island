@@ -13,6 +13,10 @@ Item {
     readonly property color cardYellow: "#ffd60a"
     readonly property color cardCyan: "#32ade6"
 
+    readonly property color buttonBg: StyleTokens.cardFill
+    readonly property color buttonBgHover: StyleTokens.cardFillHover
+    readonly property color buttonBgPressed: StyleTokens.cardFillActive
+
     readonly property bool isRecording: recorder ? recorder.isRecording : false
     readonly property bool isPaused: recorder ? recorder.isPaused : false
     readonly property bool isReplayActive: recorder ? recorder.isReplayActive : false
@@ -61,7 +65,9 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     color: root.isRecording
                         ? StyleTokens.withAlpha(root.cardRed, 0.22)
-                        : (recordMouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill)
+                        : (recordMouse.pressed
+                            ? root.buttonBgPressed
+                            : (recordMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
                     border.color: root.isRecording ? root.cardRed : StyleTokens.withAlpha(StyleTokens.white, 0.12)
                     border.width: 1
 
@@ -161,7 +167,9 @@ Item {
                         width: 34
                         height: 34
                         radius: 10
-                        color: pauseMouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill
+                        color: pauseMouse.pressed
+                            ? root.buttonBgPressed
+                            : (pauseMouse.containsMouse ? root.buttonBgHover : root.buttonBg)
                         border.color: root.isPaused ? root.cardYellow : StyleTokens.withAlpha(StyleTokens.white, 0.08)
                         border.width: 1
 
@@ -192,7 +200,9 @@ Item {
                         radius: 10
                         color: root.isMicOn
                             ? StyleTokens.withAlpha(root.cardAccent, 0.22)
-                            : (micMouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill)
+                            : (micMouse.pressed
+                                ? root.buttonBgPressed
+                                : (micMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
                         border.color: root.isMicOn ? root.cardAccent : StyleTokens.withAlpha(StyleTokens.white, 0.08)
                         border.width: 1
 
@@ -223,7 +233,9 @@ Item {
                         radius: 10
                         color: root.isReplayActive
                             ? StyleTokens.withAlpha(root.cardCyan, 0.22)
-                            : (replayMouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill)
+                            : (replayMouse.pressed
+                                ? root.buttonBgPressed
+                                : (replayMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
                         border.color: root.isReplayActive ? root.cardCyan : StyleTokens.withAlpha(StyleTokens.white, 0.08)
                         border.width: 1
 
@@ -252,7 +264,9 @@ Item {
                         width: 34
                         height: 34
                         radius: 10
-                        color: folderMouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill
+                        color: folderMouse.pressed
+                            ? root.buttonBgPressed
+                            : (folderMouse.containsMouse ? root.buttonBgHover : root.buttonBg)
                         border.color: StyleTokens.withAlpha(StyleTokens.white, 0.08)
                         border.width: 1
 
@@ -300,7 +314,9 @@ Item {
                     height: 28
                     radius: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    color: clip60Mouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill
+                    color: clip60Mouse.pressed
+                        ? root.buttonBgPressed
+                        : (clip60Mouse.containsMouse ? root.buttonBgHover : root.buttonBg)
                     border.color: StyleTokens.withAlpha(root.cardCyan, 0.4)
                     border.width: 1
 
@@ -331,7 +347,9 @@ Item {
                     height: 28
                     radius: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    color: clip30Mouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill
+                    color: clip30Mouse.pressed
+                        ? root.buttonBgPressed
+                        : (clip30Mouse.containsMouse ? root.buttonBgHover : root.buttonBg)
                     border.color: StyleTokens.withAlpha(StyleTokens.white, 0.1)
                     border.width: 1
 
@@ -362,7 +380,9 @@ Item {
                     height: 28
                     radius: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    color: clip10Mouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.cardFill
+                    color: clip10Mouse.pressed
+                        ? root.buttonBgPressed
+                        : (clip10Mouse.containsMouse ? root.buttonBgHover : root.buttonBg)
                     border.color: StyleTokens.withAlpha(StyleTokens.white, 0.1)
                     border.width: 1
 
