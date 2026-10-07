@@ -15,7 +15,7 @@ Item {
     readonly property string timerText: recorder ? recorder.recordingTimeFormatted : "00:00"
 
     readonly property color cardAccent: StyleTokens.accent
-    readonly property color cardRed: "#ff453a"
+    readonly property color cardRed: StyleTokens.danger
     readonly property color buttonBg: StyleTokens.cardFill
     readonly property color buttonBgHover: StyleTokens.cardFillHover
     readonly property color buttonBgPressed: StyleTokens.cardFillActive
@@ -35,6 +35,15 @@ Item {
             radius: parent.radius
         }
 
+        // Subtle glowing border when recording, harmonized with Matugen
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: StyleTokens.transparent
+            border.width: 1
+            border.color: root.isRecording ? StyleTokens.withAlpha(root.cardRed, 0.3) : StyleTokens.transparent
+        }
+
         // Top Header Row
         Item {
             anchors.left: parent.left
@@ -49,25 +58,6 @@ Item {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
-
-                Rectangle {
-                    width: 7
-                    height: 7
-                    radius: 3.5
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.cardRed
-                    opacity: root.isRecording ? (pulseAnim.running ? pulseVal : 1) : 0.85
-
-                    property real pulseVal: 1.0
-
-                    SequentialAnimation on pulseVal {
-                        id: pulseAnim
-                        running: root.isRecording
-                        loops: Animation.Infinite
-                        NumberAnimation { to: 0.3; duration: 600; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 1.0; duration: 600; easing.type: Easing.InOutSine }
-                    }
-                }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
@@ -111,10 +101,13 @@ Item {
                 color: root.isRecording
                     ? StyleTokens.withAlpha(root.cardRed, 0.22)
                     : (recMouse.pressed ? root.buttonBgPressed : (recMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
-                border.color: root.isRecording ? root.cardRed : StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                border.color: root.isRecording
+                    ? root.cardRed
+                    : (recMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.35) : StyleTokens.withAlpha(StyleTokens.white, 0.08))
                 border.width: 1
 
                 Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on border.color { ColorAnimation { duration: 120 } }
 
                 Row {
                     anchors.centerIn: parent
@@ -158,15 +151,18 @@ Item {
                 color: root.isMicOn
                     ? StyleTokens.withAlpha(root.cardAccent, 0.22)
                     : (micMouse.pressed ? root.buttonBgPressed : (micMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
-                border.color: root.isMicOn ? root.cardAccent : StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                border.color: root.isMicOn
+                    ? root.cardAccent
+                    : (micMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.35) : StyleTokens.withAlpha(StyleTokens.white, 0.08))
                 border.width: 1
 
                 Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on border.color { ColorAnimation { duration: 120 } }
 
                 Text {
                     anchors.centerIn: parent
                     text: root.isMicOn ? "\uf130" : "\uf131"
-                    color: root.isMicOn ? root.cardAccent : StyleTokens.textSecondary
+                    color: root.isMicOn ? root.cardAccent : (micMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary)
                     font.pixelSize: 12
                     font.family: userConfig.iconFontFamily
                 }
@@ -189,15 +185,18 @@ Item {
                 height: 34
                 radius: 10
                 color: folderMouse.pressed ? root.buttonBgPressed : (folderMouse.containsMouse ? root.buttonBgHover : root.buttonBg)
-                border.color: StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                border.color: folderMouse.containsMouse
+                    ? StyleTokens.withAlpha(root.cardAccent, 0.35)
+                    : StyleTokens.withAlpha(StyleTokens.white, 0.08)
                 border.width: 1
 
                 Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on border.color { ColorAnimation { duration: 120 } }
 
                 Text {
                     anchors.centerIn: parent
                     text: "\uf07b"
-                    color: StyleTokens.textSecondary
+                    color: folderMouse.containsMouse ? root.cardAccent : StyleTokens.textSecondary
                     font.pixelSize: 12
                     font.family: userConfig.iconFontFamily
                 }

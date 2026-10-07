@@ -48,14 +48,6 @@ Item {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "\uf0c9"
-                    color: StyleTokens.textSecondary
-                    font.pixelSize: 11
-                    font.family: userConfig.iconFontFamily
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
                     text: "Tray"
                     color: StyleTokens.textPrimary
                     font.pixelSize: 12

@@ -9,9 +9,10 @@ Item {
     readonly property var recorder: ScreenRecorder
 
     readonly property color cardAccent: StyleTokens.accent
-    readonly property color cardRed: "#ff453a"
-    readonly property color cardYellow: "#ffd60a"
-    readonly property color cardCyan: "#32ade6"
+    readonly property color cardAccentSoft: StyleTokens.accentSoft
+    readonly property color cardRed: StyleTokens.danger
+    readonly property color cardYellow: StyleTokens.warning
+    readonly property color cardCyan: StyleTokens.accent
 
     readonly property color buttonBg: StyleTokens.cardFill
     readonly property color buttonBgHover: StyleTokens.cardFillHover
@@ -38,6 +39,17 @@ Item {
             radius: parent.radius
         }
 
+        // Subtle glowing border when active, harmonized with Matugen
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: StyleTokens.transparent
+            border.width: 1
+            border.color: root.isRecording
+                ? StyleTokens.withAlpha(root.cardRed, 0.3)
+                : (root.isReplayActive ? StyleTokens.withAlpha(root.cardAccent, 0.3) : StyleTokens.transparent)
+        }
+
         Column {
             anchors.fill: parent
             anchors.margins: 14
@@ -61,10 +73,13 @@ Item {
                         : (recordMouse.pressed
                             ? root.buttonBgPressed
                             : (recordMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
-                    border.color: root.isRecording ? root.cardRed : StyleTokens.withAlpha(StyleTokens.white, 0.12)
+                    border.color: root.isRecording
+                        ? root.cardRed
+                        : (recordMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.4) : StyleTokens.withAlpha(StyleTokens.white, 0.12))
                     border.width: 1
 
                     Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
 
                     // Icon: Stop square if recording, Red dot if idle
                     Rectangle {
@@ -72,7 +87,7 @@ Item {
                         width: root.isRecording ? 16 : 14
                         height: root.isRecording ? 16 : 14
                         radius: root.isRecording ? 3 : 7
-                        color: root.isRecording ? root.cardRed : (recordMouse.containsMouse ? root.cardRed : "#ff6961")
+                        color: root.isRecording ? root.cardRed : (recordMouse.containsMouse ? root.cardRed : StyleTokens.withAlpha(root.cardRed, 0.85))
 
                         Behavior on radius { NumberAnimation { duration: 160 } }
                         Behavior on width { NumberAnimation { duration: 160 } }
@@ -163,13 +178,16 @@ Item {
                         color: pauseMouse.pressed
                             ? root.buttonBgPressed
                             : (pauseMouse.containsMouse ? root.buttonBgHover : root.buttonBg)
-                        border.color: root.isPaused ? root.cardYellow : StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                        border.color: root.isPaused ? root.cardYellow : (pauseMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.35) : StyleTokens.withAlpha(StyleTokens.white, 0.08))
                         border.width: 1
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Behavior on border.color { ColorAnimation { duration: 120 } }
 
                         Text {
                             anchors.centerIn: parent
                             text: root.isPaused ? "\uf04b" : "\uf04c"
-                            color: root.isPaused ? root.cardYellow : StyleTokens.textSecondary
+                            color: root.isPaused ? root.cardYellow : (pauseMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary)
                             font.pixelSize: 12
                             font.family: userConfig.iconFontFamily
                         }
@@ -196,13 +214,16 @@ Item {
                             : (micMouse.pressed
                                 ? root.buttonBgPressed
                                 : (micMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
-                        border.color: root.isMicOn ? root.cardAccent : StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                        border.color: root.isMicOn ? root.cardAccent : (micMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.35) : StyleTokens.withAlpha(StyleTokens.white, 0.08))
                         border.width: 1
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Behavior on border.color { ColorAnimation { duration: 120 } }
 
                         Text {
                             anchors.centerIn: parent
                             text: "\uf130"
-                            color: root.isMicOn ? root.cardAccent : StyleTokens.textSecondary
+                            color: root.isMicOn ? root.cardAccent : (micMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary)
                             font.pixelSize: 13
                             font.family: userConfig.iconFontFamily
                         }
@@ -225,17 +246,20 @@ Item {
                         height: 34
                         radius: 10
                         color: root.isReplayActive
-                            ? StyleTokens.withAlpha(root.cardCyan, 0.22)
+                            ? StyleTokens.withAlpha(root.cardAccent, 0.22)
                             : (replayMouse.pressed
                                 ? root.buttonBgPressed
                                 : (replayMouse.containsMouse ? root.buttonBgHover : root.buttonBg))
-                        border.color: root.isReplayActive ? root.cardCyan : StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                        border.color: root.isReplayActive ? root.cardAccent : (replayMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.35) : StyleTokens.withAlpha(StyleTokens.white, 0.08))
                         border.width: 1
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Behavior on border.color { ColorAnimation { duration: 120 } }
 
                         Text {
                             anchors.centerIn: parent
                             text: "\uf0e7"
-                            color: root.isReplayActive ? root.cardCyan : StyleTokens.textSecondary
+                            color: root.isReplayActive ? root.cardAccent : (replayMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary)
                             font.pixelSize: 13
                             font.family: userConfig.iconFontFamily
                         }
@@ -260,13 +284,16 @@ Item {
                         color: folderMouse.pressed
                             ? root.buttonBgPressed
                             : (folderMouse.containsMouse ? root.buttonBgHover : root.buttonBg)
-                        border.color: StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                        border.color: folderMouse.containsMouse ? StyleTokens.withAlpha(root.cardAccent, 0.35) : StyleTokens.withAlpha(StyleTokens.white, 0.08)
                         border.width: 1
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Behavior on border.color { ColorAnimation { duration: 120 } }
 
                         Text {
                             anchors.centerIn: parent
                             text: "\uf07b"
-                            color: StyleTokens.textSecondary
+                            color: folderMouse.containsMouse ? root.cardAccent : StyleTokens.textSecondary
                             font.pixelSize: 13
                             font.family: userConfig.iconFontFamily
                         }
@@ -310,13 +337,16 @@ Item {
                     color: clip60Mouse.pressed
                         ? root.buttonBgPressed
                         : (clip60Mouse.containsMouse ? root.buttonBgHover : root.buttonBg)
-                    border.color: StyleTokens.withAlpha(root.cardCyan, 0.4)
+                    border.color: clip60Mouse.containsMouse ? root.cardAccent : StyleTokens.withAlpha(root.cardAccent, 0.4)
                     border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Behavior on border.color { ColorAnimation { duration: 120 } }
 
                     Text {
                         anchors.centerIn: parent
                         text: "Last 60s"
-                        color: StyleTokens.textPrimary
+                        color: clip60Mouse.containsMouse ? root.cardAccent : StyleTokens.textPrimary
                         font.pixelSize: 11
                         font.family: userConfig.textFontFamily
                         font.weight: Font.Medium
@@ -343,13 +373,16 @@ Item {
                     color: clip30Mouse.pressed
                         ? root.buttonBgPressed
                         : (clip30Mouse.containsMouse ? root.buttonBgHover : root.buttonBg)
-                    border.color: StyleTokens.withAlpha(StyleTokens.white, 0.1)
+                    border.color: clip30Mouse.containsMouse ? root.cardAccent : StyleTokens.withAlpha(root.cardAccent, 0.3)
                     border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Behavior on border.color { ColorAnimation { duration: 120 } }
 
                     Text {
                         anchors.centerIn: parent
                         text: "Last 30s"
-                        color: StyleTokens.textSecondary
+                        color: clip30Mouse.containsMouse ? root.cardAccent : StyleTokens.textSecondary
                         font.pixelSize: 11
                         font.family: userConfig.textFontFamily
                         font.weight: Font.Medium
@@ -376,13 +409,16 @@ Item {
                     color: clip10Mouse.pressed
                         ? root.buttonBgPressed
                         : (clip10Mouse.containsMouse ? root.buttonBgHover : root.buttonBg)
-                    border.color: StyleTokens.withAlpha(StyleTokens.white, 0.1)
+                    border.color: clip10Mouse.containsMouse ? root.cardAccent : StyleTokens.withAlpha(StyleTokens.white, 0.1)
                     border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Behavior on border.color { ColorAnimation { duration: 120 } }
 
                     Text {
                         anchors.centerIn: parent
                         text: "Last 10s"
-                        color: StyleTokens.textSecondary
+                        color: clip10Mouse.containsMouse ? root.cardAccent : StyleTokens.textSecondary
                         font.pixelSize: 11
                         font.family: userConfig.textFontFamily
                         font.weight: Font.Medium
