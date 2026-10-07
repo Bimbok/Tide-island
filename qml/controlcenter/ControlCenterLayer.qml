@@ -129,6 +129,9 @@ Item {
     readonly property string bluetoothGlyph: ""
     readonly property string chargingIconGlyph: "\uf0e7"
     readonly property string brightnessIconGlyph: "\u{F00DF}"
+    readonly property string brightnessLowIconGlyph: "\u{F00DE}"
+    readonly property string brightnessMediumIconGlyph: "\u{F00DF}"
+    readonly property string brightnessHighIconGlyph: "\u{F00E0}"
     readonly property string volumeIconGlyph: "\ueb75"
     readonly property string volumeMuteIconGlyph: "\ueb24"
     readonly property string micIconGlyph: "\uf130"
@@ -738,6 +741,27 @@ Item {
         if (showCondition && !sliderIntroPending) displayedBrightness = localBrightness;
         pendingBrightness = localBrightness;
         brightnessApplyTimer.restart();
+    }
+
+    function currentBrightnessGlyph(val) {
+        if (val < 0.30) return brightnessLowIconGlyph;
+        if (val < 0.70) return brightnessMediumIconGlyph;
+        return brightnessHighIconGlyph;
+    }
+
+    function cycleBrightnessPreset() {
+        const presets = [0.10, 0.30, 0.65, 1.0];
+        const current = clamp01(displayedBrightness);
+        let nextValue = presets[0];
+        for (let i = 0; i < presets.length; i++) {
+            if (presets[i] > current + 0.04) {
+                nextValue = presets[i];
+                break;
+            }
+        }
+        queueBrightness(nextValue);
+        brightnessApplyTimer.stop();
+        flushBrightness(true);
     }
 
     function flushVolume(force) {
@@ -2694,7 +2718,7 @@ Item {
             width: parent.width
             height: 76
             title: "Display"
-            iconText: controlCenter.brightnessIconGlyph
+            iconText: controlCenter.currentBrightnessGlyph(controlCenter.displayedBrightness)
             iconFontFamily: controlCenter.iconFontFamily
             textFontFamily: controlCenter.textFontFamily
             value: controlCenter.displayedBrightness
@@ -2723,6 +2747,7 @@ Item {
                 controlCenter.flushBrightness(true);
             }
             onCancelRequested: SystemServices.requestBrightness()
+            onIconClicked: controlCenter.cycleBrightnessPreset()
         }
 
         ControlSliderCard {
