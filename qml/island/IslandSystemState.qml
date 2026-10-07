@@ -372,19 +372,11 @@ Item {
                     || Math.abs(root._pendingMicVal - root._lastMicVal) > 0.001) {
                 root._lastMicType = root._pendingMicType;
                 root._lastMicVal = root._pendingMicVal;
-                if (root._pendingMicType === "MIC_MUTE") {
-                    root.transientRequested(
-                        root.statusIcon("micMute"),
-                        -1.0,
-                        "Mic Muted"
-                    );
-                } else {
-                    root.transientRequested(
-                        root.statusIcon("mic"),
-                        root._pendingMicVal,
-                        ""
-                    );
-                }
+                root.transientRequested(
+                    root._pendingMicType === "MIC_MUTE" ? root.statusIcon("micMute") : root.statusIcon("mic"),
+                    root._pendingMicVal,
+                    ""
+                );
             }
         }
     }
