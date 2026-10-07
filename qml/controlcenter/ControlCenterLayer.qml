@@ -41,6 +41,8 @@ Item {
     property bool isCharging: false
     property real volumeLevel: -1
     property real brightnessLevel: -1
+    property real micLevel: -1
+    property bool micMuted: false
     property int sliderIntroDelay: 400
     property int currentWorkspace: 1
     property string currentTrack: ""
@@ -48,14 +50,19 @@ Item {
 
     property real localVolume: 0.5
     property real localBrightness: 0.5
+    property real localMicVolume: 0.5
     property real displayedVolume: 0.5
     property real displayedBrightness: 0.5
+    property real displayedMicVolume: 0.5
     property real pendingVolume: 0.5
     property real pendingBrightness: 0.5
+    property real pendingMicVolume: 0.5
     property real lastAppliedVolume: -1
     property real lastAppliedBrightness: -1
+    property real lastAppliedMicVolume: -1
     property bool brightnessSetterRunning: false
     property bool volumeSetterRunning: false
+    property bool micSetterRunning: false
     property bool sliderIntroPending: false
     property bool readyForCardAnimations: false
     property bool wifiPanelOpen: false
@@ -122,6 +129,8 @@ Item {
     readonly property string chargingIconGlyph: "\uf0e7"
     readonly property string brightnessIconGlyph: "\u{F00DF}"
     readonly property string volumeIconGlyph: "\ueb75"
+    readonly property string micIconGlyph: "\uf130"
+    readonly property string micMuteIconGlyph: "\uf131"
     readonly property string nightLightGlyph: "\uf186"
     readonly property var batteryModeGlyphs: ["", "", ""]
     readonly property real batteryDrawerHandleHeight: 20
@@ -700,6 +709,13 @@ Item {
             syncVolumeFromLevel(value);
     }
 
+    function applyMicVolumeSnapshot(value, muted) {
+        if (muted !== undefined)
+            micMuted = muted;
+        if (value >= 0 && !micCard.pressed)
+            syncMicVolumeFromLevel(value, muted);
+    }
+
     function flushBrightness(force) {
         const nextValue = clamp01(pendingBrightness);
         if (!force && Math.abs(nextValue - lastAppliedBrightness) < 0.01) return;
@@ -740,6 +756,26 @@ Item {
         volumeApplyTimer.restart();
     }
 
+    function flushMicVolume(force) {
+        const nextValue = clamp01(pendingMicVolume);
+        if (!force && Math.abs(nextValue - lastAppliedMicVolume) < 0.01) return;
+        if (micSetterRunning) {
+            micApplyTimer.restart();
+            return;
+        }
+
+        lastAppliedMicVolume = nextValue;
+        micSetterRunning = true;
+        SystemServices.setMicVolume(nextValue);
+    }
+
+    function queueMicVolume(value) {
+        localMicVolume = clamp01(value);
+        if (showCondition && !sliderIntroPending) displayedMicVolume = localMicVolume;
+        pendingMicVolume = localMicVolume;
+        micApplyTimer.restart();
+    }
+
     function syncBrightnessFromLevel(level) {
         if (level < 0) return;
         localBrightness = clamp01(level);
@@ -756,9 +792,20 @@ Item {
         lastAppliedVolume = localVolume;
     }
 
+    function syncMicVolumeFromLevel(level, muted) {
+        if (muted !== undefined)
+            micMuted = muted;
+        if (level < 0) return;
+        localMicVolume = clamp01(level);
+        if (showCondition && !sliderIntroPending) displayedMicVolume = localMicVolume;
+        pendingMicVolume = localMicVolume;
+        lastAppliedMicVolume = localMicVolume;
+    }
+
     function syncLevelsFromProps() {
         syncBrightnessFromLevel(brightnessLevel);
         syncVolumeFromLevel(volumeLevel);
+        syncMicVolumeFromLevel(micLevel, micMuted);
     }
 
     function bluetoothDeviceName(device) {
@@ -1098,6 +1145,8 @@ Item {
 
     onBrightnessLevelChanged: syncBrightnessFromLevel(brightnessLevel)
     onVolumeLevelChanged: syncVolumeFromLevel(volumeLevel)
+    onMicLevelChanged: syncMicVolumeFromLevel(micLevel, micMuted)
+    onMicMutedChanged: micMuted = micMuted
     onShowConditionChanged: {
         if (showCondition) {
             readyForCardAnimations = false;
@@ -1106,6 +1155,7 @@ Item {
             sliderIntroPending = true;
             displayedBrightness = localBrightness;
             displayedVolume = localVolume;
+            displayedMicVolume = localMicVolume;
             sliderIntroTimer.interval = sliderIntroDelay;
             sliderIntroTimer.restart();
             refreshBatteryModeState();
@@ -1118,6 +1168,7 @@ Item {
             sliderIntroPending = false;
             displayedBrightness = localBrightness;
             displayedVolume = localVolume;
+            displayedMicVolume = localMicVolume;
             powerViewActive = false;
             batteryDrawerOpen = false;
             batteryDrawerProgress = 0;
@@ -1135,8 +1186,10 @@ Item {
         syncLevelsFromProps();
         displayedBrightness = localBrightness;
         displayedVolume = localVolume;
+        displayedMicVolume = localMicVolume;
         SystemServices.requestBrightness();
         SystemServices.requestVolume();
+        SystemServices.requestMicVolume();
         refreshBatteryModeState();
         focusStateProcess.running = true;
     }
@@ -1159,6 +1212,15 @@ Item {
 
     Behavior on displayedVolume {
         enabled: controlCenter.showCondition && !controlCenter.sliderIntroPending && !volumeCard.pressed
+
+        NumberAnimation {
+            duration: 130
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    Behavior on displayedMicVolume {
+        enabled: controlCenter.showCondition && !controlCenter.sliderIntroPending && !micCard.pressed
 
         NumberAnimation {
             duration: 130
@@ -1388,6 +1450,19 @@ Item {
             if (success && Math.abs(controlCenter.pendingVolume - controlCenter.lastAppliedVolume) >= 0.01)
                 volumeApplyTimer.restart();
         }
+
+        function onMicVolumeSnapshotReady(value, muted, errorString) {
+            if (errorString === "")
+                controlCenter.applyMicVolumeSnapshot(value, muted);
+        }
+
+        function onMicVolumeSetFinished(value, success, errorString) {
+            controlCenter.micSetterRunning = false;
+            if (success && !micCard.pressed)
+                controlCenter.applyMicVolumeSnapshot(value, controlCenter.micMuted);
+            if (success && Math.abs(controlCenter.pendingMicVolume - controlCenter.lastAppliedMicVolume) >= 0.01)
+                micApplyTimer.restart();
+        }
     }
 
     Timer {
@@ -1405,6 +1480,13 @@ Item {
     }
 
     Timer {
+        id: micApplyTimer
+        interval: 55
+        repeat: false
+        onTriggered: controlCenter.flushMicVolume(false)
+    }
+
+    Timer {
         id: sliderIntroTimer
         interval: controlCenter.sliderIntroDelay
         repeat: false
@@ -1414,6 +1496,7 @@ Item {
             controlCenter.readyForCardAnimations = true;
             controlCenter.displayedBrightness = controlCenter.localBrightness;
             controlCenter.displayedVolume = controlCenter.localVolume;
+            controlCenter.displayedMicVolume = controlCenter.localMicVolume;
         }
     }
 
@@ -2622,6 +2705,7 @@ Item {
                     controlCenter.sliderIntroPending = false;
                     controlCenter.displayedBrightness = controlCenter.localBrightness;
                     controlCenter.displayedVolume = controlCenter.localVolume;
+                    controlCenter.displayedMicVolume = controlCenter.localMicVolume;
                 }
             }
             onValueMoved: function(value) {
@@ -2657,6 +2741,7 @@ Item {
                     controlCenter.sliderIntroPending = false;
                     controlCenter.displayedBrightness = controlCenter.localBrightness;
                     controlCenter.displayedVolume = controlCenter.localVolume;
+                    controlCenter.displayedMicVolume = controlCenter.localMicVolume;
                 }
             }
             onValueMoved: function(value) {
@@ -2667,6 +2752,43 @@ Item {
                 controlCenter.flushVolume(true);
             }
             onCancelRequested: SystemServices.requestVolume()
+        }
+
+        ControlSliderCard {
+            id: micCard
+            width: parent.width
+            height: 76
+            title: controlCenter.micMuted ? "Mic (Muted)" : "Microphone"
+            iconText: controlCenter.micMuted ? controlCenter.micMuteIconGlyph : controlCenter.micIconGlyph
+            iconFontFamily: controlCenter.iconFontFamily
+            textFontFamily: controlCenter.textFontFamily
+            value: controlCenter.displayedMicVolume
+            knobSize: controlCenter.sliderKnobSize
+            accentColor: controlCenter.micMuted ? StyleTokens.withAlpha(controlCenter.cardAccent, 0.45) : controlCenter.cardAccent
+            moduleColor: controlCenter.moduleColor
+            moduleHover: controlCenter.moduleHover
+            trackColor: controlCenter.trackColor
+            textPrimary: controlCenter.textPrimary
+            textSecondary: controlCenter.textSecondary
+
+            onInteractionStarted: {
+                if (controlCenter.sliderIntroPending) {
+                    sliderIntroTimer.stop();
+                    controlCenter.sliderIntroPending = false;
+                    controlCenter.displayedBrightness = controlCenter.localBrightness;
+                    controlCenter.displayedVolume = controlCenter.localVolume;
+                    controlCenter.displayedMicVolume = controlCenter.localMicVolume;
+                }
+            }
+            onValueMoved: function(value) {
+                controlCenter.queueMicVolume(value);
+            }
+            onCommitRequested: {
+                micApplyTimer.stop();
+                controlCenter.flushMicVolume(true);
+            }
+            onCancelRequested: SystemServices.requestMicVolume()
+            onIconClicked: SystemServices.toggleMicMute()
         }
     }
     Item {

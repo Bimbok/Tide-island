@@ -40,11 +40,15 @@ Item {
     readonly property string cpuStatusIcon: "\u{F035B}"
     readonly property string ramStatusIcon: "\u{F061A}"
     readonly property string bluetoothStatusIcon: "\u{F02CB}"
+    readonly property string micStatusIcon: "\uf130"
+    readonly property string micMuteStatusIcon: "\uf131"
 
     property int batteryCapacity: SysBackend.batteryCapacity
     property bool isCharging: SysBackend.batteryStatus === "Charging" || SysBackend.batteryStatus === "Full"
     property real currentVolume: -1
     property bool isMuted: false
+    property real currentMicVolume: -1
+    property bool isMicMuted: false
     property real currentBrightness: -1
     property real currentCpuUsage: -1
     property real currentRamUsage: -1
@@ -58,6 +62,10 @@ Item {
     property real _pendingVolVal: 0.0
     property string _lastVolType: ""
     property real _lastVolVal: -1.0
+    property string _pendingMicType: ""
+    property real _pendingMicVal: 0.0
+    property string _lastMicType: ""
+    property real _lastMicVal: -1.0
     property bool _bluetoothVolumeSuppressed: false
     property real _pendingBrightnessValue: 0.0
     property string _customLeftItemsSignature: ""
@@ -76,6 +84,8 @@ Item {
     onIsChargingChanged: syncCustomLeftItems()
     onCurrentVolumeChanged: syncCustomLeftItems()
     onIsMutedChanged: syncCustomLeftItems()
+    onCurrentMicVolumeChanged: syncCustomLeftItems()
+    onIsMicMutedChanged: syncCustomLeftItems()
     onCurrentBrightnessChanged: syncCustomLeftItems()
     onCurrentCpuUsageChanged: syncCustomLeftItems()
     onCurrentRamUsageChanged: syncCustomLeftItems()
@@ -89,6 +99,7 @@ Item {
         syncCustomLeftItems();
         refreshMissingValues();
         updateCavaSubscription();
+        SystemServices.requestMicVolume();
     }
 
     Component.onDestruction: {
@@ -103,6 +114,10 @@ Item {
             return volumeStatusIcon;
         case "mute":
             return muteStatusIcon;
+        case "mic":
+            return micStatusIcon;
+        case "micMute":
+            return micMuteStatusIcon;
         case "brightnessLow":
             return brightnessLowStatusIcon;
         case "brightnessMedium":
@@ -348,6 +363,33 @@ Item {
     }
 
     Timer {
+        id: micDebounce
+
+        interval: 16
+
+        onTriggered: {
+            if (root._pendingMicType !== root._lastMicType
+                    || Math.abs(root._pendingMicVal - root._lastMicVal) > 0.001) {
+                root._lastMicType = root._pendingMicType;
+                root._lastMicVal = root._pendingMicVal;
+                if (root._pendingMicType === "MIC_MUTE") {
+                    root.transientRequested(
+                        root.statusIcon("micMute"),
+                        -1.0,
+                        "Mic Muted"
+                    );
+                } else {
+                    root.transientRequested(
+                        root.statusIcon("mic"),
+                        root._pendingMicVal,
+                        ""
+                    );
+                }
+            }
+        }
+    }
+
+    Timer {
         id: brightnessDebounce
 
         interval: 16
@@ -413,6 +455,13 @@ Item {
             root.isMuted = muted;
         }
 
+        function onMicVolumeSnapshotReady(value, muted, errorString) {
+            if (errorString !== "" || value < 0)
+                return;
+            root.currentMicVolume = root.clamp01(value);
+            root.isMicMuted = muted;
+        }
+
         function onSystemStatsReady(cpuUsage, ramUsage, errorString) {
             if (errorString !== "")
                 return;
@@ -446,6 +495,24 @@ Item {
             root.currentVolume = nextVolValue;
             root.isMuted = isMuted;
             volumeDebounce.restart();
+        }
+
+        function onMicChanged(micPercentage, isMuted) {
+            const nextMicType = isMuted ? "MIC_MUTE" : "MIC";
+            const nextMicValue = root.clamp01(micPercentage / 100.0);
+            const unchanged = root.isMicMuted === isMuted
+                && Math.abs(root.currentMicVolume - nextMicValue) <= 0.001
+                && root._pendingMicType === nextMicType
+                && Math.abs(root._pendingMicVal - nextMicValue) <= 0.001;
+
+            if (unchanged)
+                return;
+
+            root._pendingMicType = nextMicType;
+            root._pendingMicVal = nextMicValue;
+            root.currentMicVolume = nextMicValue;
+            root.isMicMuted = isMuted;
+            micDebounce.restart();
         }
 
         function onBatteryChanged(capacity, statusString) {

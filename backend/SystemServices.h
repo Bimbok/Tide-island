@@ -41,6 +41,9 @@ public:
     Q_INVOKABLE void setBrightness(double value);
     Q_INVOKABLE void requestVolume();
     Q_INVOKABLE void setVolume(double value);
+    Q_INVOKABLE void requestMicVolume();
+    Q_INVOKABLE void setMicVolume(double value);
+    Q_INVOKABLE void toggleMicMute();
     Q_INVOKABLE void requestSystemStats();
     Q_INVOKABLE void requestTlpState();
     Q_INVOKABLE void setTlpMode(const QString &mode,
@@ -81,6 +84,8 @@ signals:
     void brightnessSetFinished(double value, bool success, const QString &errorString);
     void volumeSnapshotReady(double value, bool muted, const QString &errorString);
     void volumeSetFinished(double value, bool success, const QString &errorString);
+    void micVolumeSnapshotReady(double value, bool muted, const QString &errorString);
+    void micVolumeSetFinished(double value, bool success, const QString &errorString);
     void systemStatsReady(double cpuUsage, double ramUsage, const QString &errorString);
     void tlpStateReady(bool available, const QString &profile, const QString &output, const QString &errorString);
     void tlpSetFinished(bool success, int exitCode, const QString &output, const QString &errorString);
@@ -136,6 +141,7 @@ private:
 
     void applyPendingBrightness();
     void applyPendingVolume();
+    void applyPendingMicVolume();
 
     void startCava();
     void stopCava();
@@ -206,4 +212,10 @@ private:
     double m_pendingVolume = -1.0;
     double m_lastAppliedVolume = -1.0;
     QTimer m_volumeThrottleTimer;
+
+    bool m_micVolumeRequestActive = false;
+    bool m_micVolumeSettingActive = false;
+    double m_pendingMicVolume = -1.0;
+    double m_lastAppliedMicVolume = -1.0;
+    QTimer m_micVolumeThrottleTimer;
 };

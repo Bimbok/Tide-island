@@ -39,6 +39,7 @@ public:
 signals:
     void brightnessChanged(double val);
     void volumeChanged(int volPercentage, bool isMuted);
+    void micChanged(int micPercentage, bool isMuted);
     void batteryCapacityChanged(int capacity);
     void batteryStatusChanged(const QString &statusString);
     void batteryChanged(int capacity, const QString &statusString);
@@ -50,7 +51,9 @@ signals:
 private slots:
     void handleVolumeEvent();
     void fetchCurrentVolume();
+    void fetchCurrentMicVolume();
     void handleVolumeQueryFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void handleMicQueryFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void handleDefaultSinkQueryFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void handleBatteryMonitorEvent();
     void handleBatteryPropertiesChanged(const QString &interfaceName, const QVariantMap &changedProperties, const QStringList &invalidatedProperties);
@@ -87,11 +90,13 @@ private:
     bool m_isBluetoothAudio = false;
     QProcess *m_paSubscriber;
     QProcess *m_volumeQueryProcess;
+    QProcess *m_micQueryProcess = nullptr;
     QProcess *m_defaultSinkQueryProcess;
     QFileSystemWatcher *m_brightnessWatcher;
     QSocketNotifier *m_batteryNotifier;
     QTimer *m_audioDebounceTimer;
     QTimer *m_volumeQueryTimeoutTimer;
+    QTimer *m_micQueryTimeoutTimer = nullptr;
     QTimer *m_defaultSinkQueryTimeoutTimer;
     QProcess *m_lyricsProcess;
     QTimer *m_lyricsRestartTimer;

@@ -361,23 +361,39 @@ void SysBackend::setupAudio() {
         if (m_defaultSinkQueryTimeoutTimer) m_defaultSinkQueryTimeoutTimer->stop();
     });
 
+    m_micQueryProcess = new QProcess(this);
+    m_micQueryTimeoutTimer = new QTimer(this);
+    m_micQueryTimeoutTimer->setSingleShot(true);
+    m_micQueryTimeoutTimer->setInterval(kCommandTimeoutMs);
+    connect(m_micQueryTimeoutTimer, &QTimer::timeout, this, [this]() {
+        if (m_micQueryProcess && m_micQueryProcess->state() != QProcess::NotRunning)
+            m_micQueryProcess->kill();
+    });
+    connect(m_micQueryProcess, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
+            this, &SysBackend::handleMicQueryFinished);
+    connect(m_micQueryProcess, &QProcess::errorOccurred, this, [this](QProcess::ProcessError) {
+        if (m_micQueryTimeoutTimer) m_micQueryTimeoutTimer->stop();
+    });
+
     m_audioDebounceTimer = new QTimer(this);
     m_audioDebounceTimer->setSingleShot(true);
     m_audioDebounceTimer->setInterval(kAudioEventDebounceMs);
     connect(m_audioDebounceTimer, &QTimer::timeout, this, [this]() {
         fetchCurrentVolume();
+        fetchCurrentMicVolume();
         checkDefaultAudioDevice();
     });
 
     m_paSubscriber->start("pactl", QStringList() << "subscribe");
     fetchCurrentVolume();
+    fetchCurrentMicVolume();
     checkDefaultAudioDevice();
 }
 
 void SysBackend::handleVolumeEvent() {
     QByteArray output = m_paSubscriber->readAllStandardOutput();
 
-    if (output.contains("sink") || output.contains("card") || output.contains("server")) {
+    if (output.contains("sink") || output.contains("source") || output.contains("card") || output.contains("server")) {
         if (m_audioDebounceTimer) m_audioDebounceTimer->start();
     }
 }
@@ -388,6 +404,15 @@ void SysBackend::fetchCurrentVolume() {
         m_volumeQueryTimeoutTimer,
         QStringLiteral("wpctl"),
         QStringList() << QStringLiteral("get-volume") << QStringLiteral("@DEFAULT_AUDIO_SINK@")
+    );
+}
+
+void SysBackend::fetchCurrentMicVolume() {
+    startTimedProcess(
+        m_micQueryProcess,
+        m_micQueryTimeoutTimer,
+        QStringLiteral("wpctl"),
+        QStringList() << QStringLiteral("get-volume") << QStringLiteral("@DEFAULT_AUDIO_SOURCE@")
     );
 }
 
@@ -405,6 +430,23 @@ void SysBackend::handleVolumeQueryFinished(int exitCode, QProcess::ExitStatus ex
         if (!ok) return;
 
         emit volumeChanged(volPercentage, isMuted);
+    }
+}
+
+void SysBackend::handleMicQueryFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+    if (m_micQueryTimeoutTimer) m_micQueryTimeoutTimer->stop();
+    if (!m_micQueryProcess || exitStatus != QProcess::NormalExit || exitCode != 0) return;
+
+    const QString output = QString::fromUtf8(m_micQueryProcess->readAllStandardOutput()).trimmed();
+
+    if (output.startsWith(QStringLiteral("Volume:"))) {
+        const bool isMuted = output.contains(QStringLiteral("[MUTED]"));
+        const QString valStr = output.section(QLatin1Char(' '), 1, 1);
+        bool ok = false;
+        const int micPercentage = static_cast<int>(valStr.toDouble(&ok) * 100);
+        if (!ok) return;
+
+        emit micChanged(micPercentage, isMuted);
     }
 }
 

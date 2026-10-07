@@ -312,7 +312,7 @@ PanelWindow {
         ? controlCenterLoader.item.controlCenterMaximumExtraHeight
         : root.defaultControlCenterMaximumExtraHeight
     readonly property real controlCenterWindowHeight: islandContainer.controlCenterLayerVisible
-        ? userConfig.islandTopMargin + 320 + root.controlCenterMaximumExtraHeight + 12
+        ? userConfig.islandTopMargin + 406 + root.controlCenterMaximumExtraHeight + 12
         : 0
 
     readonly property real notificationCenterWindowHeight: islandContainer.notificationCenterLayerVisible
@@ -989,6 +989,8 @@ PanelWindow {
         readonly property bool isCharging: systemState.isCharging
         readonly property real currentVolume: systemState.currentVolume
         readonly property bool isMuted: systemState.isMuted
+        readonly property real currentMicVolume: systemState.currentMicVolume
+        readonly property bool isMicMuted: systemState.isMicMuted
         readonly property real currentBrightness: systemState.currentBrightness
         readonly property real currentCpuUsage: systemState.currentCpuUsage
         readonly property real currentRamUsage: systemState.currentRamUsage
@@ -2200,7 +2202,7 @@ PanelWindow {
                 case "control_center":
                     return controlCenterLoader.item && controlCenterLoader.item.powerViewActive
                         ? 150
-                        : 320 + (controlCenterLoader.item ? controlCenterLoader.item.controlCenterExtraHeight : root.defaultControlCenterExtraHeight);
+                        : 406 + (controlCenterLoader.item ? controlCenterLoader.item.controlCenterExtraHeight : root.defaultControlCenterExtraHeight);
                 case "notification_center":
                     return notificationCenterLoader.item ? notificationCenterLoader.item.contentHeight : 200;
                 case "wallpaper_picker":
@@ -2841,6 +2843,8 @@ PanelWindow {
                         isCharging: islandContainer.isCharging
                         volumeLevel: islandContainer.currentVolume
                         brightnessLevel: islandContainer.currentBrightness
+                        micLevel: islandContainer.currentMicVolume
+                        micMuted: islandContainer.isMicMuted
                         currentWorkspace: islandContainer.currentWs
                         currentTrack: islandContainer.currentTrack
                         currentArtist: islandContainer.currentArtist

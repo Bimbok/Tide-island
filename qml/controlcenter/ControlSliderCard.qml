@@ -8,6 +8,7 @@ Rectangle {
     signal valueMoved(real value)
     signal commitRequested()
     signal cancelRequested()
+    signal iconClicked()
 
     property string title: ""
     property string iconText: ""
@@ -50,6 +51,32 @@ Rectangle {
             font.pixelSize: 13
             font.family: root.textFontFamily
             font.weight: Font.DemiBold
+        }
+
+        Item {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            width: 24
+            height: 20
+            visible: root.iconText !== ""
+
+            Text {
+                anchors.centerIn: parent
+                text: root.iconText
+                color: iconMouse.containsMouse ? root.accentColor : root.textSecondary
+                font.pixelSize: 13
+                font.family: root.iconFontFamily
+
+                Behavior on color { ColorAnimation { duration: 120 } }
+            }
+
+            MouseArea {
+                id: iconMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.iconClicked()
+            }
         }
 
         Rectangle {

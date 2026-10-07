@@ -236,6 +236,13 @@ SystemServices::SystemServices(QObject *parent)
         }
     });
 
+    m_micVolumeThrottleTimer.setSingleShot(true);
+    connect(&m_micVolumeThrottleTimer, &QTimer::timeout, this, [this]() {
+        if (m_pendingMicVolume >= 0.0 && (m_lastAppliedMicVolume < 0.0 || std::abs(m_pendingMicVolume - m_lastAppliedMicVolume) >= 0.005)) {
+            applyPendingMicVolume();
+        }
+    });
+
     startNotificationMonitor();
     startPipeWireMonitor();
     startRecordingPortalMonitor();
@@ -254,6 +261,7 @@ SystemServices::~SystemServices() {
     m_cavaRestartTimer.stop();
     m_brightnessThrottleTimer.stop();
     m_volumeThrottleTimer.stop();
+    m_micVolumeThrottleTimer.stop();
 
     stopProcess(m_notificationMonitor);
     stopProcess(m_pipeWireMonitor);
@@ -1135,6 +1143,79 @@ void SystemServices::applyPendingVolume() {
         emit volumeSetFinished(targetValue, errorText.isEmpty(), errorText);
 
         m_volumeThrottleTimer.start(40);
+    });
+}
+
+void SystemServices::requestMicVolume() {
+    if (m_micVolumeRequestActive) return;
+    m_micVolumeRequestActive = true;
+
+    startCommand(QStringLiteral("wpctl"),
+                 {QStringLiteral("get-volume"), QStringLiteral("@DEFAULT_AUDIO_SOURCE@")},
+                 1000,
+                 [this](const CommandResult &result) {
+        m_micVolumeRequestActive = false;
+        const QString errorText = commandErrorText(QStringLiteral("wpctl"), result);
+        if (!errorText.isEmpty()) {
+            emit micVolumeSnapshotReady(-1.0, false, errorText);
+            return;
+        }
+
+        double value = -1.0;
+        bool muted = false;
+        bool ok = false;
+        parseVolumeOutput(QString::fromUtf8(result.stdoutData), &value, &muted, &ok);
+        if (ok && !m_micVolumeSettingActive) {
+            m_lastAppliedMicVolume = value;
+        }
+        emit micVolumeSnapshotReady(value, muted, ok ? QString() : QStringLiteral("Could not parse mic volume output."));
+    });
+}
+
+void SystemServices::setMicVolume(double value) {
+    m_pendingMicVolume = std::clamp(value, 0.0, 1.0);
+
+    if (m_micVolumeSettingActive) {
+        return;
+    }
+
+    if (m_micVolumeThrottleTimer.isActive()) {
+        return;
+    }
+
+    applyPendingMicVolume();
+}
+
+void SystemServices::applyPendingMicVolume() {
+    if (m_micVolumeSettingActive || m_pendingMicVolume < 0.0)
+        return;
+
+    const double targetValue = m_pendingMicVolume;
+    if (m_lastAppliedMicVolume >= 0.0 && std::abs(targetValue - m_lastAppliedMicVolume) < 0.005) {
+        emit micVolumeSetFinished(targetValue, true, QString());
+        return;
+    }
+
+    m_micVolumeSettingActive = true;
+    startCommand(QStringLiteral("wpctl"),
+                 {QStringLiteral("set-volume"), QStringLiteral("@DEFAULT_AUDIO_SOURCE@"), QString::number(targetValue, 'f', 2)},
+                 1000,
+                 [this, targetValue](const CommandResult &result) {
+        m_micVolumeSettingActive = false;
+        m_lastAppliedMicVolume = targetValue;
+        const QString errorText = commandErrorText(QStringLiteral("wpctl"), result);
+        emit micVolumeSetFinished(targetValue, errorText.isEmpty(), errorText);
+
+        m_micVolumeThrottleTimer.start(40);
+    });
+}
+
+void SystemServices::toggleMicMute() {
+    startCommand(QStringLiteral("wpctl"),
+                 {QStringLiteral("set-mute"), QStringLiteral("@DEFAULT_AUDIO_SOURCE@"), QStringLiteral("toggle")},
+                 1000,
+                 [this](const CommandResult &) {
+        requestMicVolume();
     });
 }
 
