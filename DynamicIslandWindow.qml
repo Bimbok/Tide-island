@@ -2842,6 +2842,7 @@ PanelWindow {
                         batteryCapacity: islandContainer.batteryCapacity
                         isCharging: islandContainer.isCharging
                         volumeLevel: islandContainer.currentVolume
+                        volumeMuted: islandContainer.isMuted
                         brightnessLevel: islandContainer.currentBrightness
                         micLevel: islandContainer.currentMicVolume
                         micMuted: islandContainer.isMicMuted

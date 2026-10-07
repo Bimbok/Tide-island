@@ -40,6 +40,7 @@ Item {
     property int batteryCapacity: 0
     property bool isCharging: false
     property real volumeLevel: -1
+    property bool volumeMuted: false
     property real brightnessLevel: -1
     property real micLevel: -1
     property bool micMuted: false
@@ -129,6 +130,7 @@ Item {
     readonly property string chargingIconGlyph: "\uf0e7"
     readonly property string brightnessIconGlyph: "\u{F00DF}"
     readonly property string volumeIconGlyph: "\ueb75"
+    readonly property string volumeMuteIconGlyph: "\ueb24"
     readonly property string micIconGlyph: "\uf130"
     readonly property string micMuteIconGlyph: "\uf131"
     readonly property string nightLightGlyph: "\uf186"
@@ -704,9 +706,11 @@ Item {
             syncBrightnessFromLevel(value);
     }
 
-    function applyVolumeSnapshot(value) {
+    function applyVolumeSnapshot(value, muted) {
+        if (muted !== undefined)
+            volumeMuted = muted;
         if (value >= 0 && !volumeCard.pressed)
-            syncVolumeFromLevel(value);
+            syncVolumeFromLevel(value, muted);
     }
 
     function applyMicVolumeSnapshot(value, muted) {
@@ -784,7 +788,9 @@ Item {
         lastAppliedBrightness = localBrightness;
     }
 
-    function syncVolumeFromLevel(level) {
+    function syncVolumeFromLevel(level, muted) {
+        if (muted !== undefined)
+            volumeMuted = muted;
         if (level < 0) return;
         localVolume = clamp01(level);
         if (showCondition && !sliderIntroPending) displayedVolume = localVolume;
@@ -804,7 +810,7 @@ Item {
 
     function syncLevelsFromProps() {
         syncBrightnessFromLevel(brightnessLevel);
-        syncVolumeFromLevel(volumeLevel);
+        syncVolumeFromLevel(volumeLevel, volumeMuted);
         syncMicVolumeFromLevel(micLevel, micMuted);
     }
 
@@ -1144,7 +1150,8 @@ Item {
     }
 
     onBrightnessLevelChanged: syncBrightnessFromLevel(brightnessLevel)
-    onVolumeLevelChanged: syncVolumeFromLevel(volumeLevel)
+    onVolumeLevelChanged: syncVolumeFromLevel(volumeLevel, volumeMuted)
+    onVolumeMutedChanged: volumeMuted = volumeMuted
     onMicLevelChanged: syncMicVolumeFromLevel(micLevel, micMuted)
     onMicMutedChanged: micMuted = micMuted
     onShowConditionChanged: {
@@ -1440,13 +1447,13 @@ Item {
 
         function onVolumeSnapshotReady(value, muted, errorString) {
             if (errorString === "")
-                controlCenter.applyVolumeSnapshot(value);
+                controlCenter.applyVolumeSnapshot(value, muted);
         }
 
         function onVolumeSetFinished(value, success, errorString) {
             controlCenter.volumeSetterRunning = false;
             if (success && !volumeCard.pressed)
-                controlCenter.applyVolumeSnapshot(value);
+                controlCenter.applyVolumeSnapshot(value, controlCenter.volumeMuted);
             if (success && Math.abs(controlCenter.pendingVolume - controlCenter.lastAppliedVolume) >= 0.01)
                 volumeApplyTimer.restart();
         }
@@ -2722,13 +2729,13 @@ Item {
             id: volumeCard
             width: parent.width
             height: 76
-            title: "Sound"
-            iconText: controlCenter.volumeIconGlyph
+            title: controlCenter.volumeMuted ? "Sound (Muted)" : "Sound"
+            iconText: controlCenter.volumeMuted ? controlCenter.volumeMuteIconGlyph : controlCenter.volumeIconGlyph
             iconFontFamily: controlCenter.iconFontFamily
             textFontFamily: controlCenter.textFontFamily
             value: controlCenter.displayedVolume
             knobSize: controlCenter.sliderKnobSize
-            accentColor: controlCenter.cardAccent
+            accentColor: controlCenter.volumeMuted ? StyleTokens.withAlpha(controlCenter.cardAccent, 0.45) : controlCenter.cardAccent
             moduleColor: controlCenter.moduleColor
             moduleHover: controlCenter.moduleHover
             trackColor: controlCenter.trackColor
@@ -2752,6 +2759,7 @@ Item {
                 controlCenter.flushVolume(true);
             }
             onCancelRequested: SystemServices.requestVolume()
+            onIconClicked: SystemServices.toggleVolumeMute()
         }
 
         ControlSliderCard {

@@ -1146,6 +1146,15 @@ void SystemServices::applyPendingVolume() {
     });
 }
 
+void SystemServices::toggleVolumeMute() {
+    startCommand(QStringLiteral("wpctl"),
+                 {QStringLiteral("set-mute"), QStringLiteral("@DEFAULT_AUDIO_SINK@"), QStringLiteral("toggle")},
+                 1000,
+                 [this](const CommandResult &) {
+        requestVolume();
+    });
+}
+
 void SystemServices::requestMicVolume() {
     if (m_micVolumeRequestActive) return;
     m_micVolumeRequestActive = true;

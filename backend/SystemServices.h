@@ -41,6 +41,7 @@ public:
     Q_INVOKABLE void setBrightness(double value);
     Q_INVOKABLE void requestVolume();
     Q_INVOKABLE void setVolume(double value);
+    Q_INVOKABLE void toggleVolumeMute();
     Q_INVOKABLE void requestMicVolume();
     Q_INVOKABLE void setMicVolume(double value);
     Q_INVOKABLE void toggleMicMute();
