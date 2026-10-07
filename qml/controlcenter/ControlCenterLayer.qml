@@ -57,6 +57,7 @@ Item {
     property bool brightnessSetterRunning: false
     property bool volumeSetterRunning: false
     property bool sliderIntroPending: false
+    property bool readyForCardAnimations: false
     property bool wifiPanelOpen: false
     property bool bluetoothPanelOpen: false
     property bool powerPanelOpen: false
@@ -132,7 +133,7 @@ Item {
     readonly property bool isRecording: ScreenRecorder ? ScreenRecorder.isRecording : false
     readonly property bool isReplayActive: ScreenRecorder ? ScreenRecorder.isReplayActive : false
     readonly property real drawerOpenDistance: batteryModeCardHeight * 2 + batteryDrawerContentGap * 2
-    readonly property real activeRecorderExtraHeight: (activeScreenRecorderCard && activeScreenRecorderCard.visible)
+    readonly property real activeRecorderExtraHeight: (activeScreenRecorderCard && activeScreenRecorderCard.visible && activeScreenRecorderCard.height > 0)
         ? activeScreenRecorderCard.height + mainContent.spacing
         : 0
 
@@ -1099,6 +1100,7 @@ Item {
     onVolumeLevelChanged: syncVolumeFromLevel(volumeLevel)
     onShowConditionChanged: {
         if (showCondition) {
+            readyForCardAnimations = false;
             controlCenter.forceActiveFocus();
             syncLevelsFromProps();
             sliderIntroPending = true;
@@ -1111,6 +1113,7 @@ Item {
             if (wifiPanelOpen && wifiSupported && wifiEnabled)
                 requestWifiListRefresh(true);
         } else {
+            readyForCardAnimations = false;
             sliderIntroTimer.stop();
             sliderIntroPending = false;
             displayedBrightness = localBrightness;
@@ -1123,6 +1126,12 @@ Item {
     }
 
     Component.onCompleted: {
+        if (showCondition) {
+            readyForCardAnimations = false;
+            sliderIntroPending = true;
+            sliderIntroTimer.interval = sliderIntroDelay;
+            sliderIntroTimer.restart();
+        }
         syncLevelsFromProps();
         displayedBrightness = localBrightness;
         displayedVolume = localVolume;
@@ -1402,6 +1411,7 @@ Item {
 
         onTriggered: {
             controlCenter.sliderIntroPending = false;
+            controlCenter.readyForCardAnimations = true;
             controlCenter.displayedBrightness = controlCenter.localBrightness;
             controlCenter.displayedVolume = controlCenter.localVolume;
         }
@@ -2566,12 +2576,14 @@ Item {
         ScreenRecorderCard {
             id: activeScreenRecorderCard
             width: parent.width
-            visible: controlCenter.isRecording || controlCenter.isReplayActive
-            height: visible ? (controlCenter.isReplayActive ? 116 : 98) : 0
-            opacity: visible ? 1 : 0
+            readonly property bool shouldBeVisible: controlCenter.isRecording || controlCenter.isReplayActive
+            visible: shouldBeVisible || height > 0.5
+            height: shouldBeVisible ? (controlCenter.isReplayActive ? 116 : 98) : 0
+            opacity: shouldBeVisible ? 1 : 0
             clip: true
 
             Behavior on height {
+                enabled: controlCenter.readyForCardAnimations
                 NumberAnimation {
                     duration: 220
                     easing.type: Easing.OutCubic
@@ -2579,6 +2591,7 @@ Item {
             }
 
             Behavior on opacity {
+                enabled: controlCenter.readyForCardAnimations
                 NumberAnimation {
                     duration: 180
                     easing.type: Easing.OutCubic

@@ -26,13 +26,6 @@ Item {
     width: parent ? parent.width : 380
     height: isReplayActive ? 116 : (isRecording ? 98 : 74)
 
-    Behavior on height {
-        NumberAnimation {
-            duration: 220
-            easing.type: Easing.OutCubic
-        }
-    }
-
     Rectangle {
         id: cardBg
         anchors.fill: parent

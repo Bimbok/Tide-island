@@ -296,9 +296,21 @@ PanelWindow {
     readonly property bool anyConnectivityDetailMounted: wifiConnectivityDetailMounted || bluetoothConnectivityDetailMounted || powerConnectivityDetailMounted
     readonly property real connectivityDetailWidth: 318
     readonly property real connectivityDetailHeight: 404
+    readonly property bool controlCenterActiveRecording: ScreenRecorder
+        ? (ScreenRecorder.isRecording || ScreenRecorder.isReplayActive)
+        : false
+    readonly property real controlCenterActiveRecorderHeight: controlCenterActiveRecording
+        ? (ScreenRecorder && ScreenRecorder.isReplayActive ? 116 : 98)
+        : 0
+    readonly property real controlCenterActiveRecorderExtraHeight: controlCenterActiveRecording
+        ? controlCenterActiveRecorderHeight + 10
+        : 0
+    readonly property real defaultControlCenterExtraHeight: 32 + controlCenterActiveRecorderExtraHeight
+    readonly property real defaultControlCenterMaximumExtraHeight: 208 + controlCenterActiveRecorderExtraHeight
+
     readonly property real controlCenterMaximumExtraHeight: controlCenterLoader.item
         ? controlCenterLoader.item.controlCenterMaximumExtraHeight
-        : 120
+        : root.defaultControlCenterMaximumExtraHeight
     readonly property real controlCenterWindowHeight: islandContainer.controlCenterLayerVisible
         ? userConfig.islandTopMargin + 320 + root.controlCenterMaximumExtraHeight + 12
         : 0
@@ -2188,7 +2200,7 @@ PanelWindow {
                 case "control_center":
                     return controlCenterLoader.item && controlCenterLoader.item.powerViewActive
                         ? 150
-                        : 320 + (controlCenterLoader.item ? controlCenterLoader.item.controlCenterExtraHeight : 32);
+                        : 320 + (controlCenterLoader.item ? controlCenterLoader.item.controlCenterExtraHeight : root.defaultControlCenterExtraHeight);
                 case "notification_center":
                     return notificationCenterLoader.item ? notificationCenterLoader.item.contentHeight : 200;
                 case "wallpaper_picker":
