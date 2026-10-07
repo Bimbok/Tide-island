@@ -128,13 +128,20 @@ Item {
     readonly property real batteryModeCardHeight: 80
     readonly property real roundToggleButtonSize: 58
     readonly property real roundToggleButtonGap: 18
+
+    readonly property bool isRecording: ScreenRecorder ? ScreenRecorder.isRecording : false
+    readonly property bool isReplayActive: ScreenRecorder ? ScreenRecorder.isReplayActive : false
+    readonly property real drawerOpenDistance: batteryModeCardHeight * 2 + batteryDrawerContentGap * 2
+    readonly property real activeRecorderExtraHeight: (activeScreenRecorderCard && activeScreenRecorderCard.visible)
+        ? activeScreenRecorderCard.height + mainContent.spacing
+        : 0
+
     readonly property real controlCenterExtraHeight: 12 + batteryDrawerHandleHeight
-        + batteryDrawerProgress * (batteryDrawerContentGap + batteryModeCardHeight + (screenRecorderCard ? screenRecorderCard.height + batteryDrawerContentGap : 0))
-        + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
+        + batteryDrawerProgress * drawerOpenDistance
+        + activeRecorderExtraHeight
     readonly property real controlCenterMaximumExtraHeight: 12 + batteryDrawerHandleHeight
-        + batteryDrawerContentGap + batteryModeCardHeight
-        + (screenRecorderCard ? screenRecorderCard.height + batteryDrawerContentGap : 0)
-        + (systemTrayCard && systemTrayCard.hasItems ? systemTrayCard.height + mainContent.spacing : 0)
+        + drawerOpenDistance
+        + activeRecorderExtraHeight
     readonly property bool bluetoothAvailable: !!bluetoothAdapter
     readonly property var bluetoothAdapter: Bluetooth.defaultAdapter
     readonly property var bluetoothDeviceValues: bluetoothAdapter ? bluetoothAdapter.devices.values : []
@@ -1103,8 +1110,6 @@ Item {
             requestWifiStateRefresh();
             if (wifiPanelOpen && wifiSupported && wifiEnabled)
                 requestWifiListRefresh(true);
-            if (ScreenRecorder && (ScreenRecorder.isRecording || ScreenRecorder.isReplayActive))
-                setBatteryDrawerOpen(true);
         } else {
             sliderIntroTimer.stop();
             sliderIntroPending = false;
@@ -1125,8 +1130,6 @@ Item {
         SystemServices.requestVolume();
         refreshBatteryModeState();
         focusStateProcess.running = true;
-        if (ScreenRecorder && (ScreenRecorder.isRecording || ScreenRecorder.isReplayActive))
-            setBatteryDrawerOpen(true);
     }
 
     Behavior on opacity {
@@ -1337,18 +1340,6 @@ Item {
 
         function onNotificationRequested(title, message) {
             controlCenter.requestNotification("Screen Recorder", title, message);
-        }
-
-        function onIsRecordingChanged() {
-            if (ScreenRecorder.isRecording) {
-                controlCenter.setBatteryDrawerOpen(true);
-            }
-        }
-
-        function onIsReplayActiveChanged() {
-            if (ScreenRecorder.isReplayActive) {
-                controlCenter.setBatteryDrawerOpen(true);
-            }
         }
     }
 
@@ -2023,9 +2014,7 @@ Item {
             id: batteryDrawer
             readonly property real cardWidth: (width - connectivityCardsRow.spacing) / 2
             readonly property real modeSlotWidth: 44
-            readonly property real openDistance: controlCenter.batteryModeCardHeight
-                + controlCenter.batteryDrawerContentGap
-                + (screenRecorderCard ? screenRecorderCard.height + controlCenter.batteryDrawerContentGap : 0)
+            readonly property real openDistance: controlCenter.drawerOpenDistance
 
             width: parent.width
             height: controlCenter.batteryDrawerHandleHeight
@@ -2459,11 +2448,22 @@ Item {
                 }
             }
 
-            ScreenRecorderCard {
-                id: screenRecorderCard
+            SystemTrayCard {
+                id: drawerSystemTrayCard
                 anchors.left: parent.left
-                anchors.right: parent.right
+                width: batteryDrawer.cardWidth
+                height: controlCenter.batteryModeCardHeight
                 y: -height + controlCenter.batteryDrawerProgress * (controlCenter.batteryModeCardHeight + controlCenter.batteryDrawerContentGap + height)
+                opacity: Math.min(1, controlCenter.batteryDrawerProgress * 1.35)
+                clip: true
+            }
+
+            DrawerRecorderCard {
+                id: drawerRecorderCard
+                x: batteryDrawer.cardWidth + connectivityCardsRow.spacing
+                y: drawerSystemTrayCard.y
+                width: batteryDrawer.cardWidth
+                height: controlCenter.batteryModeCardHeight
                 opacity: Math.min(1, controlCenter.batteryDrawerProgress * 1.35)
                 clip: true
             }
@@ -2472,7 +2472,7 @@ Item {
                 id: batteryDrawerTunnelShade
                 anchors.left: parent.left
                 anchors.top: parent.top
-                width: batteryDrawer.cardWidth
+                width: parent.width
                 height: Math.max(1, controlCenter.batteryDrawerContentGap * 0.35)
                 z: 6
                 opacity: Math.min(0.34, controlCenter.batteryDrawerProgress * 0.45)
@@ -2563,9 +2563,27 @@ Item {
             }
         }
 
-        SystemTrayCard {
-            id: systemTrayCard
+        ScreenRecorderCard {
+            id: activeScreenRecorderCard
             width: parent.width
+            visible: controlCenter.isRecording || controlCenter.isReplayActive
+            height: visible ? (controlCenter.isReplayActive ? 116 : 98) : 0
+            opacity: visible ? 1 : 0
+            clip: true
+
+            Behavior on height {
+                NumberAnimation {
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 180
+                    easing.type: Easing.OutCubic
+                }
+            }
         }
 
         ControlSliderCard {

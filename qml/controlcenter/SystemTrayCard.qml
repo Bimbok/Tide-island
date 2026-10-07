@@ -11,22 +11,13 @@ Item {
     readonly property int itemCount: trayItems ? trayItems.length : 0
     readonly property bool hasItems: itemCount > 0
 
-    visible: hasItems
-    height: hasItems ? 62 : 0
+    readonly property color cardAccent: StyleTokens.accent
+    readonly property color buttonBg: StyleTokens.cardFill
+    readonly property color buttonBgHover: StyleTokens.cardFillHover
+    readonly property color buttonBgPressed: StyleTokens.cardFillActive
 
-    Behavior on height {
-        NumberAnimation {
-            duration: 220
-            easing.type: Easing.OutCubic
-        }
-    }
-
-    Behavior on opacity {
-        NumberAnimation {
-            duration: 180
-            easing.type: Easing.OutCubic
-        }
-    }
+    width: parent ? parent.width : 180
+    height: 80
 
     Rectangle {
         id: cardBg
@@ -40,15 +31,18 @@ Item {
             radius: parent.radius
         }
 
-        Row {
+        // Top Header Row
+        Item {
             anchors.left: parent.left
-            anchors.leftMargin: 16
+            anchors.leftMargin: 14
             anchors.right: parent.right
-            anchors.rightMargin: 16
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 12
+            anchors.rightMargin: 14
+            anchors.top: parent.top
+            anchors.topMargin: 11
+            height: 20
 
             Row {
+                anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
@@ -56,58 +50,113 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "\uf0c9"
                     color: StyleTokens.textSecondary
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     font.family: userConfig.iconFontFamily
                 }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Tray"
-                    color: StyleTokens.textSecondary
+                    color: StyleTokens.textPrimary
                     font.pixelSize: 12
                     font.family: userConfig.textFontFamily
                     font.weight: Font.DemiBold
                 }
             }
 
+            // Item count pill badge
             Rectangle {
-                width: 1
-                height: 18
+                visible: root.hasItems
+                anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                color: StyleTokens.withAlpha(StyleTokens.textSecondary, 0.22)
+                height: 18
+                width: Math.max(18, countText.implicitWidth + 10)
+                radius: 9
+                color: StyleTokens.cardFillActive
+                border.color: StyleTokens.withAlpha(StyleTokens.white, 0.08)
+                border.width: 1
+
+                Text {
+                    id: countText
+                    anchors.centerIn: parent
+                    text: root.itemCount.toString()
+                    font.pixelSize: 10
+                    font.family: userConfig.textFontFamily
+                    font.weight: Font.Bold
+                    color: StyleTokens.textSecondary
+                }
             }
+        }
+
+        // Empty state when no tray items are present
+        Row {
+            visible: !root.hasItems
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
+            spacing: 6
+            opacity: 0.55
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "\uf115"
+                color: StyleTokens.textDisabled
+                font.pixelSize: 12
+                font.family: userConfig.iconFontFamily
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "No items"
+                color: StyleTokens.textDisabled
+                font.pixelSize: 11
+                font.family: userConfig.textFontFamily
+                font.weight: Font.Medium
+            }
+        }
+
+        // Content Area: Horizontal Scrolling Tray
+        Item {
+            visible: root.hasItems
+            anchors.left: parent.left
+            anchors.leftMargin: 8
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 8
+            height: 36
+            clip: true
 
             Flickable {
                 id: trayFlickable
-                width: parent.width - 70
-                height: 42
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.fill: parent
                 contentWidth: trayRow.implicitWidth
                 contentHeight: height
                 boundsBehavior: Flickable.StopAtBounds
+                flickableDirection: Flickable.HorizontalFlick
                 clip: true
 
                 Row {
                     id: trayRow
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 8
+                    spacing: 6
 
                     Repeater {
                         model: root.trayItems
 
                         delegate: Item {
                             id: trayDelegate
-                            width: 38
-                            height: 38
+                            width: 34
+                            height: 34
 
                             Rectangle {
                                 anchors.fill: parent
-                                radius: 10
+                                radius: 9
                                 color: trayMouse.pressed
-                                    ? StyleTokens.cardFillActive
-                                    : (trayMouse.containsMouse ? StyleTokens.cardFillHover : StyleTokens.transparent)
+                                    ? root.buttonBgPressed
+                                    : (trayMouse.containsMouse ? root.buttonBgHover : StyleTokens.transparent)
                                 border.color: modelData.status === 2
-                                    ? StyleTokens.accent
+                                    ? root.cardAccent
                                     : (trayMouse.containsMouse ? StyleTokens.withAlpha(StyleTokens.white, 0.12) : StyleTokens.transparent)
                                 border.width: 1
 
@@ -117,8 +166,8 @@ Item {
 
                                 Image {
                                     anchors.centerIn: parent
-                                    width: 22
-                                    height: 22
+                                    width: 20
+                                    height: 20
                                     source: modelData.icon || ""
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
@@ -153,10 +202,10 @@ Item {
                                 visible: trayMouse.containsMouse && tooltipLabel.text !== ""
                                 z: 999
                                 anchors.bottom: parent.top
-                                anchors.bottomMargin: 6
+                                anchors.bottomMargin: 4
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                width: tooltipLabel.implicitWidth + 16
-                                height: 22
+                                width: tooltipLabel.implicitWidth + 14
+                                height: 20
                                 radius: 6
                                 color: StyleTokens.prompt
                                 border.color: StyleTokens.inputBorder
@@ -167,13 +216,54 @@ Item {
                                     anchors.centerIn: parent
                                     text: modelData.tooltipTitle || modelData.title || modelData.id || ""
                                     color: StyleTokens.textPrimaryBright
-                                    font.pixelSize: 11
+                                    font.pixelSize: 10
                                     font.family: userConfig.textFontFamily
                                     font.weight: Font.Medium
                                 }
                             }
                         }
                     }
+                }
+            }
+
+            // Left fade gradient when scrolled
+            Rectangle {
+                visible: trayFlickable.contentX > 2
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: 14
+                z: 2
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: StyleTokens.module }
+                    GradientStop { position: 1.0; color: StyleTokens.transparent }
+                }
+            }
+
+            // Right fade gradient when content overflows
+            Rectangle {
+                visible: trayFlickable.contentWidth > trayFlickable.width && (trayFlickable.contentX < trayFlickable.contentWidth - trayFlickable.width - 2)
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: 14
+                z: 2
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: StyleTokens.transparent }
+                    GradientStop { position: 1.0; color: StyleTokens.module }
+                }
+            }
+
+            // Wheel scroll support on entire flickable area
+            MouseArea {
+                anchors.fill: parent
+                z: 1
+                propagateComposedEvents: true
+                acceptedButtons: Qt.NoButton
+                onWheel: function(wheel) {
+                    trayFlickable.contentX = Math.max(0, Math.min(trayFlickable.contentWidth - trayFlickable.width, trayFlickable.contentX - wheel.angleDelta.y));
                 }
             }
         }
