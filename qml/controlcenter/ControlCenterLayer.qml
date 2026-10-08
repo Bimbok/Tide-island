@@ -682,6 +682,10 @@ Item {
         clearBluetoothMessages();
     }
 
+    function closeConnectivityOverlays(emitSignals) {
+        closeConnectivityPanels(emitSignals);
+    }
+
     function requestWifiStateRefresh() {
         if (!showCondition || !wifiController || typeof wifiController.refreshState !== "function") return;
         wifiController.refreshState();
@@ -1179,7 +1183,7 @@ Item {
             return;
         }
         if (controlCenter.anyConnectivityPanelOpen) {
-            controlCenter.closeConnectivityOverlays();
+            controlCenter.closeConnectivityPanels();
             event.accepted = true;
             return;
         }
@@ -1209,7 +1213,7 @@ Item {
                 return;
             }
             if (controlCenter.anyConnectivityPanelOpen) {
-                controlCenter.closeConnectivityOverlays();
+                controlCenter.closeConnectivityPanels();
                 event.accepted = true;
                 return;
             }
@@ -1351,7 +1355,7 @@ Item {
 
     Process {
         id: focusStateProcess
-        command: ["swaync-client", "--get-dnd"]
+        command: ["sh", "-c", "if command -v swaync-client >/dev/null 2>&1; then swaync-client --get-dnd; fi"]
         running: false
 
         stdout: SplitParser {
@@ -1441,7 +1445,7 @@ Item {
 
     Process {
         id: focusEnableProcess
-        command: ["swaync-client", "-dn"]
+        command: ["sh", "-c", "if command -v swaync-client >/dev/null 2>&1; then swaync-client -dn; else exit 127; fi"]
         running: false
 
         onExited: function(exitCode) {
@@ -1455,7 +1459,7 @@ Item {
 
     Process {
         id: focusDisableProcess
-        command: ["swaync-client", "-df"]
+        command: ["sh", "-c", "if command -v swaync-client >/dev/null 2>&1; then swaync-client -df; else exit 127; fi"]
         running: false
 
         onExited: function(exitCode) {
