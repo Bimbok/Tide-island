@@ -75,7 +75,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 height: 22
                 radius: 11
-                color: StyleTokens.card
+                color: StyleTokens.cardFill
                 visible: SystemServices.appStreams.length > 0
                 width: appCountText.implicitWidth + 14
 
@@ -100,7 +100,9 @@ Item {
             anchors.topMargin: 12
             height: 36
             radius: 18
-            color: StyleTokens.card
+            color: StyleTokens.input
+            border.width: 1
+            border.color: StyleTokens.inputBorder
             clip: true
 
             Row {
@@ -248,8 +250,8 @@ Item {
                 height: 56
                 radius: 16
                 color: modelData.active
-                    ? StyleTokens.withAlpha(StyleTokens.accent, 0.14)
-                    : (outputMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.card)
+                    ? StyleTokens.withAlpha(StyleTokens.accent, 0.15)
+                    : (outputMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.cardFill)
                 border.width: 1
                 border.color: modelData.active ? StyleTokens.accent : StyleTokens.inputBorder
 
@@ -362,8 +364,8 @@ Item {
                 height: 56
                 radius: 16
                 color: modelData.active
-                    ? StyleTokens.withAlpha(StyleTokens.accent, 0.14)
-                    : (inputMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.card)
+                    ? StyleTokens.withAlpha(StyleTokens.accent, 0.15)
+                    : (inputMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.cardFill)
                 border.width: 1
                 border.color: modelData.active ? StyleTokens.accent : StyleTokens.inputBorder
 
@@ -519,7 +521,7 @@ Item {
                     width: streamsList.width
                     height: 68
                     radius: 16
-                    color: StyleTokens.card
+                    color: StyleTokens.cardFill
                     border.width: 1
                     border.color: StyleTokens.inputBorder
 

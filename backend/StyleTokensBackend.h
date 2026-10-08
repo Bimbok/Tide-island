@@ -27,6 +27,8 @@ class StyleTokensBackend final : public QObject {
     Q_PROPERTY(QColor cardFill READ cardFill NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor cardFillActive READ cardFillActive NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor cardFillHover READ cardFillHover NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor card READ cardFill NOTIFY colorsChanged FINAL)
+    Q_PROPERTY(QColor cardHover READ cardFillHover NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor connectivityCard READ connectivityCard NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor connectivityCardHover READ connectivityCardHover NOTIFY colorsChanged FINAL)
     Q_PROPERTY(QColor prompt READ prompt NOTIFY colorsChanged FINAL)
