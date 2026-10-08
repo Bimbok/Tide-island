@@ -19,7 +19,7 @@ Item {
         if (iconType === "bluetooth") return "\udb80\udcaf";
         if (iconType === "hdmi") return "\udb80\ude41";
         if (iconType === "headset") return "\udb80\udccd";
-        if (iconType === "mic") return "\udb80\udcf2";
+        if (iconType === "mic") return "\uf130";
         return "\udb81\udcc3"; // speaker default
     }
 
@@ -163,7 +163,7 @@ Item {
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: "\udb80\udcf2"
+                            text: "\uf130"
                             font.pixelSize: 12
                             font.family: root.iconFontFamily
                             color: root.activeTab === "inputs" ? StyleTokens.textOnAccent : StyleTokens.textSecondary
@@ -203,7 +203,7 @@ Item {
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: "\udb80\udcf6"
+                            text: "\uf1de"
                             font.pixelSize: 12
                             font.family: root.iconFontFamily
                             color: root.activeTab === "apps" ? StyleTokens.textOnAccent : StyleTokens.textSecondary
@@ -481,7 +481,7 @@ Item {
 
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "\udb80\udcf6"
+                        text: "\uf1de"
                         color: StyleTokens.textSubtle
                         font.pixelSize: 28
                         font.family: root.iconFontFamily
@@ -519,11 +519,47 @@ Item {
                     id: streamDelegate
                     required property var modelData
                     width: streamsList.width
-                    height: 68
+                    height: 72
                     radius: 16
                     color: StyleTokens.cardFill
                     border.width: 1
                     border.color: StyleTokens.inputBorder
+
+                    property real displayedVolume: (modelData && modelData.volume !== undefined) ? modelData.volume : 0.0
+                    property real pendingVolume: displayedVolume
+                    readonly property bool isDragging: sliderMouse.pressed
+
+                    onModelDataChanged: {
+                        if (!isDragging && modelData && modelData.volume !== undefined) {
+                            displayedVolume = modelData.volume;
+                            pendingVolume = modelData.volume;
+                        }
+                    }
+
+                    Timer {
+                        id: streamVolumeApplyTimer
+                        interval: 35
+                        repeat: false
+                        onTriggered: {
+                            if (modelData && modelData.index !== undefined) {
+                                SystemServices.setAppStreamVolume(modelData.index, streamDelegate.pendingVolume);
+                            }
+                        }
+                    }
+
+                    function updateVolumeFromMouse(val) {
+                        const clamped = Math.max(0.0, Math.min(1.0, val));
+                        displayedVolume = clamped;
+                        pendingVolume = clamped;
+                        streamVolumeApplyTimer.restart();
+                    }
+
+                    function commitVolume() {
+                        streamVolumeApplyTimer.stop();
+                        if (modelData && modelData.index !== undefined) {
+                            SystemServices.setAppStreamVolume(modelData.index, streamDelegate.pendingVolume);
+                        }
+                    }
 
                     Item {
                         anchors.fill: parent
@@ -546,12 +582,12 @@ Item {
                                 anchors.margins: 2
                                 source: Quickshell.iconPath(modelData.iconName, true) || ""
                                 fillMode: Image.PreserveAspectFit
-                                visible: source.toString() !== ""
+                                visible: source.toString() !== "" && status === Image.Ready
                             }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "\udb80\udcf6"
+                                text: "\uf001"
                                 color: StyleTokens.textSecondary
                                 font.pixelSize: 12
                                 font.family: root.iconFontFamily
@@ -580,7 +616,7 @@ Item {
                             anchors.right: muteButton.left
                             anchors.rightMargin: 8
                             anchors.verticalCenter: appIconBox.verticalCenter
-                            text: Math.round(modelData.volume * 100) + "%"
+                            text: Math.round(streamDelegate.displayedVolume * 100) + "%"
                             color: modelData.muted ? StyleTokens.textMuted : StyleTokens.textSecondary
                             font.pixelSize: 11
                             font.family: root.textFontFamily
@@ -622,8 +658,8 @@ Item {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
-                            height: 16
-                            radius: 8
+                            height: 20
+                            radius: 10
                             color: StyleTokens.track
                             border.width: 1
                             border.color: StyleTokens.inputBorder
@@ -631,7 +667,9 @@ Item {
 
                             Rectangle {
                                 id: appSliderFill
-                                width: Math.max(0, Math.min(appSliderTrack.width, appSliderTrack.width * (modelData.volume / 1.0)))
+                                width: streamDelegate.displayedVolume <= 0.001
+                                    ? 0
+                                    : Math.min(appSliderTrack.width, appSliderTrack.width * streamDelegate.displayedVolume)
                                 height: parent.height
                                 radius: parent.radius
                                 color: modelData.muted
@@ -644,16 +682,34 @@ Item {
                             MouseArea {
                                 id: sliderMouse
                                 anchors.fill: parent
+                                anchors.topMargin: -8
+                                anchors.bottomMargin: -8
+                                preventStealing: true
                                 hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
 
-                                function updatePos(mouseX) {
-                                    const nextVol = Math.max(0, Math.min(1.0, mouseX / width));
-                                    SystemServices.setAppStreamVolume(modelData.index, nextVol);
+                                function updateFromMouse(mouseX) {
+                                    const nextVal = Math.max(0.0, Math.min(1.0, mouseX / appSliderTrack.width));
+                                    streamDelegate.updateVolumeFromMouse(nextVal);
                                 }
 
-                                onPressed: function(mouse) { updatePos(mouse.x); }
+                                onPressed: function(mouse) {
+                                    updateFromMouse(mouse.x);
+                                }
                                 onPositionChanged: function(mouse) {
-                                    if (pressed) updatePos(mouse.x);
+                                    if (pressed) {
+                                        updateFromMouse(mouse.x);
+                                    }
+                                }
+                                onReleased: streamDelegate.commitVolume()
+                                onCanceled: streamDelegate.commitVolume()
+
+                                onWheel: function(wheel) {
+                                    const delta = wheel.angleDelta.y > 0 ? 0.05 : -0.05;
+                                    const nextVal = Math.max(0.0, Math.min(1.0, streamDelegate.displayedVolume + delta));
+                                    streamDelegate.displayedVolume = nextVal;
+                                    streamDelegate.pendingVolume = nextVal;
+                                    streamDelegate.commitVolume();
                                 }
                             }
                         }

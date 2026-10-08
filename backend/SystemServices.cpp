@@ -265,6 +265,8 @@ SystemServices::~SystemServices() {
     m_brightnessThrottleTimer.stop();
     m_volumeThrottleTimer.stop();
     m_micVolumeThrottleTimer.stop();
+    m_pendingAppStreamVolumePercents.clear();
+    m_activeAppStreamVolumeCommands.clear();
 
     stopProcess(m_notificationMonitor);
     stopProcess(m_pipeWireMonitor);
@@ -1543,21 +1545,45 @@ void SystemServices::setAudioInput(const QString &sourceName, const QString &por
 }
 
 void SystemServices::setAppStreamVolume(int streamIndex, double volume) {
+    if (m_shuttingDown) return;
+
     const int percent = qRound(std::clamp(volume, 0.0, 1.5) * 100.0);
     for (int i = 0; i < m_appStreams.size(); ++i) {
         QVariantMap map = m_appStreams[i].toMap();
         if (map.value(QStringLiteral("index")).toInt() == streamIndex) {
             map.insert(QStringLiteral("volume"), volume);
             m_appStreams[i] = map;
-            emit appStreamsChanged();
             break;
         }
     }
 
+    m_pendingAppStreamVolumePercents.insert(streamIndex, percent);
+    if (m_activeAppStreamVolumeCommands.contains(streamIndex)) {
+        return;
+    }
+
+    applyPendingAppStreamVolume(streamIndex);
+}
+
+void SystemServices::applyPendingAppStreamVolume(int streamIndex) {
+    if (m_shuttingDown || !m_pendingAppStreamVolumePercents.contains(streamIndex)) {
+        return;
+    }
+
+    const int percent = m_pendingAppStreamVolumePercents.take(streamIndex);
+    m_activeAppStreamVolumeCommands.insert(streamIndex);
+
+    QPointer<SystemServices> self(this);
     startCommand(QStringLiteral("pactl"),
                  {QStringLiteral("set-sink-input-volume"), QString::number(streamIndex), QStringLiteral("%1%").arg(percent)},
                  800,
-                 [](const CommandResult &) {});
+                 [self, streamIndex](const CommandResult &) {
+        if (!self || self->m_shuttingDown) return;
+        self->m_activeAppStreamVolumeCommands.remove(streamIndex);
+        if (self->m_pendingAppStreamVolumePercents.contains(streamIndex)) {
+            self->applyPendingAppStreamVolume(streamIndex);
+        }
+    });
 }
 
 void SystemServices::toggleAppStreamMute(int streamIndex) {

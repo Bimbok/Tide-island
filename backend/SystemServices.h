@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QByteArray>
+#include <QPointer>
 #include <QProcess>
 #include <QSet>
 #include <QString>
@@ -167,6 +168,7 @@ private:
     void applyPendingBrightness();
     void applyPendingVolume();
     void applyPendingMicVolume();
+    void applyPendingAppStreamVolume(int streamIndex);
 
     void startCava();
     void stopCava();
@@ -253,4 +255,6 @@ private:
     bool m_audioInputsRequestActive = false;
     bool m_appStreamsRequestActive = false;
     bool m_audioMonitoringActive = false;
+    QHash<int, int> m_pendingAppStreamVolumePercents;
+    QSet<int> m_activeAppStreamVolumeCommands;
 };
