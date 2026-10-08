@@ -194,7 +194,7 @@ Item {
     readonly property string bluetoothPairingMessage: bluetoothPairingAgent ? bluetoothPairingAgent.promptMessage : ""
     readonly property string bluetoothPairingDisplayedCode: bluetoothPairingAgent ? bluetoothPairingAgent.displayedCode : ""
     readonly property bool hasConnectivityPrompt: wifiPendingPasswordSsid.length > 0 || bluetoothPairingActive
-    readonly property bool anyConnectivityPanelOpen: wifiPanelOpen || bluetoothPanelOpen || audioOutputPanelOpen || audioInputPanelOpen
+    readonly property bool anyConnectivityPanelOpen: wifiPanelOpen || bluetoothPanelOpen || audioOutputPanelOpen || audioInputPanelOpen || powerPanelOpen
     readonly property string wifiStatusText: wifiController ? wifiController.statusText : "Unavailable"
     readonly property string bluetoothStatusText: buildBluetoothStatusText()
     readonly property string bluetoothAvailabilityMessage: bluetoothAvailable ? "" : "No Bluetooth adapter is available."
@@ -530,6 +530,10 @@ Item {
             wifiPanelOpen = nextOpen;
 
             if (nextOpen) {
+                setConnectivityPanelOpen("bluetooth", false, emitSignal);
+                setConnectivityPanelOpen("power", false, emitSignal);
+                setConnectivityPanelOpen("audio_output", false, emitSignal);
+                setConnectivityPanelOpen("audio_input", false, emitSignal);
                 if (showCondition) {
                     requestWifiStateRefresh();
                     if (wifiSupported && wifiEnabled)
@@ -544,6 +548,10 @@ Item {
             bluetoothPanelOpen = nextOpen;
 
             if (nextOpen) {
+                setConnectivityPanelOpen("wifi", false, emitSignal);
+                setConnectivityPanelOpen("power", false, emitSignal);
+                setConnectivityPanelOpen("audio_output", false, emitSignal);
+                setConnectivityPanelOpen("audio_input", false, emitSignal);
                 if (bluetoothAdapter && bluetoothEnabled && !bluetoothAdapter.discovering) {
                     bluetoothAdapter.discovering = true;
                     bluetoothInfoMessage = "Scanning for nearby devices...";
@@ -565,6 +573,12 @@ Item {
         else if (kind === "power") {
             changed = powerPanelOpen !== nextOpen;
             powerPanelOpen = nextOpen;
+            if (nextOpen) {
+                setConnectivityPanelOpen("wifi", false, emitSignal);
+                setConnectivityPanelOpen("bluetooth", false, emitSignal);
+                setConnectivityPanelOpen("audio_output", false, emitSignal);
+                setConnectivityPanelOpen("audio_input", false, emitSignal);
+            }
         }
         else if (kind === "audio_output" || kind === "output") {
             changed = audioOutputPanelOpen !== nextOpen;
@@ -573,6 +587,7 @@ Item {
                 audioInputPanelOpen = false;
                 setConnectivityPanelOpen("wifi", false, emitSignal);
                 setConnectivityPanelOpen("bluetooth", false, emitSignal);
+                setConnectivityPanelOpen("power", false, emitSignal);
                 SystemServices.setAudioMonitoringActive(true);
                 SystemServices.requestAudioOutputs();
                 SystemServices.requestAppStreams();
@@ -590,6 +605,7 @@ Item {
                 audioOutputPanelOpen = false;
                 setConnectivityPanelOpen("wifi", false, emitSignal);
                 setConnectivityPanelOpen("bluetooth", false, emitSignal);
+                setConnectivityPanelOpen("power", false, emitSignal);
                 SystemServices.setAudioMonitoringActive(true);
                 SystemServices.requestAudioInputs();
             } else if (!audioOutputPanelOpen) {
@@ -634,6 +650,7 @@ Item {
 
         setConnectivityPanelOpen("wifi", false, emitSignals);
         setConnectivityPanelOpen("bluetooth", false, emitSignals);
+        setConnectivityPanelOpen("power", false, emitSignals);
         setConnectivityPanelOpen("audio_output", false, emitSignals);
         setConnectivityPanelOpen("audio_input", false, emitSignals);
         clearWifiPrompt();
