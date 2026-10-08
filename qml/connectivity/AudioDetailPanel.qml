@@ -673,10 +673,10 @@ Item {
                                 height: parent.height
                                 radius: parent.radius
                                 color: modelData.muted
-                                    ? StyleTokens.withAlpha(StyleTokens.textMuted, 0.5)
-                                    : (sliderMouse.pressed ? StyleTokens.accentSoft : StyleTokens.accent)
+                                    ? StyleTokens.withAlpha(StyleTokens.accent, 0.45)
+                                    : StyleTokens.accent
 
-                                Behavior on color { ColorAnimation { duration: 100 } }
+                                Behavior on color { ColorAnimation { duration: 140 } }
                             }
 
                             MouseArea {
