@@ -502,25 +502,6 @@ PanelWindow {
     function setConnectivityDetailVisible(kind, open) {
         const nextOpen = !!open;
 
-        if (nextOpen) {
-            if (kind !== "wifi" && (wifiConnectivityDetailMounted || wifiConnectivityDetailOpen)) {
-                wifiConnectivityDetailOpen = false;
-                wifiConnectivityDetailCleanupTimer.restart();
-            }
-            if (kind !== "power" && (powerConnectivityDetailMounted || powerConnectivityDetailOpen)) {
-                powerConnectivityDetailOpen = false;
-                powerConnectivityDetailCleanupTimer.restart();
-            }
-            if (kind !== "bluetooth" && (bluetoothConnectivityDetailMounted || bluetoothConnectivityDetailOpen)) {
-                bluetoothConnectivityDetailOpen = false;
-                bluetoothConnectivityDetailCleanupTimer.restart();
-            }
-            if (!kind.startsWith("audio") && (root.audioConnectivityDetailMounted || root.audioConnectivityDetailOpen)) {
-                root.audioConnectivityDetailOpen = false;
-                audioConnectivityDetailCleanupTimer.restart();
-            }
-        }
-
         if (kind === "wifi") {
             if (nextOpen) {
                 wifiConnectivityDetailCleanupTimer.stop();

@@ -637,9 +637,9 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData.muted ? "\ueb24" : "\ueb75"
+                                text: modelData.muted ? "\uf026" : "\uf028"
                                 color: modelData.muted ? StyleTokens.error : (muteMouse.containsMouse ? StyleTokens.textPrimary : StyleTokens.textSecondary)
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 font.family: root.iconFontFamily
                             }
 
