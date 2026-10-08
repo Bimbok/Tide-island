@@ -149,6 +149,14 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
   - **Microphone Intensity Slider**: Native input gain slider powered by WirePlumber (`@DEFAULT_AUDIO_SOURCE@`) with 40ms event throttling, fluid drags, and instant click-to-mute corner toggle.
   - **Click-to-Mute Sound Card**: One-click corner icon toggle for system audio (`@DEFAULT_AUDIO_SINK@`) with dynamic mute icon (`󰝟`), `"Sound (Muted)"` title indicator, and dimmed accent fill.
   - **Dynamic Sun Glyph & Brightness Presets**: Real-time morphing sun icon matching backlight level (`󰃞` <30%, `󰃟` 30%–70%, `󰃠` >70%) plus click-to-cycle presets (`10% ➔ 30% ➔ 65% ➔ 100% ➔ 10%...`).
+- **🎧 Audio Device Switcher Flyout (Outputs & Inputs)**: Side flyout panel opened with one click on the chevron (`›`) on either the Sound or Microphone card:
+  - **Output Devices**: Instantly switch default audio sink/port between Speakers, Headphones, Bluetooth earbuds, and HDMI with visual active indicator checkmarks.
+  - **Input Devices**: Instantly switch active microphone source between Internal Mic, USB Mic, and Headsets.
+  - **Sleek Tab Switcher**: Segmented pills (`[ 󰓃 Output | 󰍬 Input | 󰎆 Mixer ]`) allow seamless navigation between output devices, microphones, and per-app streams in place.
+- **🎛 Per-App Volume Mixer**: Integrated PipeWire/WirePlumber application volume mixer:
+  - Displays all active applications playing audio (Firefox, Spotify, Discord, Steam, games).
+  - High-res desktop app icons resolved automatically via the freedesktop icon theme.
+  - Compact individual volume sliders and one-click app mute toggles.
 - **Dedicated Microphone & Audio Dynamic Island OSD Feedback**: Real-time PipeWire audio source/sink monitoring (`pactl subscribe`) that keeps sliders in sync and triggers matching Dynamic Island pills (`[   XX%  ◯ ]` and `[ 󰝟  XX%  ◯ ]`) whenever adjusted via hotkeys, CLI commands, or UI clicks.
 - **Throttled Slider Performance**: Event throttling on microphone, volume, and brightness slider drags to eliminate IPC and D-Bus lag, maintaining smooth 60fps+ responsiveness.
 - **Unified Icon Weight Harmony**: Clean, consistent icon line weights across volume, microphone, brightness, battery, and weather.

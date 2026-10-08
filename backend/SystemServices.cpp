@@ -12,6 +12,9 @@
 #include <QImageReader>
 #include <QImageWriter>
 #include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QStandardPaths>
@@ -1225,6 +1228,355 @@ void SystemServices::toggleMicMute() {
                  1000,
                  [this](const CommandResult &) {
         requestMicVolume();
+    });
+}
+
+void SystemServices::setAudioMonitoringActive(bool active) {
+    m_audioMonitoringActive = active;
+    if (active) {
+        requestAudioOutputs();
+        requestAudioInputs();
+        requestAppStreams();
+    }
+}
+
+void SystemServices::refreshAudioIfActive() {
+    if (m_audioMonitoringActive) {
+        requestAudioOutputs();
+        requestAudioInputs();
+        requestAppStreams();
+    }
+}
+
+void SystemServices::requestAudioOutputs() {
+    if (m_audioOutputsRequestActive) return;
+    m_audioOutputsRequestActive = true;
+
+    startCommand(QStringLiteral("sh"),
+                 {QStringLiteral("-c"), QStringLiteral("pactl get-default-sink 2>/dev/null; echo '---TIDE-SEP---'; pactl -f json list sinks 2>/dev/null")},
+                 1000,
+                 [this](const CommandResult &result) {
+        m_audioOutputsRequestActive = false;
+        if (result.exitCode != 0 || result.stdoutData.isEmpty()) return;
+
+        const QString fullText = QString::fromUtf8(result.stdoutData);
+        const QStringList parts = fullText.split(QStringLiteral("---TIDE-SEP---"));
+        if (parts.size() < 2) return;
+
+        const QString defaultSink = parts[0].trimmed();
+        if (m_defaultAudioSink != defaultSink) {
+            m_defaultAudioSink = defaultSink;
+            emit defaultAudioSinkChanged();
+        }
+
+        const QByteArray jsonBytes = parts[1].trimmed().toUtf8();
+        QJsonParseError parseErr;
+        const QJsonDocument doc = QJsonDocument::fromJson(jsonBytes, &parseErr);
+        if (!doc.isArray()) return;
+
+        QVariantList outputs;
+        const QJsonArray arr = doc.array();
+        for (const QJsonValue &val : arr) {
+            if (!val.isObject()) continue;
+            const QJsonObject sinkObj = val.toObject();
+            const QString sinkName = sinkObj.value(QStringLiteral("name")).toString();
+            const QString sinkDesc = sinkObj.value(QStringLiteral("description")).toString();
+            const QString activePort = sinkObj.value(QStringLiteral("active_port")).toString();
+            const QJsonObject props = sinkObj.value(QStringLiteral("properties")).toObject();
+            const QString formFactor = props.value(QStringLiteral("device.form_factor")).toString();
+            const QString iconName = props.value(QStringLiteral("device.icon_name")).toString();
+
+            const QJsonArray ports = sinkObj.value(QStringLiteral("ports")).toArray();
+            if (ports.size() > 1) {
+                for (const QJsonValue &pVal : ports) {
+                    if (!pVal.isObject()) continue;
+                    const QJsonObject portObj = pVal.toObject();
+                    const QString pName = portObj.value(QStringLiteral("name")).toString();
+                    const QString pDesc = portObj.value(QStringLiteral("description")).toString();
+                    const QString pType = portObj.value(QStringLiteral("type")).toString();
+                    const bool isActive = (sinkName == defaultSink && activePort == pName);
+
+                    QString iconType = QStringLiteral("speaker");
+                    if (pType.compare(QStringLiteral("headphones"), Qt::CaseInsensitive) == 0 ||
+                        pName.contains(QStringLiteral("headphone"), Qt::CaseInsensitive) ||
+                        pDesc.contains(QStringLiteral("headphone"), Qt::CaseInsensitive)) {
+                        iconType = QStringLiteral("headphones");
+                    } else if (pType.compare(QStringLiteral("speaker"), Qt::CaseInsensitive) == 0 ||
+                               pName.contains(QStringLiteral("speaker"), Qt::CaseInsensitive)) {
+                        iconType = QStringLiteral("speaker");
+                    }
+
+                    QVariantMap item;
+                    item.insert(QStringLiteral("id"), QStringLiteral("%1:%2").arg(sinkName, pName));
+                    item.insert(QStringLiteral("sinkName"), sinkName);
+                    item.insert(QStringLiteral("portName"), pName);
+                    item.insert(QStringLiteral("name"), pDesc.isEmpty() ? pName : pDesc);
+                    item.insert(QStringLiteral("description"), sinkDesc);
+                    item.insert(QStringLiteral("iconType"), iconType);
+                    item.insert(QStringLiteral("active"), isActive);
+                    outputs.append(item);
+                }
+            } else {
+                const bool isActive = (sinkName == defaultSink);
+                QString iconType = QStringLiteral("speaker");
+                if (sinkName.contains(QStringLiteral("bluez"), Qt::CaseInsensitive) ||
+                    sinkDesc.contains(QStringLiteral("Bluetooth"), Qt::CaseInsensitive) ||
+                    iconName.contains(QStringLiteral("bluetooth"), Qt::CaseInsensitive)) {
+                    iconType = QStringLiteral("bluetooth");
+                } else if (sinkDesc.contains(QStringLiteral("hdmi"), Qt::CaseInsensitive) ||
+                           sinkDesc.contains(QStringLiteral("displayport"), Qt::CaseInsensitive)) {
+                    iconType = QStringLiteral("hdmi");
+                } else if (sinkDesc.contains(QStringLiteral("headphone"), Qt::CaseInsensitive) ||
+                           formFactor.contains(QStringLiteral("headphone"), Qt::CaseInsensitive)) {
+                    iconType = QStringLiteral("headphones");
+                }
+
+                QVariantMap item;
+                item.insert(QStringLiteral("id"), sinkName);
+                item.insert(QStringLiteral("sinkName"), sinkName);
+                item.insert(QStringLiteral("portName"), QString());
+                item.insert(QStringLiteral("name"), sinkDesc.isEmpty() ? sinkName : sinkDesc);
+                item.insert(QStringLiteral("description"), QString());
+                item.insert(QStringLiteral("iconType"), iconType);
+                item.insert(QStringLiteral("active"), isActive);
+                outputs.append(item);
+            }
+        }
+
+        if (m_audioOutputs != outputs) {
+            m_audioOutputs = outputs;
+            emit audioOutputsChanged();
+        }
+    });
+}
+
+void SystemServices::requestAudioInputs() {
+    if (m_audioInputsRequestActive) return;
+    m_audioInputsRequestActive = true;
+
+    startCommand(QStringLiteral("sh"),
+                 {QStringLiteral("-c"), QStringLiteral("pactl get-default-source 2>/dev/null; echo '---TIDE-SEP---'; pactl -f json list sources 2>/dev/null")},
+                 1000,
+                 [this](const CommandResult &result) {
+        m_audioInputsRequestActive = false;
+        if (result.exitCode != 0 || result.stdoutData.isEmpty()) return;
+
+        const QString fullText = QString::fromUtf8(result.stdoutData);
+        const QStringList parts = fullText.split(QStringLiteral("---TIDE-SEP---"));
+        if (parts.size() < 2) return;
+
+        const QString defaultSource = parts[0].trimmed();
+        if (m_defaultAudioSource != defaultSource) {
+            m_defaultAudioSource = defaultSource;
+            emit defaultAudioSourceChanged();
+        }
+
+        const QByteArray jsonBytes = parts[1].trimmed().toUtf8();
+        QJsonParseError parseErr;
+        const QJsonDocument doc = QJsonDocument::fromJson(jsonBytes, &parseErr);
+        if (!doc.isArray()) return;
+
+        QVariantList inputs;
+        const QJsonArray arr = doc.array();
+        for (const QJsonValue &val : arr) {
+            if (!val.isObject()) continue;
+            const QJsonObject srcObj = val.toObject();
+            const QString srcName = srcObj.value(QStringLiteral("name")).toString();
+            const QJsonObject props = srcObj.value(QStringLiteral("properties")).toObject();
+
+            if (srcName.endsWith(QStringLiteral(".monitor"), Qt::CaseInsensitive) ||
+                props.value(QStringLiteral("media.class")).toString() == QLatin1String("Audio/Sink")) {
+                continue;
+            }
+
+            const QString srcDesc = srcObj.value(QStringLiteral("description")).toString();
+            const QString activePort = srcObj.value(QStringLiteral("active_port")).toString();
+            const QJsonArray ports = srcObj.value(QStringLiteral("ports")).toArray();
+
+            if (ports.size() > 1) {
+                for (const QJsonValue &pVal : ports) {
+                    if (!pVal.isObject()) continue;
+                    const QJsonObject portObj = pVal.toObject();
+                    const QString pName = portObj.value(QStringLiteral("name")).toString();
+                    const QString pDesc = portObj.value(QStringLiteral("description")).toString();
+                    const bool isActive = (srcName == defaultSource && activePort == pName);
+
+                    QString iconType = QStringLiteral("mic");
+                    if (pName.contains(QStringLiteral("headset"), Qt::CaseInsensitive) ||
+                        pDesc.contains(QStringLiteral("headset"), Qt::CaseInsensitive)) {
+                        iconType = QStringLiteral("headset");
+                    }
+
+                    QVariantMap item;
+                    item.insert(QStringLiteral("id"), QStringLiteral("%1:%2").arg(srcName, pName));
+                    item.insert(QStringLiteral("sourceName"), srcName);
+                    item.insert(QStringLiteral("portName"), pName);
+                    item.insert(QStringLiteral("name"), pDesc.isEmpty() ? pName : pDesc);
+                    item.insert(QStringLiteral("description"), srcDesc);
+                    item.insert(QStringLiteral("iconType"), iconType);
+                    item.insert(QStringLiteral("active"), isActive);
+                    inputs.append(item);
+                }
+            } else {
+                const bool isActive = (srcName == defaultSource);
+                QString iconType = QStringLiteral("mic");
+                if (srcName.contains(QStringLiteral("bluez"), Qt::CaseInsensitive)) {
+                    iconType = QStringLiteral("bluetooth");
+                } else if (srcDesc.contains(QStringLiteral("headset"), Qt::CaseInsensitive)) {
+                    iconType = QStringLiteral("headset");
+                }
+
+                QVariantMap item;
+                item.insert(QStringLiteral("id"), srcName);
+                item.insert(QStringLiteral("sourceName"), srcName);
+                item.insert(QStringLiteral("portName"), QString());
+                item.insert(QStringLiteral("name"), srcDesc.isEmpty() ? srcName : srcDesc);
+                item.insert(QStringLiteral("description"), QString());
+                item.insert(QStringLiteral("iconType"), iconType);
+                item.insert(QStringLiteral("active"), isActive);
+                inputs.append(item);
+            }
+        }
+
+        if (m_audioInputs != inputs) {
+            m_audioInputs = inputs;
+            emit audioInputsChanged();
+        }
+    });
+}
+
+void SystemServices::requestAppStreams() {
+    if (m_appStreamsRequestActive) return;
+    m_appStreamsRequestActive = true;
+
+    startCommand(QStringLiteral("pactl"),
+                 {QStringLiteral("-f"), QStringLiteral("json"), QStringLiteral("list"), QStringLiteral("sink-inputs")},
+                 1000,
+                 [this](const CommandResult &result) {
+        m_appStreamsRequestActive = false;
+        if (result.exitCode != 0 || result.stdoutData.isEmpty()) return;
+
+        QJsonParseError parseErr;
+        const QJsonDocument doc = QJsonDocument::fromJson(result.stdoutData, &parseErr);
+        if (!doc.isArray()) return;
+
+        QVariantList streams;
+        const QJsonArray arr = doc.array();
+        for (const QJsonValue &val : arr) {
+            if (!val.isObject()) continue;
+            const QJsonObject streamObj = val.toObject();
+            const int index = streamObj.value(QStringLiteral("index")).toInt();
+            const bool muted = streamObj.value(QStringLiteral("mute")).toBool();
+            const bool corked = streamObj.value(QStringLiteral("corked")).toBool();
+
+            double vol = 1.0;
+            const QJsonObject volumeObj = streamObj.value(QStringLiteral("volume")).toObject();
+            if (!volumeObj.isEmpty()) {
+                const QJsonObject fl = volumeObj.value(QStringLiteral("front-left")).toObject();
+                if (!fl.isEmpty()) {
+                    vol = static_cast<double>(fl.value(QStringLiteral("value")).toInt()) / 65536.0;
+                } else {
+                    auto it = volumeObj.begin();
+                    if (it != volumeObj.end() && it.value().isObject()) {
+                        vol = static_cast<double>(it.value().toObject().value(QStringLiteral("value")).toInt()) / 65536.0;
+                    }
+                }
+            }
+
+            const QJsonObject props = streamObj.value(QStringLiteral("properties")).toObject();
+            QString appName = props.value(QStringLiteral("application.name")).toString();
+            if (appName.isEmpty()) appName = props.value(QStringLiteral("media.name")).toString();
+            if (appName.isEmpty()) appName = props.value(QStringLiteral("node.name")).toString();
+            if (appName.isEmpty()) appName = props.value(QStringLiteral("application.process.binary")).toString();
+            if (appName.isEmpty()) appName = QStringLiteral("Application");
+
+            QString iconName = props.value(QStringLiteral("application.icon_name")).toString();
+            if (iconName.isEmpty()) iconName = props.value(QStringLiteral("application.process.binary")).toString();
+            if (iconName.isEmpty()) iconName = appName.toLower();
+
+            const QString mediaTitle = props.value(QStringLiteral("media.name")).toString();
+
+            QVariantMap item;
+            item.insert(QStringLiteral("index"), index);
+            item.insert(QStringLiteral("name"), appName);
+            item.insert(QStringLiteral("title"), mediaTitle);
+            item.insert(QStringLiteral("iconName"), iconName);
+            item.insert(QStringLiteral("volume"), std::clamp(vol, 0.0, 1.5));
+            item.insert(QStringLiteral("muted"), muted);
+            item.insert(QStringLiteral("corked"), corked);
+            streams.append(item);
+        }
+
+        if (m_appStreams != streams) {
+            m_appStreams = streams;
+            emit appStreamsChanged();
+        }
+    });
+}
+
+void SystemServices::setAudioOutput(const QString &sinkName, const QString &portName) {
+    if (sinkName.isEmpty()) return;
+
+    QString cmd = QStringLiteral("pactl set-default-sink '%1'").arg(sinkName);
+    if (!portName.isEmpty()) {
+        cmd += QStringLiteral(" && pactl set-sink-port '%1' '%2'").arg(sinkName, portName);
+    }
+
+    startCommand(QStringLiteral("sh"), {QStringLiteral("-c"), cmd}, 1000, [this](const CommandResult &) {
+        requestAudioOutputs();
+        requestVolume();
+    });
+}
+
+void SystemServices::setAudioInput(const QString &sourceName, const QString &portName) {
+    if (sourceName.isEmpty()) return;
+
+    QString cmd = QStringLiteral("pactl set-default-source '%1'").arg(sourceName);
+    if (!portName.isEmpty()) {
+        cmd += QStringLiteral(" && pactl set-source-port '%1' '%2'").arg(sourceName, portName);
+    }
+
+    startCommand(QStringLiteral("sh"), {QStringLiteral("-c"), cmd}, 1000, [this](const CommandResult &) {
+        requestAudioInputs();
+        requestMicVolume();
+    });
+}
+
+void SystemServices::setAppStreamVolume(int streamIndex, double volume) {
+    const int percent = qRound(std::clamp(volume, 0.0, 1.5) * 100.0);
+    for (int i = 0; i < m_appStreams.size(); ++i) {
+        QVariantMap map = m_appStreams[i].toMap();
+        if (map.value(QStringLiteral("index")).toInt() == streamIndex) {
+            map.insert(QStringLiteral("volume"), volume);
+            m_appStreams[i] = map;
+            emit appStreamsChanged();
+            break;
+        }
+    }
+
+    startCommand(QStringLiteral("pactl"),
+                 {QStringLiteral("set-sink-input-volume"), QString::number(streamIndex), QStringLiteral("%1%").arg(percent)},
+                 800,
+                 [](const CommandResult &) {});
+}
+
+void SystemServices::toggleAppStreamMute(int streamIndex) {
+    for (int i = 0; i < m_appStreams.size(); ++i) {
+        QVariantMap map = m_appStreams[i].toMap();
+        if (map.value(QStringLiteral("index")).toInt() == streamIndex) {
+            const bool current = map.value(QStringLiteral("muted")).toBool();
+            map.insert(QStringLiteral("muted"), !current);
+            m_appStreams[i] = map;
+            emit appStreamsChanged();
+            break;
+        }
+    }
+
+    startCommand(QStringLiteral("pactl"),
+                 {QStringLiteral("set-sink-input-mute"), QString::number(streamIndex), QStringLiteral("toggle")},
+                 800,
+                 [this](const CommandResult &) {
+        requestAppStreams();
     });
 }
 

@@ -1,4 +1,5 @@
 #include "SysBackend.h"
+#include "SystemServices.h"
 #include <QFile>
 #include <QDir>
 #include <QDebug>
@@ -382,6 +383,9 @@ void SysBackend::setupAudio() {
         fetchCurrentVolume();
         fetchCurrentMicVolume();
         checkDefaultAudioDevice();
+        if (auto *ss = SystemServices::instance()) {
+            ss->refreshAudioIfActive();
+        }
     });
 
     m_paSubscriber->start("pactl", QStringList() << "subscribe");

@@ -85,15 +85,32 @@ Item {
             asynchronous: false
             visible: active
 
-            sourceComponent: Component {
-                ConnectivityDetailPanel {
-                    provider: shell.provider
-                    panelKind: shell.panelKind
-                    iconFontFamily: shell.iconFontFamily
-                    textFontFamily: shell.textFontFamily
-                    heroFontFamily: shell.heroFontFamily
-                    presentationProgress: shell.revealProgress
-                }
+            sourceComponent: shell.panelKind.startsWith("audio")
+                ? audioDetailComponent
+                : connectivityDetailComponent
+        }
+
+        Component {
+            id: connectivityDetailComponent
+            ConnectivityDetailPanel {
+                provider: shell.provider
+                panelKind: shell.panelKind
+                iconFontFamily: shell.iconFontFamily
+                textFontFamily: shell.textFontFamily
+                heroFontFamily: shell.heroFontFamily
+                presentationProgress: shell.revealProgress
+            }
+        }
+
+        Component {
+            id: audioDetailComponent
+            AudioDetailPanel {
+                provider: shell.provider
+                panelKind: shell.panelKind
+                iconFontFamily: shell.iconFontFamily
+                textFontFamily: shell.textFontFamily
+                heroFontFamily: shell.heroFontFamily
+                presentationProgress: shell.revealProgress
             }
         }
     }

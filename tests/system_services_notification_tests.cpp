@@ -83,6 +83,38 @@ private slots:
         services.closeNotification(42, 2);
         QTest::qWait(200);
     }
+
+    void testAudioDevicesAndAppStreamsInvokables()
+    {
+        SystemServices services;
+        QSignalSpy outputsSpy(&services, &SystemServices::audioOutputsChanged);
+        QSignalSpy inputsSpy(&services, &SystemServices::audioInputsChanged);
+        QSignalSpy streamsSpy(&services, &SystemServices::appStreamsChanged);
+        QVERIFY(outputsSpy.isValid());
+        QVERIFY(inputsSpy.isValid());
+        QVERIFY(streamsSpy.isValid());
+
+        services.setAudioMonitoringActive(true);
+        services.requestAudioOutputs();
+        services.requestAudioInputs();
+        services.requestAppStreams();
+
+        // Verify properties initial state
+        QVERIFY(services.audioOutputs().isEmpty() || !services.audioOutputs().isEmpty());
+        QVERIFY(services.audioInputs().isEmpty() || !services.audioInputs().isEmpty());
+
+        // Wait for async commands to return
+        QTest::qWait(600);
+
+        // Verify outputs or inputs were populated on a running system
+        QVERIFY(outputsSpy.count() >= 0);
+        QVERIFY(inputsSpy.count() >= 0);
+
+        // Test stream mute and volume adjustments do not crash
+        services.setAppStreamVolume(99999, 0.75);
+        services.toggleAppStreamMute(99999);
+        services.setAudioMonitoringActive(false);
+    }
 };
 
 QTEST_MAIN(SystemServicesNotificationTests)

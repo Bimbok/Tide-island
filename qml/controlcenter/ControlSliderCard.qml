@@ -9,6 +9,10 @@ Rectangle {
     signal commitRequested()
     signal cancelRequested()
     signal iconClicked()
+    signal flyoutClicked()
+
+    property bool showFlyoutChevron: false
+    property bool flyoutOpen: false
 
     property string title: ""
     property string iconText: ""
@@ -53,29 +57,60 @@ Rectangle {
             font.weight: Font.DemiBold
         }
 
-        Item {
+        Row {
             anchors.right: parent.right
             anchors.top: parent.top
-            width: 24
-            height: 20
-            visible: root.iconText !== ""
+            spacing: 8
 
-            Text {
-                anchors.centerIn: parent
-                text: root.iconText
-                color: iconMouse.containsMouse ? root.accentColor : root.textSecondary
-                font.pixelSize: 13
-                font.family: root.iconFontFamily
+            Item {
+                width: 22
+                height: 20
+                visible: root.iconText !== ""
 
-                Behavior on color { ColorAnimation { duration: 120 } }
+                Text {
+                    anchors.centerIn: parent
+                    text: root.iconText
+                    color: iconMouse.containsMouse ? root.accentColor : root.textSecondary
+                    font.pixelSize: 13
+                    font.family: root.iconFontFamily
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                }
+
+                MouseArea {
+                    id: iconMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.iconClicked()
+                }
             }
 
-            MouseArea {
-                id: iconMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.iconClicked()
+            Item {
+                width: 18
+                height: 20
+                visible: root.showFlyoutChevron
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "›"
+                    color: root.flyoutOpen
+                        ? root.accentColor
+                        : (chevronMouse.containsMouse ? root.textPrimary : StyleTokens.textSubtle)
+                    font.pixelSize: 16
+                    font.family: root.textFontFamily
+                    font.weight: Font.DemiBold
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                }
+
+                MouseArea {
+                    id: chevronMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.flyoutClicked()
+                }
             }
         }
 

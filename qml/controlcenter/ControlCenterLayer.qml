@@ -69,6 +69,8 @@ Item {
     property bool wifiPanelOpen: false
     property bool bluetoothPanelOpen: false
     property bool powerPanelOpen: false
+    property bool audioOutputPanelOpen: false
+    property bool audioInputPanelOpen: false
     property bool powerViewActive: false
     property bool batteryDrawerOpen: false
     property bool batteryDrawerDragging: false
@@ -192,7 +194,7 @@ Item {
     readonly property string bluetoothPairingMessage: bluetoothPairingAgent ? bluetoothPairingAgent.promptMessage : ""
     readonly property string bluetoothPairingDisplayedCode: bluetoothPairingAgent ? bluetoothPairingAgent.displayedCode : ""
     readonly property bool hasConnectivityPrompt: wifiPendingPasswordSsid.length > 0 || bluetoothPairingActive
-    readonly property bool anyConnectivityPanelOpen: wifiPanelOpen || bluetoothPanelOpen
+    readonly property bool anyConnectivityPanelOpen: wifiPanelOpen || bluetoothPanelOpen || audioOutputPanelOpen || audioInputPanelOpen
     readonly property string wifiStatusText: wifiController ? wifiController.statusText : "Unavailable"
     readonly property string bluetoothStatusText: buildBluetoothStatusText()
     readonly property string bluetoothAvailabilityMessage: bluetoothAvailable ? "" : "No Bluetooth adapter is available."
@@ -511,6 +513,8 @@ Item {
         if (kind === "wifi") return wifiPanelOpen;
         if (kind === "bluetooth") return bluetoothPanelOpen;
         if (kind === "power") return powerPanelOpen;
+        if (kind === "audio_output" || kind === "output") return audioOutputPanelOpen;
+        if (kind === "audio_input" || kind === "input") return audioInputPanelOpen;
         return false;
     }
 
@@ -562,6 +566,39 @@ Item {
             changed = powerPanelOpen !== nextOpen;
             powerPanelOpen = nextOpen;
         }
+        else if (kind === "audio_output" || kind === "output") {
+            changed = audioOutputPanelOpen !== nextOpen;
+            audioOutputPanelOpen = nextOpen;
+            if (nextOpen) {
+                audioInputPanelOpen = false;
+                setConnectivityPanelOpen("wifi", false, emitSignal);
+                setConnectivityPanelOpen("bluetooth", false, emitSignal);
+                SystemServices.setAudioMonitoringActive(true);
+                SystemServices.requestAudioOutputs();
+                SystemServices.requestAppStreams();
+            } else if (!audioInputPanelOpen) {
+                SystemServices.setAudioMonitoringActive(false);
+            }
+            if (changed && emitSignal)
+                connectivityPanelRequested("audio_output", nextOpen);
+            return;
+        }
+        else if (kind === "audio_input" || kind === "input") {
+            changed = audioInputPanelOpen !== nextOpen;
+            audioInputPanelOpen = nextOpen;
+            if (nextOpen) {
+                audioOutputPanelOpen = false;
+                setConnectivityPanelOpen("wifi", false, emitSignal);
+                setConnectivityPanelOpen("bluetooth", false, emitSignal);
+                SystemServices.setAudioMonitoringActive(true);
+                SystemServices.requestAudioInputs();
+            } else if (!audioOutputPanelOpen) {
+                SystemServices.setAudioMonitoringActive(false);
+            }
+            if (changed && emitSignal)
+                connectivityPanelRequested("audio_input", nextOpen);
+            return;
+        }
         else {
             return;
         }
@@ -597,6 +634,8 @@ Item {
 
         setConnectivityPanelOpen("wifi", false, emitSignals);
         setConnectivityPanelOpen("bluetooth", false, emitSignals);
+        setConnectivityPanelOpen("audio_output", false, emitSignals);
+        setConnectivityPanelOpen("audio_input", false, emitSignals);
         clearWifiPrompt();
         clearWifiMessages();
         clearBluetoothMessages();
@@ -2766,6 +2805,8 @@ Item {
             trackColor: controlCenter.trackColor
             textPrimary: controlCenter.textPrimary
             textSecondary: controlCenter.textSecondary
+            showFlyoutChevron: true
+            flyoutOpen: controlCenter.audioOutputPanelOpen
 
             onInteractionStarted: {
                 if (controlCenter.sliderIntroPending) {
@@ -2785,6 +2826,7 @@ Item {
             }
             onCancelRequested: SystemServices.requestVolume()
             onIconClicked: SystemServices.toggleVolumeMute()
+            onFlyoutClicked: controlCenter.toggleConnectivityOverlay("audio_output")
         }
 
         ControlSliderCard {
@@ -2803,6 +2845,8 @@ Item {
             trackColor: controlCenter.trackColor
             textPrimary: controlCenter.textPrimary
             textSecondary: controlCenter.textSecondary
+            showFlyoutChevron: true
+            flyoutOpen: controlCenter.audioInputPanelOpen
 
             onInteractionStarted: {
                 if (controlCenter.sliderIntroPending) {
@@ -2822,6 +2866,7 @@ Item {
             }
             onCancelRequested: SystemServices.requestMicVolume()
             onIconClicked: SystemServices.toggleMicMute()
+            onFlyoutClicked: controlCenter.toggleConnectivityOverlay("audio_input")
         }
     }
     Item {

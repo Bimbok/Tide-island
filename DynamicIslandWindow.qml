@@ -140,6 +140,14 @@ PanelWindow {
 
         Region {
             intersection: Intersection.Combine
+            x: Math.floor(audioConnectivityDetailShell.x)
+            y: Math.floor(audioConnectivityDetailShell.y)
+            width: audioConnectivityDetailShell.visible ? Math.ceil(audioConnectivityDetailShell.width) : 0
+            height: audioConnectivityDetailShell.visible ? Math.ceil(audioConnectivityDetailShell.height) : 0
+        }
+
+        Region {
+            intersection: Intersection.Combine
             x: Math.floor(calendarNoteShell.x)
             y: Math.floor(calendarNoteShell.y)
             width: calendarNoteShell.visible ? Math.ceil(calendarNoteShell.width) : 0
@@ -293,7 +301,10 @@ PanelWindow {
     property bool bluetoothConnectivityDetailMounted: false
     property bool powerConnectivityDetailOpen: false
     property bool powerConnectivityDetailMounted: false
-    readonly property bool anyConnectivityDetailMounted: wifiConnectivityDetailMounted || bluetoothConnectivityDetailMounted || powerConnectivityDetailMounted
+    property bool audioConnectivityDetailOpen: false
+    property bool audioConnectivityDetailMounted: false
+    property string audioConnectivityDetailKind: "audio_output"
+    readonly property bool anyConnectivityDetailMounted: wifiConnectivityDetailMounted || bluetoothConnectivityDetailMounted || powerConnectivityDetailMounted || audioConnectivityDetailMounted
     readonly property real connectivityDetailWidth: 318
     readonly property real connectivityDetailHeight: 404
     readonly property bool controlCenterActiveRecording: ScreenRecorder
@@ -530,6 +541,21 @@ PanelWindow {
                 bluetoothConnectivityDetailOpen = false;
                 bluetoothConnectivityDetailCleanupTimer.restart();
             }
+            return;
+        }
+
+        if (kind === "audio_output" || kind === "audio_input" || kind.startsWith("audio")) {
+            root.audioConnectivityDetailKind = kind;
+            if (nextOpen) {
+                audioConnectivityDetailCleanupTimer.stop();
+                root.audioConnectivityDetailMounted = true;
+                root.audioConnectivityDetailOpen = true;
+            } else {
+                if (!root.audioConnectivityDetailMounted && !root.audioConnectivityDetailOpen)
+                    return;
+                root.audioConnectivityDetailOpen = false;
+                audioConnectivityDetailCleanupTimer.restart();
+            }
         }
     }
 
@@ -537,6 +563,8 @@ PanelWindow {
         setConnectivityDetailVisible("wifi", false);
         setConnectivityDetailVisible("bluetooth", false);
         setConnectivityDetailVisible("power", false);
+        setConnectivityDetailVisible("audio_output", false);
+        setConnectivityDetailVisible("audio_input", false);
     }
 
     function openOverviewEverywhere() {
@@ -943,6 +971,13 @@ PanelWindow {
         interval: root.connectivityDetailAnimationDuration
         repeat: false
         onTriggered: root.powerConnectivityDetailMounted = false
+    }
+
+    Timer {
+        id: audioConnectivityDetailCleanupTimer
+        interval: root.connectivityDetailAnimationDuration
+        repeat: false
+        onTriggered: root.audioConnectivityDetailMounted = false
     }
 
     OverviewWallpaperCacheController {
@@ -3454,6 +3489,24 @@ PanelWindow {
             availableWidth: root.width
             detailWidth: 260
             detailHeight: 88
+            detailGap: root.connectivityDetailGap
+            iconFontFamily: root.iconFontFamily
+            textFontFamily: root.textFontFamily
+            heroFontFamily: root.heroFontFamily
+        }
+
+        ConnectivityDetailShell {
+            id: audioConnectivityDetailShell
+
+            open: root.audioConnectivityDetailOpen
+            mounted: root.audioConnectivityDetailMounted
+            rightSide: true
+            panelKind: root.audioConnectivityDetailKind
+            provider: controlCenterLoader.item
+            mainCapsule: mainCapsule
+            availableWidth: root.width
+            detailWidth: root.connectivityDetailWidth
+            detailHeight: root.connectivityDetailHeight
             detailGap: root.connectivityDetailGap
             iconFontFamily: root.iconFontFamily
             textFontFamily: root.textFontFamily
