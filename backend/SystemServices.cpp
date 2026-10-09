@@ -250,6 +250,8 @@ SystemServices::SystemServices(QObject *parent)
     startPipeWireMonitor();
     startRecordingPortalMonitor();
     requestScreenRecordingSnapshot();
+    detectBatteryThresholdSupport();
+    requestBatteryThresholdState();
 }
 
 SystemServices::~SystemServices() {
@@ -1900,6 +1902,280 @@ void SystemServices::cancelTlpApply() {
 
 void SystemServices::cancelPowerProfileApply() {
     cancelTlpApply();
+}
+
+void SystemServices::detectBatteryThresholdSupport() {
+    m_batteryThresholdSupported = false;
+    m_batteryThresholdType.clear();
+    m_batteryThresholdSysfsPath.clear();
+    m_batteryThresholdPresets.clear();
+
+    // 1. Check Lenovo IdeaPad conservation mode
+    const QString ideapadPath = QStringLiteral("/sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode");
+    if (QFile::exists(ideapadPath)) {
+        m_batteryThresholdSupported = true;
+        m_batteryThresholdType = QStringLiteral("conservation");
+        m_batteryThresholdSysfsPath = ideapadPath;
+        m_batteryThresholdPresets = QVariantList{80, 100};
+        return;
+    }
+
+    QDir ideapadDir(QStringLiteral("/sys/bus/platform/drivers/ideapad_acpi"));
+    if (ideapadDir.exists()) {
+        const QStringList entries = ideapadDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString &entry : entries) {
+            const QString candidate = ideapadDir.absoluteFilePath(entry + QStringLiteral("/conservation_mode"));
+            if (QFile::exists(candidate)) {
+                m_batteryThresholdSupported = true;
+                m_batteryThresholdType = QStringLiteral("conservation");
+                m_batteryThresholdSysfsPath = candidate;
+                m_batteryThresholdPresets = QVariantList{80, 100};
+                return;
+            }
+        }
+    }
+
+    const QString ideapadPlatform = QStringLiteral("/sys/devices/platform/ideapad_acpi/conservation_mode");
+    if (QFile::exists(ideapadPlatform)) {
+        m_batteryThresholdSupported = true;
+        m_batteryThresholdType = QStringLiteral("conservation");
+        m_batteryThresholdSysfsPath = ideapadPlatform;
+        m_batteryThresholdPresets = QVariantList{80, 100};
+        return;
+    }
+
+    // 2. Check standard Linux charge_control_end_threshold (ThinkPad, ASUS, Framework, etc.)
+    QDir powerSupplyDir(QStringLiteral("/sys/class/power_supply"));
+    if (powerSupplyDir.exists()) {
+        const QStringList entries = powerSupplyDir.entryList(QStringList() << QStringLiteral("BAT*"), QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString &bat : entries) {
+            const QString candidate = powerSupplyDir.absoluteFilePath(bat + QStringLiteral("/charge_control_end_threshold"));
+            if (QFile::exists(candidate)) {
+                m_batteryThresholdSupported = true;
+                m_batteryThresholdType = QStringLiteral("threshold");
+                m_batteryThresholdSysfsPath = candidate;
+                m_batteryThresholdPresets = QVariantList{80, 85, 90, 100};
+                return;
+            }
+        }
+    }
+
+    // 3. Check ASUS specific WMI path
+    const QString asusPath = QStringLiteral("/sys/devices/platform/asus-nb-wmi/charge_control_end_threshold");
+    if (QFile::exists(asusPath)) {
+        m_batteryThresholdSupported = true;
+        m_batteryThresholdType = QStringLiteral("threshold");
+        m_batteryThresholdSysfsPath = asusPath;
+        m_batteryThresholdPresets = QVariantList{80, 85, 90, 100};
+        return;
+    }
+}
+
+void SystemServices::updateBatteryMetrics() {
+    QString batDir;
+    QDir psDir(QStringLiteral("/sys/class/power_supply"));
+    if (psDir.exists()) {
+        const QStringList bats = psDir.entryList(QStringList() << QStringLiteral("BAT*"), QDir::Dirs | QDir::NoDotAndDotDot);
+        if (!bats.isEmpty()) {
+            batDir = psDir.absoluteFilePath(bats.first());
+        }
+    }
+
+    if (batDir.isEmpty())
+        return;
+
+    QFile cycleFile(batDir + QStringLiteral("/cycle_count"));
+    if (cycleFile.open(QIODevice::ReadOnly)) {
+        m_batteryCycleCount = QString::fromUtf8(cycleFile.readAll()).trimmed().toInt();
+        cycleFile.close();
+    }
+
+    QFile statusFile(batDir + QStringLiteral("/status"));
+    if (statusFile.open(QIODevice::ReadOnly)) {
+        m_batteryChargeState = QString::fromUtf8(statusFile.readAll()).trimmed();
+        statusFile.close();
+    }
+
+    qint64 energyFull = 0;
+    qint64 energyFullDesign = 0;
+
+    QFile efFile(batDir + QStringLiteral("/energy_full"));
+    if (!efFile.exists())
+        efFile.setFileName(batDir + QStringLiteral("/charge_full"));
+    if (efFile.open(QIODevice::ReadOnly)) {
+        energyFull = QString::fromUtf8(efFile.readAll()).trimmed().toLongLong();
+        efFile.close();
+    }
+
+    QFile efdFile(batDir + QStringLiteral("/energy_full_design"));
+    if (!efdFile.exists())
+        efdFile.setFileName(batDir + QStringLiteral("/charge_full_design"));
+    if (efdFile.open(QIODevice::ReadOnly)) {
+        energyFullDesign = QString::fromUtf8(efdFile.readAll()).trimmed().toLongLong();
+        efdFile.close();
+    }
+
+    if (energyFullDesign > 0 && energyFull > 0) {
+        m_batteryHealthPercent = std::clamp(static_cast<int>(qRound(100.0 * energyFull / energyFullDesign)), 0, 100);
+    } else {
+        m_batteryHealthPercent = 100;
+    }
+
+    emit batteryHealthMetricsChanged();
+}
+
+void SystemServices::requestBatteryThresholdState() {
+    if (m_batteryThresholdSysfsPath.isEmpty()) {
+        detectBatteryThresholdSupport();
+    }
+
+    updateBatteryMetrics();
+
+    if (!m_batteryThresholdSupported || m_batteryThresholdSysfsPath.isEmpty()) {
+        emit batteryThresholdChanged();
+        return;
+    }
+
+    QFile file(m_batteryThresholdSysfsPath);
+    if (file.open(QIODevice::ReadOnly)) {
+        const QString content = QString::fromUtf8(file.readAll()).trimmed();
+        file.close();
+
+        if (m_batteryThresholdType == QLatin1String("conservation")) {
+            const bool enabled = (content == QLatin1String("1"));
+            m_batteryConservationMode = enabled;
+            m_batteryThresholdValue = enabled ? 80 : 100;
+        } else {
+            bool ok = false;
+            const int val = content.toInt(&ok);
+            if (ok && val > 0) {
+                m_batteryThresholdValue = val;
+                m_batteryConservationMode = (val <= 80);
+            }
+        }
+        m_batteryThresholdError.clear();
+        emit batteryThresholdChanged();
+    }
+}
+
+void SystemServices::setBatteryConservationMode(bool enabled) {
+    if (!m_batteryThresholdSupported || m_batteryThresholdSysfsPath.isEmpty()) {
+        emit batteryThresholdFinished(false, QStringLiteral("Battery charge threshold is not supported on this device."));
+        return;
+    }
+
+    if (m_batteryThresholdType == QLatin1String("conservation")) {
+        applyBatteryThresholdValue(enabled ? QStringLiteral("1") : QStringLiteral("0"));
+    } else {
+        applyBatteryThresholdValue(enabled ? QStringLiteral("80") : QStringLiteral("100"));
+    }
+}
+
+void SystemServices::setBatteryThreshold(int threshold) {
+    if (!m_batteryThresholdSupported || m_batteryThresholdSysfsPath.isEmpty()) {
+        emit batteryThresholdFinished(false, QStringLiteral("Battery charge threshold is not supported on this device."));
+        return;
+    }
+
+    if (m_batteryThresholdType == QLatin1String("conservation")) {
+        applyBatteryThresholdValue((threshold <= 80) ? QStringLiteral("1") : QStringLiteral("0"));
+    } else {
+        applyBatteryThresholdValue(QString::number(std::clamp(threshold, 40, 100)));
+    }
+}
+
+void SystemServices::applyBatteryThresholdValue(const QString &targetValue) {
+    if (m_batteryThresholdSysfsPath.isEmpty())
+        return;
+
+    m_batteryThresholdBusy = true;
+    m_batteryThresholdError.clear();
+    emit batteryThresholdBusyChanged();
+
+    // 1. Direct write (works with 0ms latency when tmpfiles/udev permissions are set)
+    QFile file(m_batteryThresholdSysfsPath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        const QByteArray bytes = targetValue.toUtf8() + "\n";
+        file.write(bytes);
+        file.flush();
+        file.close();
+
+        m_batteryThresholdBusy = false;
+        requestBatteryThresholdState();
+        emit batteryThresholdBusyChanged();
+        emit batteryThresholdFinished(true, QString());
+        return;
+    }
+
+    // 2. Fallback to elevated pkexec or sudo
+    QString program;
+    QStringList arguments;
+    QByteArray stdinData;
+
+    const UserConfigBackend config;
+    const QString sudoPassword = config.tlpSudoPassword().trimmed();
+
+    if (sudoPassword.isEmpty()) {
+        if (!findExecutable(QStringLiteral("pkexec")).isEmpty()) {
+            program = QStringLiteral("pkexec");
+            arguments = {
+                QStringLiteral("sh"),
+                QStringLiteral("-c"),
+                QStringLiteral("printf '%%s\\n' '%1' > '%2'").arg(targetValue, m_batteryThresholdSysfsPath)
+            };
+        } else if (!findExecutable(QStringLiteral("sudo")).isEmpty()) {
+            program = QStringLiteral("sudo");
+            arguments = {
+                QStringLiteral("-n"),
+                QStringLiteral("sh"),
+                QStringLiteral("-c"),
+                QStringLiteral("printf '%%s\\n' '%1' > '%2'").arg(targetValue, m_batteryThresholdSysfsPath)
+            };
+        } else {
+            m_batteryThresholdBusy = false;
+            m_batteryThresholdError = QStringLiteral("pkexec or sudo is required to set battery threshold.");
+            emit batteryThresholdBusyChanged();
+            emit batteryThresholdFinished(false, m_batteryThresholdError);
+            return;
+        }
+    } else {
+        if (findExecutable(QStringLiteral("sudo")).isEmpty()) {
+            m_batteryThresholdBusy = false;
+            m_batteryThresholdError = QStringLiteral("sudo is not installed.");
+            emit batteryThresholdBusyChanged();
+            emit batteryThresholdFinished(false, m_batteryThresholdError);
+            return;
+        }
+        program = QStringLiteral("sudo");
+        arguments = {
+            QStringLiteral("-S"),
+            QStringLiteral("-p"),
+            QString(),
+            QStringLiteral("sh"),
+            QStringLiteral("-c"),
+            QStringLiteral("printf '%%s\\n' '%1' > '%2'").arg(targetValue, m_batteryThresholdSysfsPath)
+        };
+        stdinData = (sudoPassword + QLatin1Char('\n')).toUtf8();
+    }
+
+    startCommand(program, arguments, 10000,
+        [this, program](const CommandResult &result) {
+            m_batteryThresholdBusy = false;
+            if (result.exitCode == 0 && result.exitStatus == QProcess::NormalExit) {
+                m_batteryThresholdError.clear();
+                requestBatteryThresholdState();
+                emit batteryThresholdBusyChanged();
+                emit batteryThresholdFinished(true, QString());
+            } else {
+                m_batteryThresholdError = commandErrorText(program, result);
+                if (m_batteryThresholdError.isEmpty())
+                    m_batteryThresholdError = QStringLiteral("Failed to set battery threshold.");
+                emit batteryThresholdBusyChanged();
+                emit batteryThresholdFinished(false, m_batteryThresholdError);
+            }
+        },
+        stdinData
+    );
 }
 
 void SystemServices::setCavaClientActive(const QString &clientId, bool active) {

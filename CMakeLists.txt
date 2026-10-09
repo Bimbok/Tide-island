@@ -359,3 +359,7 @@ install(FILES tide-island.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applicati
 
 # Install systemd user service
 install(FILES tide-island.service DESTINATION lib/systemd/user)
+
+# Install systemd tmpfiles rule for battery threshold permissions
+install(FILES templates/tide-island-battery.conf DESTINATION lib/tmpfiles.d)
+

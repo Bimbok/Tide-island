@@ -580,6 +580,9 @@ build_tide_island() {
   fi
   run sudo install -d -m 0755 "$STATE_DIR"
   run sudo install -m 0644 "$build_dir/install_manifest.txt" "$INSTALL_MANIFEST"
+  if command -v systemd-tmpfiles >/dev/null 2>&1; then
+    run sudo systemd-tmpfiles --create /usr/lib/tmpfiles.d/tide-island-battery.conf 2>/dev/null || true
+  fi
 }
 
 configure_service() {

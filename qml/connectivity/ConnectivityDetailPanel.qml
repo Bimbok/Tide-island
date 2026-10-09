@@ -161,16 +161,15 @@ Item {
 
         Item {
             id: headerRow
-            visible: !root.isPower
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            height: root.isPower ? 0 : 24
+            height: 24
 
             Text {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.isWifi ? "Wi-Fi" : root.isBluetooth ? "Bluetooth" : "Power"
+                text: root.isWifi ? "Wi-Fi" : root.isBluetooth ? "Bluetooth" : "Battery & Power"
                 color: StyleTokens.textPrimary
                 font.pixelSize: 15
                 font.family: root.heroFontFamily
@@ -218,7 +217,7 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: headerRow.bottom
-            anchors.topMargin: root.isPower ? 0 : 14
+            anchors.topMargin: root.isPower ? 10 : 14
             spacing: 10
 
             Rectangle {
@@ -700,10 +699,358 @@ Item {
                 width: contentFlick.width
                 spacing: 8
 
+                // 1. Live Battery Status & Metrics Card
+                Rectangle {
+                    visible: root.isPower
+                    width: parent.width
+                    height: 58
+                    radius: 16
+                    color: StyleTokens.secondaryButton
+
+                    Item {
+                        anchors.fill: parent
+                        anchors.margins: 10
+
+                        Rectangle {
+                            id: batteryIconCircle
+                            width: 38
+                            height: 38
+                            radius: 19
+                            color: StyleTokens.moduleHover
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: (root.provider && root.provider.isCharging) ? (root.provider.chargingIconGlyph || "\uf0e7") : "\uf240"
+                                color: (root.provider && root.provider.isCharging)
+                                    ? StyleTokens.accent
+                                    : ((root.provider && root.provider.batteryCapacity <= 20) ? StyleTokens.warning : StyleTokens.textPrimary)
+                                font.pixelSize: 15
+                                font.family: root.iconFontFamily
+                            }
+                        }
+
+                        Column {
+                            anchors.left: batteryIconCircle.right
+                            anchors.leftMargin: 10
+                            anchors.right: batteryStatusBadge.left
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+
+                            Row {
+                                spacing: 6
+
+                                Text {
+                                    text: (root.provider ? root.provider.batteryCapacity : 0) + "%"
+                                    color: StyleTokens.textPrimary
+                                    font.pixelSize: 15
+                                    font.family: root.heroFontFamily
+                                    font.weight: Font.Bold
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: {
+                                        if (root.provider && root.provider.isCharging) return "Charging";
+                                        if (SystemServices.batteryChargeState === "Not charging") return "Plugged In";
+                                        if (SystemServices.batteryChargeState === "Full") return "Full";
+                                        return "Discharging";
+                                    }
+                                    color: StyleTokens.textMuted
+                                    font.pixelSize: 11
+                                    font.family: root.textFontFamily
+                                }
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: {
+                                    if (SystemServices.batteryConservationMode)
+                                        return "Conservation limit active (80% ceiling)";
+                                    if (SystemServices.batteryCycleCount > 0)
+                                        return SystemServices.batteryCycleCount + " cycles • " + SystemServices.batteryHealthPercent + "% health";
+                                    return "Full capacity mode";
+                                }
+                                color: StyleTokens.textDim
+                                font.pixelSize: 10
+                                font.family: root.textFontFamily
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Rectangle {
+                            id: batteryStatusBadge
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: badgeText.implicitWidth + 14
+                            height: 22
+                            radius: 11
+                            color: SystemServices.batteryConservationMode ? StyleTokens.moduleHover : StyleTokens.transparent
+                            border.color: SystemServices.batteryConservationMode ? StyleTokens.accent : StyleTokens.track
+                            border.width: 1
+
+                            Text {
+                                id: badgeText
+                                anchors.centerIn: parent
+                                text: SystemServices.batteryConservationMode ? "80% Cap" : "100% Full"
+                                color: SystemServices.batteryConservationMode ? StyleTokens.accent : StyleTokens.textMuted
+                                font.pixelSize: 10
+                                font.family: root.textFontFamily
+                                font.weight: Font.DemiBold
+                            }
+                        }
+                    }
+                }
+
+                // 2. Battery Health & Charge Limit Card
+                Rectangle {
+                    visible: root.isPower && SystemServices.batteryThresholdSupported
+                    width: parent.width
+                    implicitHeight: thresholdContentCol.implicitHeight + 20
+                    radius: 16
+                    color: StyleTokens.secondaryButton
+
+                    Column {
+                        id: thresholdContentCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 10
+                        spacing: 8
+
+                        Item {
+                            width: parent.width
+                            height: 18
+
+                            Row {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 6
+
+                                Text {
+                                    text: "\uf132"
+                                    color: StyleTokens.accent
+                                    font.pixelSize: 12
+                                    font.family: root.iconFontFamily
+                                }
+
+                                Text {
+                                    text: "Charge Limit"
+                                    color: StyleTokens.textPrimary
+                                    font.pixelSize: 12
+                                    font.family: root.textFontFamily
+                                    font.weight: Font.DemiBold
+                                }
+                            }
+
+                            Text {
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: SystemServices.batteryThresholdBusy
+                                    ? "Applying..."
+                                    : (SystemServices.batteryThresholdType === "conservation"
+                                        ? (SystemServices.batteryConservationMode ? "Conservation (80%)" : "Full Charge (100%)")
+                                        : (SystemServices.batteryThresholdValue + "% Limit"))
+                                color: SystemServices.batteryThresholdBusy ? StyleTokens.warning : StyleTokens.textMuted
+                                font.pixelSize: 10
+                                font.family: root.textFontFamily
+                            }
+                        }
+
+                        // Presets Row for Lenovo IdeaPad (Conservation Mode)
+                        Row {
+                            visible: SystemServices.batteryThresholdType === "conservation"
+                            width: parent.width
+                            spacing: 8
+
+                            readonly property real pillWidth: (width - spacing) / 2
+
+                            Rectangle {
+                                width: parent.pillWidth
+                                height: 32
+                                radius: 10
+                                color: SystemServices.batteryConservationMode ? StyleTokens.accent : StyleTokens.moduleHover
+                                opacity: SystemServices.batteryThresholdBusy ? 0.6 : 1.0
+
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "80% Conservation"
+                                    color: SystemServices.batteryConservationMode ? StyleTokens.textOnAccent : StyleTokens.textPrimary
+                                    font.pixelSize: 11
+                                    font.family: root.textFontFamily
+                                    font.weight: SystemServices.batteryConservationMode ? Font.DemiBold : Font.Normal
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: !SystemServices.batteryThresholdBusy
+                                    onClicked: SystemServices.setBatteryConservationMode(true)
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.pillWidth
+                                height: 32
+                                radius: 10
+                                color: !SystemServices.batteryConservationMode ? StyleTokens.accent : StyleTokens.moduleHover
+                                opacity: SystemServices.batteryThresholdBusy ? 0.6 : 1.0
+
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "100% Full Charge"
+                                    color: !SystemServices.batteryConservationMode ? StyleTokens.textOnAccent : StyleTokens.textPrimary
+                                    font.pixelSize: 11
+                                    font.family: root.textFontFamily
+                                    font.weight: !SystemServices.batteryConservationMode ? Font.DemiBold : Font.Normal
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: !SystemServices.batteryThresholdBusy
+                                    onClicked: SystemServices.setBatteryConservationMode(false)
+                                }
+                            }
+                        }
+
+                        // Presets Row for Generic Thresholds (ThinkPad, ASUS, etc.)
+                        Row {
+                            visible: SystemServices.batteryThresholdType === "threshold"
+                            width: parent.width
+                            spacing: 6
+
+                            Repeater {
+                                model: [80, 85, 90, 100]
+
+                                delegate: Rectangle {
+                                    readonly property bool active: SystemServices.batteryThresholdValue === modelData
+                                    width: (parent.width - 18) / 4
+                                    height: 32
+                                    radius: 10
+                                    color: active ? StyleTokens.accent : StyleTokens.moduleHover
+                                    opacity: SystemServices.batteryThresholdBusy ? 0.6 : 1.0
+
+                                    Behavior on color {
+                                        ColorAnimation { duration: 150 }
+                                    }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: modelData + "%"
+                                        color: active ? StyleTokens.textOnAccent : StyleTokens.textPrimary
+                                        font.pixelSize: 11
+                                        font.family: root.textFontFamily
+                                        font.weight: active ? Font.DemiBold : Font.Normal
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        enabled: !SystemServices.batteryThresholdBusy
+                                        onClicked: SystemServices.setBatteryThreshold(modelData)
+                                    }
+                                }
+                            }
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: SystemServices.batteryThresholdType === "conservation"
+                                ? (SystemServices.batteryConservationMode
+                                    ? "Stops charging at 80% to preserve battery lifespan while plugged in."
+                                    : "Charges battery to 100% capacity for extended mobile use.")
+                                : ("Charging stops at " + SystemServices.batteryThresholdValue + "% to reduce battery degradation.")
+                            color: StyleTokens.textMuted
+                            font.pixelSize: 10
+                            font.family: root.textFontFamily
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                }
+
+                // 3. Power Profiles Selector Card
+                Rectangle {
+                    visible: root.isPower && root.provider && root.provider.tlpControlsEnabled
+                    width: parent.width
+                    height: 44
+                    radius: 16
+                    color: StyleTokens.secondaryButton
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        spacing: 4
+
+                        Repeater {
+                            model: [
+                                { label: "Saver", glyph: "", index: 0 },
+                                { label: "Balanced", glyph: "", index: 1 },
+                                { label: "Performance", glyph: "", index: 2 }
+                            ]
+
+                            delegate: Rectangle {
+                                readonly property bool active: root.provider && root.provider.batteryModeIndex === modelData.index
+                                width: (parent.width - 8) / 3
+                                height: parent.height
+                                radius: 12
+                                color: active ? StyleTokens.accent : StyleTokens.transparent
+
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+
+                                Row {
+                                    anchors.centerIn: parent
+                                    spacing: 5
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.glyph
+                                        color: active ? StyleTokens.textOnAccent : StyleTokens.textMuted
+                                        font.pixelSize: 12
+                                        font.family: root.iconFontFamily
+                                    }
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.label
+                                        color: active ? StyleTokens.textOnAccent : StyleTokens.textPrimary
+                                        font.pixelSize: 11
+                                        font.family: root.textFontFamily
+                                        font.weight: active ? Font.DemiBold : Font.Normal
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (root.provider && root.provider.selectBatteryMode)
+                                            root.provider.selectBatteryMode(modelData.index);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. System Power Actions Row (Lock, Sleep, Restart, Shutdown)
                 Row {
                     visible: root.isPower
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 12
+                    topPadding: 2
 
                     Repeater {
                         model: [
@@ -714,21 +1061,31 @@ Item {
                         ]
 
                         delegate: Rectangle {
-                            width: 48
-                            height: 48
-                            radius: 14
-                            color: StyleTokens.secondaryButton
+                            id: actionBtn
+                            width: 58
+                            height: 42
+                            radius: 13
+                            color: actionMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.secondaryButton
+
+                            Behavior on color {
+                                ColorAnimation { duration: 120 }
+                            }
 
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.glyph
-                                color: StyleTokens.textPrimary
-                                font.pixelSize: 17
+                                color: (modelData.action === "triggerShutdown" && actionMouse.containsMouse)
+                                    ? StyleTokens.danger
+                                    : StyleTokens.textPrimary
+                                font.pixelSize: 16
                                 font.family: root.iconFontFamily
                             }
 
                             MouseArea {
+                                id: actionMouse
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: {
                                     if (root.provider && root.provider[modelData.action])
                                         root.provider[modelData.action]();

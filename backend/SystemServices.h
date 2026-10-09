@@ -24,6 +24,16 @@ class SystemServices final : public QObject {
     Q_PROPERTY(QVariantList appStreams READ appStreams NOTIFY appStreamsChanged FINAL)
     Q_PROPERTY(QString defaultAudioSink READ defaultAudioSink NOTIFY defaultAudioSinkChanged FINAL)
     Q_PROPERTY(QString defaultAudioSource READ defaultAudioSource NOTIFY defaultAudioSourceChanged FINAL)
+    Q_PROPERTY(bool batteryThresholdSupported READ batteryThresholdSupported NOTIFY batteryThresholdChanged FINAL)
+    Q_PROPERTY(QString batteryThresholdType READ batteryThresholdType NOTIFY batteryThresholdChanged FINAL)
+    Q_PROPERTY(bool batteryConservationMode READ batteryConservationMode NOTIFY batteryThresholdChanged FINAL)
+    Q_PROPERTY(int batteryThresholdValue READ batteryThresholdValue NOTIFY batteryThresholdChanged FINAL)
+    Q_PROPERTY(QVariantList batteryThresholdPresets READ batteryThresholdPresets NOTIFY batteryThresholdChanged FINAL)
+    Q_PROPERTY(bool batteryThresholdBusy READ batteryThresholdBusy NOTIFY batteryThresholdBusyChanged FINAL)
+    Q_PROPERTY(QString batteryThresholdError READ batteryThresholdError NOTIFY batteryThresholdChanged FINAL)
+    Q_PROPERTY(int batteryCycleCount READ batteryCycleCount NOTIFY batteryHealthMetricsChanged FINAL)
+    Q_PROPERTY(int batteryHealthPercent READ batteryHealthPercent NOTIFY batteryHealthMetricsChanged FINAL)
+    Q_PROPERTY(QString batteryChargeState READ batteryChargeState NOTIFY batteryHealthMetricsChanged FINAL)
 
 public:
     explicit SystemServices(QObject *parent = nullptr);
@@ -38,6 +48,16 @@ public:
     QVariantList appStreams() const { return m_appStreams; }
     QString defaultAudioSink() const { return m_defaultAudioSink; }
     QString defaultAudioSource() const { return m_defaultAudioSource; }
+    bool batteryThresholdSupported() const { return m_batteryThresholdSupported; }
+    QString batteryThresholdType() const { return m_batteryThresholdType; }
+    bool batteryConservationMode() const { return m_batteryConservationMode; }
+    int batteryThresholdValue() const { return m_batteryThresholdValue; }
+    QVariantList batteryThresholdPresets() const { return m_batteryThresholdPresets; }
+    bool batteryThresholdBusy() const { return m_batteryThresholdBusy; }
+    QString batteryThresholdError() const { return m_batteryThresholdError; }
+    int batteryCycleCount() const { return m_batteryCycleCount; }
+    int batteryHealthPercent() const { return m_batteryHealthPercent; }
+    QString batteryChargeState() const { return m_batteryChargeState; }
     void updateScreenRecordingActive();
 
     Q_INVOKABLE void requestScreenRecordingSnapshot();
@@ -81,6 +101,9 @@ public:
     Q_INVOKABLE void ensureUserConfigAvailable();
     Q_INVOKABLE void invokeNotificationAction(uint id, const QString &actionKey);
     Q_INVOKABLE void closeNotification(uint id, uint reason = 2);
+    Q_INVOKABLE void requestBatteryThresholdState();
+    Q_INVOKABLE void setBatteryConservationMode(bool enabled);
+    Q_INVOKABLE void setBatteryThreshold(int threshold);
 
 signals:
     void notificationReceived(uint id,
@@ -110,6 +133,10 @@ signals:
     void systemStatsReady(double cpuUsage, double ramUsage, const QString &errorString);
     void tlpStateReady(bool available, const QString &profile, const QString &output, const QString &errorString);
     void tlpSetFinished(bool success, int exitCode, const QString &output, const QString &errorString);
+    void batteryThresholdChanged();
+    void batteryThresholdBusyChanged();
+    void batteryHealthMetricsChanged();
+    void batteryThresholdFinished(bool success, const QString &errorString);
     void cavaLevelsChanged();
     void audioOutputsChanged();
     void audioInputsChanged();
@@ -137,6 +164,10 @@ private:
     QString findExecutable(const QString &program) const;
     QString commandErrorText(const QString &program, const CommandResult &result) const;
     QString resolvePowerProfileDriver(const QString &requestedDriver) const;
+
+    void detectBatteryThresholdSupport();
+    void updateBatteryMetrics();
+    void applyBatteryThresholdValue(const QString &targetValue);
 
     void startNotificationMonitor();
     void startPipeWireMonitor();
@@ -257,4 +288,16 @@ private:
     bool m_audioMonitoringActive = false;
     QHash<int, int> m_pendingAppStreamVolumePercents;
     QSet<int> m_activeAppStreamVolumeCommands;
+
+    bool m_batteryThresholdSupported = false;
+    QString m_batteryThresholdType;
+    QString m_batteryThresholdSysfsPath;
+    bool m_batteryConservationMode = false;
+    int m_batteryThresholdValue = 100;
+    QVariantList m_batteryThresholdPresets;
+    bool m_batteryThresholdBusy = false;
+    QString m_batteryThresholdError;
+    int m_batteryCycleCount = 0;
+    int m_batteryHealthPercent = 100;
+    QString m_batteryChargeState;
 };

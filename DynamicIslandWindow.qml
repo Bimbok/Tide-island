@@ -3506,8 +3506,8 @@ PanelWindow {
             provider: controlCenterLoader.item
             mainCapsule: mainCapsule
             availableWidth: root.width
-            detailWidth: 260
-            detailHeight: 88
+            detailWidth: root.connectivityDetailWidth
+            detailHeight: 330
             detailGap: root.connectivityDetailGap
             iconFontFamily: root.iconFontFamily
             textFontFamily: root.textFontFamily

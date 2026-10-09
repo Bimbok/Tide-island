@@ -603,6 +603,9 @@ Item {
         else if (kind === "power") {
             changed = powerPanelOpen !== nextOpen;
             powerPanelOpen = nextOpen;
+            if (nextOpen) {
+                SystemServices.requestBatteryThresholdState();
+            }
         }
         else if (kind === "audio_output" || kind === "output") {
             changed = audioOutputPanelOpen !== nextOpen;
@@ -1884,73 +1887,97 @@ Item {
                 }
             }
 
-            Row {
+            Rectangle {
+                id: headerBatteryPill
                 anchors.right: parent.right
-                anchors.rightMargin: 2
+                anchors.rightMargin: 0
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 5
+                height: 24
+                width: headerBatteryRow.implicitWidth + 12
+                radius: 12
+                color: headerBatteryMouse.containsMouse
+                    ? StyleTokens.withAlpha(StyleTokens.white, 0.12)
+                    : (controlCenter.powerPanelOpen ? StyleTokens.withAlpha(cardAccent, 0.2) : StyleTokens.transparent)
 
-                Text {
-                    text: controlCenter.chargingIconGlyph
-                    color: StyleTokens.white
-                    font.pixelSize: 13
-                    font.family: iconFontFamily
-                    visible: isCharging
-                    anchors.verticalCenter: parent.verticalCenter
+                Behavior on color {
+                    ColorAnimation { duration: 120 }
                 }
 
-                Text {
-                    text: batteryCapacity + "%"
-                    color: StyleTokens.white
-                    font.pixelSize: 13
-                    font.family: textFontFamily
-                    font.weight: Font.DemiBold
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                Row {
+                    id: headerBatteryRow
+                    anchors.centerIn: parent
+                    spacing: 5
 
-                Item {
-                    width: 28
-                    height: 14
-                    anchors.verticalCenter: parent.verticalCenter
+                    Text {
+                        text: controlCenter.chargingIconGlyph
+                        color: StyleTokens.white
+                        font.pixelSize: 13
+                        font.family: iconFontFamily
+                        visible: isCharging
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
 
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.rightMargin: 2
-                        radius: 4
-                        color: StyleTokens.transparent
-                        border.color: StyleTokens.textSecondary
-                        border.width: 1
+                    Text {
+                        text: batteryCapacity + "%"
+                        color: StyleTokens.white
+                        font.pixelSize: 13
+                        font.family: textFontFamily
+                        font.weight: Font.DemiBold
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Item {
+                        width: 28
+                        height: 14
+                        anchors.verticalCenter: parent.verticalCenter
 
                         Rectangle {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            anchors.margins: 2
-                            radius: 2
-                            width: (parent.width - 4) * (batteryCapacity / 100.0)
-                            color: {
-                                if (batteryCapacity <= 10) return StyleTokens.danger;
-                                if (batteryCapacity <= 20) return StyleTokens.warning;
-                                return StyleTokens.success;
-                            }
+                            anchors.fill: parent
+                            anchors.rightMargin: 2
+                            radius: 4
+                            color: StyleTokens.transparent
+                            border.color: StyleTokens.textSecondary
+                            border.width: 1
 
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: 300
-                                    easing.type: Easing.OutCubic
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 2
+                                radius: 2
+                                width: (parent.width - 4) * (batteryCapacity / 100.0)
+                                color: {
+                                    if (batteryCapacity <= 10) return StyleTokens.danger;
+                                    if (batteryCapacity <= 20) return StyleTokens.warning;
+                                    return StyleTokens.success;
+                                }
+
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: 300
+                                        easing.type: Easing.OutCubic
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Rectangle {
-                        width: 2
-                        height: 6
-                        radius: 1
-                        color: StyleTokens.textSecondary
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
+                        Rectangle {
+                            width: 2
+                            height: 6
+                            radius: 1
+                            color: StyleTokens.textSecondary
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
                     }
+                }
+
+                MouseArea {
+                    id: headerBatteryMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: controlCenter.toggleConnectivityOverlay("power")
                 }
             }
         }
@@ -2247,35 +2274,84 @@ Item {
                     hovered: controlCenter.batteryModeSliderDragging
                 }
 
-                Text {
+                Row {
                     anchors.left: parent.left
                     anchors.leftMargin: 14
                     anchors.top: parent.top
                     anchors.topMargin: 11
-                    text: "Battery"
-                    color: textPrimary
-                    font.pixelSize: 13
-                    font.family: textFontFamily
-                    font.weight: Font.DemiBold
+                    spacing: 6
+
+                    Text {
+                        text: "Battery"
+                        color: textPrimary
+                        font.pixelSize: 13
+                        font.family: textFontFamily
+                        font.weight: Font.DemiBold
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Rectangle {
+                        visible: SystemServices.batteryConservationMode
+                        width: capBadgeText.implicitWidth + 8
+                        height: 15
+                        radius: 7
+                        color: StyleTokens.moduleHover
+                        border.color: cardAccent
+                        border.width: 1
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            id: capBadgeText
+                            anchors.centerIn: parent
+                            text: "80%"
+                            color: cardAccent
+                            font.pixelSize: 9
+                            font.family: textFontFamily
+                            font.weight: Font.DemiBold
+                        }
+                    }
                 }
 
-                Text {
+                Row {
                     anchors.right: parent.right
-                    anchors.rightMargin: 12
+                    anchors.rightMargin: 10
                     anchors.top: parent.top
-                    anchors.topMargin: 12
-                    width: Math.max(0, parent.width - 88)
-                    text: controlCenter.batteryModeError.length > 0
-                        ? controlCenter.batteryModeError
-                        : (controlCenter.batteryModeInfoMessage.length > 0
-                            ? controlCenter.batteryModeInfoMessage
-                            : controlCenter.batteryModeStatusText)
-                    color: controlCenter.batteryModeError.length > 0 ? StyleTokens.error : StyleTokens.textMuted
-                    horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 9
-                    font.family: textFontFamily
-                    font.weight: Font.Medium
-                    elide: Text.ElideRight
+                    anchors.topMargin: 10
+                    spacing: 4
+
+                    Text {
+                        width: Math.max(0, batteryModeCard.width - 105)
+                        text: controlCenter.batteryModeError.length > 0
+                            ? controlCenter.batteryModeError
+                            : (controlCenter.batteryModeInfoMessage.length > 0
+                                ? controlCenter.batteryModeInfoMessage
+                                : controlCenter.batteryModeStatusText)
+                        color: controlCenter.batteryModeError.length > 0 ? StyleTokens.error : StyleTokens.textMuted
+                        horizontalAlignment: Text.AlignRight
+                        font.pixelSize: 9
+                        font.family: textFontFamily
+                        font.weight: Font.Medium
+                        elide: Text.ElideRight
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: "›"
+                        color: controlCenter.powerPanelOpen ? cardAccent : StyleTokens.textSubtle
+                        font.pixelSize: 16
+                        font.family: textFontFamily
+                        font.weight: Font.DemiBold
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    height: 28
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: controlCenter.toggleConnectivityOverlay("power")
                 }
 
                 Item {

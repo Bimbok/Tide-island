@@ -115,6 +115,25 @@ private slots:
         services.toggleAppStreamMute(99999);
         services.setAudioMonitoringActive(false);
     }
+
+    void testBatteryThresholdDetection()
+    {
+        SystemServices services;
+        QSignalSpy spy(&services, &SystemServices::batteryThresholdChanged);
+        QVERIFY(spy.isValid());
+
+        services.requestBatteryThresholdState();
+
+        if (QFile::exists(QStringLiteral("/sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode"))) {
+            QVERIFY(services.batteryThresholdSupported());
+            QCOMPARE(services.batteryThresholdType(), QStringLiteral("conservation"));
+            QCOMPARE(services.batteryThresholdValue(), services.batteryConservationMode() ? 80 : 100);
+            QCOMPARE(services.batteryThresholdPresets().size(), 2);
+        }
+
+        QVERIFY(services.batteryHealthPercent() >= 0 && services.batteryHealthPercent() <= 100);
+        QVERIFY(services.batteryCycleCount() >= 0);
+    }
 };
 
 QTEST_MAIN(SystemServicesNotificationTests)
