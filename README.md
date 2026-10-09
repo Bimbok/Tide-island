@@ -96,6 +96,14 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
   </tr>
   <tr>
     <td width="50%">
+      <img src="docs/preview/audio_panel.png" width="100%" alt="Audio Device Switcher & Application Mixer" />
+    </td>
+    <td width="50%">
+      <img src="docs/preview/battery_panel.png" width="100%" alt="Battery Health & Charge Conservation Mode" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
       <img src="docs/preview/app_launcher.png" width="100%" alt="Application Launcher" />
     </td>
     <td width="50%">
@@ -149,14 +157,23 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
   - **Microphone Intensity Slider**: Native input gain slider powered by WirePlumber (`@DEFAULT_AUDIO_SOURCE@`) with 40ms event throttling, fluid drags, and instant click-to-mute corner toggle.
   - **Click-to-Mute Sound Card**: One-click corner icon toggle for system audio (`@DEFAULT_AUDIO_SINK@`) with dynamic mute icon (`󰝟`), `"Sound (Muted)"` title indicator, and dimmed accent fill.
   - **Dynamic Sun Glyph & Brightness Presets**: Real-time morphing sun icon matching backlight level (`󰃞` <30%, `󰃟` 30%–70%, `󰃠` >70%) plus click-to-cycle presets (`10% ➔ 30% ➔ 65% ➔ 100% ➔ 10%...`).
-- **🎧 Audio Device Switcher Flyout (Outputs & Inputs)**: Side flyout panel opened with one click on the chevron (`›`) on either the Sound or Microphone card:
+- **Audio Device Switcher Flyout (Outputs & Inputs)**: Side flyout panel opened with one click on the chevron (`›`) on either the Sound or Microphone card:
   - **Output Devices**: Instantly switch default audio sink/port between Speakers, Headphones, Bluetooth earbuds, and HDMI with visual active indicator checkmarks.
   - **Input Devices**: Instantly switch active microphone source between Internal Mic, USB Mic, and Headsets.
-  - **Sleek Tab Switcher**: Segmented pills (`[ 󰓃 Output | 󰍬 Input | 󰎆 Mixer ]`) allow seamless navigation between output devices, microphones, and per-app streams in place.
-- **🎛 Per-App Volume Mixer**: Integrated PipeWire/WirePlumber application volume mixer:
+  - **Sleek Tab Switcher**: Segmented pills (`[ Output | Input | Mixer ]`) allow seamless navigation between output devices, microphones, and per-app streams in place.
+- **Per-App Volume Mixer**: Integrated PipeWire/WirePlumber application volume mixer:
   - Displays all active applications playing audio (Firefox, Spotify, Discord, Steam, games).
   - High-res desktop app icons resolved automatically via the freedesktop icon theme.
   - Compact individual volume sliders and one-click app mute toggles.
+- **Battery Health, Charge Limit & Conservation Mode**: Direct hardware control for laptop battery lifespan preservation:
+  - **Lenovo IdeaPad Conservation Mode**: Hardware-level 80% charge threshold integration via `ideapad_acpi` (`conservation_mode`), capping charge at 80% while plugged in to prevent battery wear.
+  - **Generic Laptop Charge End Threshold**: Automatic support for standard Linux battery threshold interfaces (`charge_control_end_threshold`) with preset pills (`80%`, `85%`, `90%`, `100%`).
+  - **Dedicated Battery Flyout Panel**: Symmetrical 318×404 flyout opened by clicking the battery pill in the Control Center header or the chevron (`›`) on the drawer Battery card.
+  - **Live Battery Telemetry**: Real-time display of battery charge status, health percentage (`batteryHealthPercent`), cycle count (`batteryCycleCount`), and an active `80% Cap` badge.
+  - **Zero-Latency Non-Blocking Control**: Asynchronous C++ backend paired with automated `systemd-tmpfiles` permissions (`tide-island-battery.conf`) for instantaneous toggling without root password prompts or UI freezes.
+- **Symmetrical Flyout Architecture & Mutual Exclusivity**:
+  - All side panels (Wi-Fi, Bluetooth, Audio, Battery) share identical 318×404 geometry and unified typography.
+  - Clean mutual exclusivity automatically dismisses active sibling panels when a new flyout is opened, eliminating clutter.
 - **Dedicated Microphone & Audio Dynamic Island OSD Feedback**: Real-time PipeWire audio source/sink monitoring (`pactl subscribe`) that keeps sliders in sync and triggers matching Dynamic Island pills (`[   XX%  ◯ ]` and `[ 󰝟  XX%  ◯ ]`) whenever adjusted via hotkeys, CLI commands, or UI clicks.
 - **Throttled Slider Performance**: Event throttling on microphone, volume, and brightness slider drags to eliminate IPC and D-Bus lag, maintaining smooth 60fps+ responsiveness.
 - **Unified Icon Weight Harmony**: Clean, consistent icon line weights across volume, microphone, brightness, battery, and weather.
@@ -168,7 +185,9 @@ It is built with Quickshell, QML, and C++/Qt 6. Animations are tuned to be fluid
 - Clock
 - Music player
 - Control Center
+- Audio device switcher & per-app volume mixer
 - Microphone control & mute toggle
+- Battery health & charge limit (conservation mode)
 - Timer
 - Lyrics displayer
 - Application launcher
@@ -195,7 +214,7 @@ Click the × button on a notification card to dismiss it, or use **Clear All** i
 - Volume & audio mute changes
 - Microphone intensity & mute changes
 - Brightness changes
-- Battery charging / discharging
+- Battery charging / discharging & conservation limit
 - Workspace changes
 - Media playback (optional)
 - System notifications
@@ -324,6 +343,14 @@ tide-island-config-app
 - **System Tray (SNI)**:
   - Tucked inside the Control Center drawer with an item count pill badge and smooth horizontal wheel/touch scrolling.
   - Supports left-click activate, right-click context menus, wheel scrolling, and tooltip previews on hover.
+- **Battery Health & Charge Limit (Conservation Mode)**:
+  - Protect laptop battery longevity when connected to AC power. On supported hardware (such as Lenovo IdeaPads with `ideapad_acpi` or generic laptops supporting `charge_control_end_threshold`), toggle between **80% Conservation** mode and **100% Full Charge** directly in the dedicated Battery flyout panel.
+  - Open the panel anytime by clicking the battery indicator pill in the Control Center header or clicking `›` on the drawer's Battery card.
+  - The installer automatically configures `/usr/lib/tmpfiles.d/tide-island-battery.conf`, enabling instantaneous, passwordless switching without root prompts.
+- **Audio Device Switcher & Application Mixer**:
+  - Click the `›` chevron on either the Sound or Microphone card in the Control Center to reveal the Audio flyout panel.
+  - Instantly switch default output endpoints (Speakers, Headphones, HDMI, Bluetooth earbuds) and active microphone sources in real time.
+  - Switch to the **Mixer** tab to adjust individual per-application volume sliders and toggle mute status, complete with freedesktop application icons.
 - **Color Palette & Matugen**: Tide Island supports dynamic system-wide color palettes generated by tools like [Matugen](https://github.com/InioX/matugen) or customized manually in `~/.config/tide-island/colors.json`.
   - **Live Auto-Reload**: Palette updates on disk are automatically detected and reloaded instantly via `QFileSystemWatcher` without restarting the service.
   - **Transparency Preserved**: Island capsule background transparency (`islandBackgroundOpacity`) continues to work seamlessly alongside dynamic palette tints.
@@ -385,11 +412,14 @@ You can control Tide Island remotely using `quickshell ipc call`:
 | `quickshell ipc call island show` | Show dynamic island capsules |
 | `quickshell ipc call island hide` | Hide dynamic island capsules |
 | `quickshell ipc call recorder toggle` | Start or stop screen recording |
+| `quickshell ipc call recorder start` | Start screen recording |
+| `quickshell ipc call recorder stop` | Stop screen recording |
 | `quickshell ipc call recorder toggleMic` | Toggle microphone audio capture |
 | `quickshell ipc call recorder pause` | Pause or resume active recording |
 | `quickshell ipc call recorder toggleReplay` | Start or stop instant replay buffer |
 | `quickshell ipc call recorder saveReplay [sec]` | Save replay clip (e.g. 10, 30, 60 seconds) |
 | `quickshell ipc call recorder openRecordings` | Open recordings folder in file manager |
+| `quickshell ipc call recorder openReplays` | Open saved replays folder in file manager |
 | `quickshell ipc call tide reloadColors` | Reload color palette from colors.json |
 | `quickshell ipc call theme reload` | Reload color palette from colors.json |
 
