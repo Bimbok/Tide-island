@@ -169,7 +169,7 @@ Item {
             Text {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.isWifi ? "Wi-Fi" : root.isBluetooth ? "Bluetooth" : "Battery & Power"
+                text: root.isWifi ? "Wi-Fi" : root.isBluetooth ? "Bluetooth" : "Battery"
                 color: StyleTokens.textPrimary
                 font.pixelSize: 15
                 font.family: root.heroFontFamily
@@ -979,121 +979,7 @@ Item {
                     }
                 }
 
-                // 3. Power Profiles Selector Card
-                Rectangle {
-                    visible: root.isPower && root.provider && root.provider.tlpControlsEnabled
-                    width: parent.width
-                    height: 44
-                    radius: 16
-                    color: StyleTokens.secondaryButton
 
-                    Row {
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        spacing: 4
-
-                        Repeater {
-                            model: [
-                                { label: "Saver", glyph: "", index: 0 },
-                                { label: "Balanced", glyph: "", index: 1 },
-                                { label: "Performance", glyph: "", index: 2 }
-                            ]
-
-                            delegate: Rectangle {
-                                readonly property bool active: root.provider && root.provider.batteryModeIndex === modelData.index
-                                width: (parent.width - 8) / 3
-                                height: parent.height
-                                radius: 12
-                                color: active ? StyleTokens.accent : StyleTokens.transparent
-
-                                Behavior on color {
-                                    ColorAnimation { duration: 150 }
-                                }
-
-                                Row {
-                                    anchors.centerIn: parent
-                                    spacing: 5
-
-                                    Text {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: modelData.glyph
-                                        color: active ? StyleTokens.textOnAccent : StyleTokens.textMuted
-                                        font.pixelSize: 12
-                                        font.family: root.iconFontFamily
-                                    }
-
-                                    Text {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: modelData.label
-                                        color: active ? StyleTokens.textOnAccent : StyleTokens.textPrimary
-                                        font.pixelSize: 11
-                                        font.family: root.textFontFamily
-                                        font.weight: active ? Font.DemiBold : Font.Normal
-                                    }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        if (root.provider && root.provider.selectBatteryMode)
-                                            root.provider.selectBatteryMode(modelData.index);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 4. System Power Actions Row (Lock, Sleep, Restart, Shutdown)
-                Row {
-                    visible: root.isPower
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 12
-                    topPadding: 2
-
-                    Repeater {
-                        model: [
-                            { glyph: "\uf023", action: "triggerLock" },
-                            { glyph: "\uf186", action: "triggerSleep" },
-                            { glyph: "\uf021", action: "triggerRestart" },
-                            { glyph: "\uf011", action: "triggerShutdown" }
-                        ]
-
-                        delegate: Rectangle {
-                            id: actionBtn
-                            width: 58
-                            height: 42
-                            radius: 13
-                            color: actionMouse.containsMouse ? StyleTokens.moduleHover : StyleTokens.secondaryButton
-
-                            Behavior on color {
-                                ColorAnimation { duration: 120 }
-                            }
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.glyph
-                                color: (modelData.action === "triggerShutdown" && actionMouse.containsMouse)
-                                    ? StyleTokens.danger
-                                    : StyleTokens.textPrimary
-                                font.pixelSize: 16
-                                font.family: root.iconFontFamily
-                            }
-
-                            MouseArea {
-                                id: actionMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (root.provider && root.provider[modelData.action])
-                                        root.provider[modelData.action]();
-                                }
-                            }
-                        }
-                    }
-                }
 
                 Text {
                     width: parent.width

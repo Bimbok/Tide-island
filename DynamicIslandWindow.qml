@@ -3507,7 +3507,7 @@ PanelWindow {
             mainCapsule: mainCapsule
             availableWidth: root.width
             detailWidth: root.connectivityDetailWidth
-            detailHeight: 330
+            detailHeight: root.connectivityDetailHeight
             detailGap: root.connectivityDetailGap
             iconFontFamily: root.iconFontFamily
             textFontFamily: root.textFontFamily
